@@ -1,0 +1,15 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Git Show Menu
+# Tags: git, wrapper, fzf, menu
+# Dependencies:
+#   fzf
+#   git
+# Created: 04 Apr 2023
+# Updated: 06 Set 2025
+
+
+git l --color=always | \
+  fzf --ansi --preview-window=up,80%,wrap \
+    --preview 'git show --color=always {2}'
+

@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Technical Spellchecker
+# Type: school, document processing
+# Dependencies: Python3.7+, nvim (neovim)
+# Version: 7
+# Init: 09 Feb 2021
+# Updated: 18 Dec 2022
+
+
+# This script is used to add words to my Neovim dictionary that normal
+# spell-checkers would say are invalid. For instance, many of my class notes
+# contain technical, scientific terms that most spell-checkers think are
+# spelling mistakes. This script uses Wiktionary as the back-end for checking
+# whether or not words are valid.
+
+# My minimal testing indicated that Wiktionary is case-sensitive.
+
+
+import os
+import sys
+from sys import exit
+
+import re
+import requests
+import tempfile
+import pathlib as pl
+import subprocess as sp
+
+
+# Variables
+program_name = 'technical-spellchecker'
+exe_file_name = sys.argv[0].split('/')[-1]
+help_text = f"Usage: {exe_file_name} TEXT_FILE|LYX_FILE"
+
+if 'XDG_CACHE_HOME' in os.environ:
+    XDG_CACHE_HOME = pl.Path(os.environ['XDG_CACHE_HOME'])
+else:
+    XDG_CACHE_HOME = pl.Path.home() / '.cache'
+CACHE_HOME = XDG_CACHE_HOME / 'daniel_rode_code' / program_name
+CACHE_HOME.mkdir(parents=True, exist_ok=True)
+
+wikitionary_misspellings_cache_path = CACHE_HOME / \
+    'wikitionary_misspellings_cache.txt'
+
+
+# Functions
+def nvim_add_word(word, nvim_server_pipe_pth):
+    # Add word to neovim personal dictionary file
+    # Note that it is assumed that a personal dictionary file path is defined
+    # in the users nvim config.
+
+    cmd = ['nvim',
+        '--server', nvim_server_pipe_pth,
+        '--remote-send', f':spellgood {word}<CR>',
+    ]
+    sp.run(cmd, check=True)
+
+def nvim_spell_check(word_set, nvim_server_pipe_pth):
+    # Pass list of words to nvim to see if they are misspellings
+    misspellings = set()
+    for w in word_set:
+        cmd = ['nvim',
+            '--server', nvim_server_pipe_pth,
+            '--remote-expr', f'spellbadword("{w}")[1]',
+        ]
+        p = sp.run(cmd, text=True, capture_output=True, check=True)
+
+        if p.stderr == 'bad':
+            misspellings.add(w)
+
+    # Return list of misspellings
+    return misspellings
+
+def valid_wikitionary_word_check(response):
+    english_section_header = ('<h2><span class="mw-headline" '
+        'id="English">English</span><span class="mw-editsection">'
+        '<span class="mw-editsection-bracket">[</span>')
+    if english_section_header not in response:
+        # In this case, the term is valid, but not in the English language
+        return None
+
+    if "This page was last edited on " not in response:
+        return False
+
+    return True
+
+def wiktionary_spell_check(word):
+    response = curl(f"https://en.wiktionary.org/wiki/{word}")
+    is_valid_wikitionary_word = valid_wikitionary_word_check(response)
+
+    if f"Wiktionary does not yet have an entry for {word}" in response:
+        return False
+    elif is_valid_wikitionary_word == None:
+        # In this case, the term is valid, but not in the English language
+        return False
+    elif is_valid_wikitionary_word:
+        return True
+    else:
+        print("error: Wiktionary seems to have returned an invalid page")
+        exit(1)
+
+def curl(url):
+    r = requests.get(url)
+    return str(r.content, 'utf8')
+
+
+# Parse input
+try:
+    input_path = sys.argv[1]
+except IndexError:
+    print(help_text)
+    exit(1)
+
+input_path = pl.Path(input_path)
+if not input_path.is_file():
+    print("error: Invalid file path:", input_path)
+    print(help_text)
+    exit(1)
+
+
+# Prep file for processing based on its file type (LyX vs plain text)
+p = sp.run(['file', '--dereference', '--brief', input_path],
+    capture_output=True, text=True, check=True)
+file_type = p.stdout.strip().split(',')[0]
+
+if file_type == "LyX document text":
+
+    # Convert lyx file to plain text
+    tmp_file = tempfile.NamedTemporaryFile()
+    tmp_file_path = tmp_file.name
+    print("Converting LyX file... ", end='')
+    sp.run(
+        ['lyx', '-batch', '--export-to', 'text', tmp_file_path, input_path],
+    )
+    word_pool = tmp_file.read_text()
+    word_pool.replace('<Graphics file: ', '')
+    print("done")
+
+elif file_type in ["Unicode text", "ASCII text"]:
+    word_pool = input_path.read_text()
+
+else:
+    print("error: Unsupported file type:", file_type)
+    exit(1)
+
+
+# First level (neovim) spell-checking
+
+# Spawn nvim server
+tmp_pth = tempfile.TemporaryDirectory()
+nvim_server_pipe_pth = tmp_pth.name + "/nvim.pipe"
+sp.Popen(
+    ['nvim', '--headless', '--listen', nvim_server_pipe_pth],
+    stdout=sp.DEVNULL,
+    stderr=sp.DEVNULL,
+)
+
+print("Running Neovim spell check...")
+word_set = re.split('\W', word_pool)
+word_set = [ i for i in word_set if re.match('[a-zA-Z]', i) ]
+    # Remove pure number/symbol sequences
+word_set = set(word_set)  # `set` removes duplicates
+misspellings = nvim_spell_check(word_set, nvim_server_pipe_pth)
+
+
+# Second level (wikitionary) spell-checking
+print("Running Wiktionary spell check...")
+
+# Include lower-case versions of any misspelling candidates
+misspellings_lower = set()
+for word in misspellings:
+    if word != word.lower():
+        misspellings_lower.add(word.lower())
+
+misspellings.update(misspellings_lower)
+
+# Wikitionary spell-checking
+try:
+    wikitionary_misspellings_cache = \
+        wikitionary_misspellings_cache_path.read_text().split('\n')
+except FileNotFoundError:
+    wikitionary_misspellings_cache = list()
+
+valid_words = set()
+wikitionary_new_misspellings = set()
+for word in misspellings:
+    if word in wikitionary_misspellings_cache:
+        print("misspelling:", word)
+        continue
+
+    if wiktionary_spell_check(word):
+        print("white-listing:", word)
+        valid_words.add(word)
+    else:
+        print("misspelling:", word)
+        wikitionary_new_misspellings.add(word)
+
+
+# Update wikitionary misspellings cache
+if wikitionary_new_misspellings:
+    with wikitionary_misspellings_cache_path.open('a') as f:
+        f.write('\n'.join(wikitionary_new_misspellings))
+        f.write('\n')
+
+
+# Add valid terms to personal dictionary
+if not valid_words:
+    # If no new words to add, then exit
+    print("No new valid terms found to add to personal dictionary")
+else:
+    for w in valid_words:
+        nvim_add_word(w, nvim_server_pipe_pth)
+
+    print("Personal dictionary file has been updated")
+    print("Restart Neovim")
+
+
+# Kill nvim server
+cmd = ['nvim',
+    '--server', nvim_server_pipe_pth,
+    '--remote-send', ':q<CR>',
+]
+sp.run(cmd, check=True)
+
+
+
+# TODO
+# - accept multiple input files under one invocation of script
+# - accept file contents via std input (as alternative to being given file path)
+# - add hook so that nvim server is still killed if this script does not exit
+# cleanly
+# - exclude words from wikitionary misspelling cache before passing list of
+# words to nvim spell check
+# - fix nvim spell checker (function) being so slow

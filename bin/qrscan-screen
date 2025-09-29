@@ -1,0 +1,10 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies: grim, zbar, wl-clipboard
+# Init: 08 Oct 2021
+# Updated: -
+
+
+# Capture full-screen screenshot, scan for bar codes, decode content, copy
+# content to clipboard
+grim -t png - | zbarimg --quiet - | cut -d: -f2- | wl-copy

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 20 Oct 2023
+
+
+# Grant QGIS Flatpak access to more paths
+flatpak override --user org.qgis.qgis --filesystem=/home
+flatpak override --user org.qgis.qgis --filesystem=/tmp
+flatpak override --user org.qgis.qgis --filesystem=/mnt
+
+# Save current workspace name
+jq_query='.[] | select(.focused==true) | .name'
+launch_workspace="$(swaymsg -t get_workspaces | jq -r "$jq_query")"
+
+# Run QGIS
+flatpak run org.qgis.qgis --nologo --noversioncheck "$@" &> /dev/null &
+
+# Watch for QGIS window to spawn, then move it to the workspace QGIS was
+# launched from
+while read line
+do
+    qgis_pid="$(pgrep --newest qgis)"
+    [[ $line == $qgis_pid ]] && break
+done < <(swaymsg --type subscribe --monitor '[ "window" ]' \
+    | jq --raw-output --unbuffered '.container.pid')
+
+swaymsg [pid=\""$qgis_pid"\"] move workspace "$launch_workspace" \; \
+    [pid=\""$qgis_pid"\"] floating disable

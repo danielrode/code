@@ -1,0 +1,17 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: View CSV
+# Tags: data, table, view, page, abbriviation, spreadsheet
+# Dependencies:
+#   xsv
+#   ov
+# Created: 21 Mar 2024
+# Updated: 04 Jun 2025
+
+
+in="$1"
+[ -z "$in" ] && in=-
+xsv table "$in" \
+    | ov --header 1 --wrap=false --exit-write --quit-if-one-screen \
+        --line-number \
+;

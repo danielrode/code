@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+
+# This script uses the SELinux "sandbox" command to provide a prompt (via bash) that runs in a sandbox
+# This can be useful for running programs which you are afraid may mess with your data
+# It is especially useful for testing beta programs you are writing that perform mass data writes to files
+# Other than sandboxing the whole environment, this script also sets the SELinux "sandbox" command to remap the home and /tmp directories to temporary directories. Anything written to those paths will be deleted upon exiting the sandbox.
+# There will be some bash errors upon starting this script. Don't worry, this is just the newly created bash shell complaining that it doesn't have access to much of anything while in the sandbox.
+
+
+temp_sandbox_home_dir="$(mktemp -d)"
+temp_sandbox_temp_dir="$(mktemp -d)"
+
+sandbox --include="~/Working/sandbox" --mount --homedir="$temp_sandbox_home_dir/" --tmpdir="$temp_sandbox_temp_dir/" bash
+
+rm -r "$temp_sandbox_home_dir"
+rm -r "$temp_sandbox_temp_dir"
+
+
+
+# some useful information on the "sandbox" command:
+# - https://www.linux.com/learn/run-applications-secure-sandboxes-selinux

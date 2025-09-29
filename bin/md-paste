@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Dependencies:
+#   python3-pyclip
+# Created: 12 Feb 2025
+# Updated: 13 Feb 2025
+
+
+import os
+import pyclip
+import hashlib
+import subprocess as sp
+from sys import exit
+from pathlib import Path
+
+
+def clipboard_mime_type() -> list[str]:
+    """
+    Get mime-type(s) of clipboard content.
+    """
+    cmd = (
+        'wl-paste',
+        '--list-types',
+    )
+    p = sp.run(cmd, capture_output=True, text=True)
+    if p.stderr.strip() == 'Nothing is copied':
+        exit()
+    if p.returncode != 0:
+        raise Exception(str(p))
+
+    return p.stdout.strip().split("\n")
+
+def sha256(blob: bytes) -> str:
+    """
+    Return fingerprint (as hexadecimal string) of binary object.
+    """
+    hasher = hashlib.sha256()
+    hasher.update(blob)
+
+    return hasher.hexdigest()
+
+
+# Main
+if clipboard_mime_type() == ['image/png']:
+    # Ensure asset directory exists (to store PNG under)
+    asset_dir = Path.cwd()/"assets"
+    asset_dir.mkdir(exist_ok=True)
+
+    # Grab image from clipboard
+    png = pyclip.paste()
+
+    # Generate unique filename for image (use its SHA fingerprint) and save
+    # image to file
+    img_path = asset_dir/f"{sha256(png)}.png"
+    with img_path.open('wb') as f:
+        f.write(png)
+
+    # Print Markdown reference to image
+    print(f"![]({img_path.resolve().relative_to(Path('.').resolve())})")
+else:
+    # If no image in clipboard, print clipboard text
+    sp.run(['wl-paste'])

@@ -1,0 +1,14 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Sway Rename Workspace
+# Type: window management
+# Description: Prompts the user for a string and then renames the current
+#			   workspace to that string.
+# Version: 1.0.0.1
+# Init: 08 Feb 2020
+# Updated: 08 Sep 2020
+
+
+echo "Rename workspace to:"
+read workspace_string
+swaymsg "rename workspace to $workspace_string"

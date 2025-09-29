@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 08 Apr 2025
+# Updated: 01 Sep 2025
+
+
+# DEBUGGING:
+# If you run into issues with Immich, you can debug by looking at
+# the logs:
+#   podman logs immich_redis
+#   podman logs immich_postgres
+#   podman logs immich_ml
+#   podman logs immich_server
+# and/or re-initiating the containers:
+#   podman stop -i immich_ml immich_postgres immich_redis immich_server
+#   podman rm -f immich_ml immich_postgres immich_redis immich_server
+#   podman rm -f immich_ml immich_postgres immich_redis immich_server
+#   podman network rm immich
+#   podman volume rm immich_model_cache immich_postgres
+#   podman pull docker.io/redis:6.2-alpine
+#   podman pull docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0
+#   podman pull ghcr.io/immich-app/immich-machine-learning:release
+#   podman pull ghcr.io/immich-app/immich-server:release
+#   # then rerun this script
+
+
+# UPGRADING:
+# + Shut down containers:
+#   podman stop immich_ml immich_postgres immich_redis immich_server
+#   OR
+#   systemctl --user stop immich
+# + Check for breaking changes:
+#   https://github.com/immich-app/immich/discussions?discussions_q=label%3Achangelog%3Abreaking-change+sort%3Adate_created
+# + Remove containers:
+#   podman rm immich_ml immich_server
+# + Remove outdated images:
+#   podman rmi immich-machine-learning:release immich-server:release
+# + Rerun this script
+
+
+export GETCRED_FORCE_CLI=true
+CRED_PATH=programs/immich_postgres_container
+IMG_REPO="$HOME/record/immich"
+IMMICH_VER=release
+
+
+# Ensure directories exist for container mounts
+mkdir -p "$IMG_REPO"
+
+# Allow the following containers to see each other's ports
+podman network create immich
+
+# Create containers
+podman inspect immich_redis &> /dev/null || podman create \
+    --name immich_redis \
+    --net immich \
+    --hostname redis \
+    --restart always \
+    docker.io/redis:6.2-alpine \
+;
+
+podman inspect immich_postgres &> /dev/null || podman create \
+    --name immich_postgres \
+    --net immich \
+    --hostname database \
+    --restart always \
+    --env POSTGRES_PASSWORD="$(getcred "$CRED_PATH" password)" \
+    --env POSTGRES_USER=postgres \
+    --env POSTGRES_DB=immich \
+    --env POSTGRES_INITDB_ARGS=--data-checksums \
+    --volume "immich_postgres:/var/lib/postgresql/data" \
+    docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0 \
+    postgres \
+    -c shared_preload_libraries=vectors.so \
+    -c 'search_path="$$user", public, vectors' \
+    -c logging_collector=on \
+    -c max_wal_size=2GB \
+    -c shared_buffers=512MB \
+    -c wal_compression=on \
+;
+
+podman inspect immich_ml &> /dev/null || podman create \
+    --name immich_ml \
+    --net immich \
+    --hostname immich-machine-learning \
+    --restart always \
+    --volume "immich_model_cache:/cache" \
+    --env "UPLOAD_LOCATION=$IMG_REPO" \
+    --env DB_DATA_LOCATION=./postgres \
+    --env TZ=America/Denver \
+    --env IMMICH_VERSION="$IMMICH_VER" \
+    --env DB_PASSWORD="$(getcred "$CRED_PATH" password)" \
+    --env DB_USERNAME=postgres \
+    --env DB_DATABASE_NAME=immich \
+    ghcr.io/immich-app/immich-machine-learning:"$IMMICH_VER" \
+;
+
+podman inspect immich_server &> /dev/null || podman create \
+    --name immich_server \
+    --net immich \
+    --restart always \
+    --requires immich_redis,immich_postgres \
+    --volume "$IMG_REPO:/usr/src/app/upload:z" \
+    --volume /etc/localtime:/etc/localtime:ro \
+    --env DB_PASSWORD="$(getcred "$CRED_PATH" password)" \
+    --env DB_USERNAME=postgres \
+    --env DB_DATABASE_NAME=immich \
+    --publish 2283:2283 \
+    ghcr.io/immich-app/immich-server:"$IMMICH_VER" \
+;
+
+# Run containers
+podman start --attach immich_redis | sed 's/^/REDIS /' &
+podman start --attach immich_postgres | sed 's/^/POSTGRES /' &
+podman start --attach immich_ml | sed 's/^/ML /' &
+podman start --attach immich_server | sed 's/^/IMMICH /' &
+
+echo "Access Immich at http://localhost:2283/"
+
+wait

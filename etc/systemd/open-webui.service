@@ -1,0 +1,13 @@
+[Unit]
+Description=Open WebUI
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/bin/podman start -a open-webui
+ExecStop=/usr/bin/podman stop open-webui
+
+[Install]
+WantedBy=default.target

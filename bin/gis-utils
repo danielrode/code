@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Dependencies:
+#   podman
+# Created: 21 Jul 2025
+
+
+CON_IMG=ghcr.io/danielrode/gis-utils:dev
+CON_ARGS=(
+    --rm
+    --tty --interactive
+    --mount "type=bind,src=/tmp,dst=/tmp"
+    --mount "type=bind,src=/mnt,dst=/mnt"
+    --mount "type=bind,src=/home,dst=/home"
+    --mount "type=bind,src=$PWD,dst=$PWD"
+    --workdir "$PWD"
+    "$CON_IMG"
+)
+
+
+# Parse command line arguments
+exe="$(basename $0)"
+[ "$exe" = gis-utils ] && exe="$1" && shift
+
+# Run container
+podman run "${CON_ARGS[@]}" "$exe" "$@"

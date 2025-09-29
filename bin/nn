@@ -1,0 +1,20 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: New Note
+# Type: documents, macro
+# Dependencies:
+#   hx
+# Version: 6
+# Created: 15 Jan 2021
+# Updated: 01 Aug 2025
+
+
+# Description: Creates a new text file (note) in my notes directory with
+# the date and time as its file name, then opens the file in a text editor.
+
+
+NOTES_DIR="$HOME/union/notes/cursory"
+
+
+mkdir -p "$NOTES_DIR"
+hx "$NOTES_DIR/$(date '+%Y%m%d%H%M%S').md"

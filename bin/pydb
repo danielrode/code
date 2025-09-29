@@ -1,0 +1,15 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Python Debug
+# Dependencies:
+#   python 3
+#   pudb (via pip)
+# Init: 12 Apr 2024
+# Updated: -
+
+
+# Description: Run a given Python script with a dubugger.
+
+
+python3 -m pudb.run "$@"
+

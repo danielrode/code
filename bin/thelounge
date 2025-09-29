@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 10 May 2025
+# Updated: 20 Aug 2025
+
+
+# sudo loginctl enable-linger $(whoami)
+
+
+podman create \
+    --name thelounge \
+    --publish 9000:9000 \
+    --volume ~/progeny/thelounge:/var/opt/thelounge:z \
+    --restart always \
+    ghcr.io/thelounge/thelounge:latest \
+;
+podman start --attach thelounge
+# podman exec --user node -it thelounge thelounge add MrLiDAR

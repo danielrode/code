@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+## Author: Daniel Rode
+## Description: For helping me figure out the correct syntax for python slices
+## Made: Jan 31 2014
+## Last updated: Nov 04 2016
+
+
+import sys
+from sys import exit
+
+def printe(message):
+	print("Error: " + message, file=sys.stderr)
+
+if len(sys.argv) != 2:
+	printe("Takes one argument")
+	exit(1)
+
+if sys.argv[1] == ":":
+	printe("Can't be just a colon")
+	exit(1)
+
+try:
+	one, two = sys.argv[1].split(":")
+except ValueError:
+	printe("Must contain a colon")
+	exit(1)
+
+try:
+	if one == "":
+		one = None
+	else:
+		one = int(one)
+	if two == "":
+		two = None
+	else:
+		two = int(two)
+except ValueError:  # error if there are non digits besides the colon
+	printe("That's not what a slice looks like")
+	exit(1)
+
+
+theList = [1,2,3,4,5,6,7,8,9,10]
+print(str(theList), end=" --> ")
+if one and two:
+	print(theList[one:two])
+elif one:
+	print(theList[one:])
+else:
+	print(theList[:two])

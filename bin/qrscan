@@ -1,0 +1,8 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies: zbar
+# Updated: -
+
+
+echo CTRL+C to exit
+zbarcam --raw --nodisplay --quiet

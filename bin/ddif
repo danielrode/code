@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Directory Difference
+# Tags: file management, compare
+# Dependencies:
+#   tree
+#   diff
+#   helix
+# Version: 1
+# Init: 14 Feb 2024
+# Updated: -
+
+
+# Description:
+# Save a text file recursively listing all files under a given directory, their
+# size, and modification date. Save another text file for the other directory
+# path given that the user wants to compare with. Then diff these two text
+# files to find the differences between the two directories.
+
+
+function tree_flags {
+  tree -a -f -h -D -F -i -n --timefmt "%Y%b%d %H:%M" "$1"
+}
+
+tmp_dir="$(mktemp -d)"
+echo "Parsing directory trees..."
+tree_flags "$1" > "$tmp_dir/left.txt"
+tree_flags "$2" > "$tmp_dir/right.txt"
+diff "$tmp_dir/left.txt" "$tmp_dir/right.txt" | hx
+
+rm -r "$tmp_dir"

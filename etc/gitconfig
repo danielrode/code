@@ -1,0 +1,31 @@
+[user]
+    name = Daniel Rode
+    email = d.rode@protonmail.com
+    signingkey = d.rode@protonmail.com
+[alias]
+    l = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'
+    lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
+    l1 = log -1
+    l2 = log -2
+    l3 = log -3
+    l4 = log -4
+    l5 = log -5
+    l6 = log -6
+    l7 = log -7
+    l8 = log -8
+    l9 = log -9
+    wd = diff --word-diff=color --word-diff-regex='\\w+|.'
+[credential]
+	helper = cache
+[init]
+	defaultBranch = master
+
+# I believe it is required that the SSH instance on a machine
+# recognize codeberg.org as a known host before git will interface with
+# it over SSH. Connecting once directly should do the trick:
+#
+# 	ssh -i "$HOME"/.ssh/YOUR_PRIVATE_KEY_FILE git@codeberg.org
+#
+# Use SSH instead of HTTPS on codeberg.org
+[url "ssh://git@codeberg.org/"]
+	insteadOf = https://codeberg.org/

@@ -1,0 +1,13 @@
+[Unit]
+Description=Immich
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=33
+ExecStart=/home/daniel/code/bin/immich
+ExecStop=/usr/bin/podman stop -i immich_ml immich_postgres immich_redis immich_server
+
+[Install]
+WantedBy=default.target

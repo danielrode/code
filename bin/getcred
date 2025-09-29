@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Get Credential
+# Tags: credentials, security, data retrieval
+# Dependencies:
+#   python 3.10+
+#   pykeepass
+#   zenity
+#   termux-dialog (on Android)
+# Version: 6
+# Created: 13 Nov 2022
+# Updated: 16 Aug 2025
+
+
+# Description: Given a credential entry path, retrieves and prints the
+# specified field of that credential entry from a KeePass database.
+
+# Useful resources regarding credentials and security:
+# - https://www.netmeister.org/blog/passing-passwords.html
+
+
+import os
+import sys
+import subprocess as sp
+from pathlib import Path
+from getpass import getpass
+
+from pykeepass import PyKeePass
+from pykeepass.exceptions import CredentialsError
+
+
+# Constants
+EXE_NAME = Path(sys.argv[0]).name
+HELP_TEXT = (
+    f"Usage: {EXE_NAME} [OPTION]... CRED_PATH CRED_ATTRIB"
+    # NOTE: 'attribute', 'fragment', and 'field' are used essentially
+    # interchangeably to refer to one part of some credential entry such as
+    # a password, a username, or some other field.
+
+)
+SECRET_TIMEOUT = 99  # Default keyring lifespan in seconds
+
+try:
+    HOSTNAME = os.environ['HOSTNAME']
+except KeyError:
+    HOSTNAME = sp.run(['hostname'], check=True, capture_output=True).stdout
+
+HOME = Path.home()
+cred_db_path = HOME / 'union/creds/main.kdbx'
+
+try:
+    XDG_CACHE_HOME = Path(os.environ['XDG_CACHE_HOME'])
+except KeyError:
+    XDG_CACHE_HOME = Path.home() / '.cache'
+CACHE_HOME = XDG_CACHE_HOME / 'daniel_rode_code' / EXE_NAME
+CACHE_HOME.mkdir(parents=True, exist_ok=True)
+
+KEYRING_ID_PATH = CACHE_HOME / 'id.txt'
+
+try:
+    FORCE_CLI = os.environ['GETCRED_FORCE_CLI']
+except KeyError:
+    FORCE_CLI = None
+
+
+# Functions
+def print2(*args, **kwargs) -> None:
+    # Print to standard error
+    print(*args, file=sys.stderr, **kwargs)
+
+def set_db_pw_keyring(pw: str) -> None:
+    # Add secret to keyring
+    cmd = ['keyctl', 'padd', 'user', 'cred store password', '@u']
+    p = sp.run(cmd, check=True, input=pw, capture_output=True, text=True)
+    keyid = p.stdout.strip()
+
+    # Set keyring entry timeout
+    cmd = ['keyctl', 'timeout', keyid, str(SECRET_TIMEOUT)]
+    sp.run(cmd, check=True)
+
+    # Save secret ID
+    KEYRING_ID_PATH.write_text(keyid)
+
+def get_db_pw_keyring() -> str:
+    keyid = KEYRING_ID_PATH.read_text().strip()
+    cmd = ['keyctl', 'print', keyid]
+    p = sp.run(cmd, check=True, capture_output=True, text=True)
+    pw = p.stdout.strip()
+
+    return pw
+
+def getpw_gui() -> str:
+    cmd = (
+        'zenity',
+        '--password',
+        f'--title={EXE_NAME} - Enter KDBX password'
+    )
+    p = sp.run(cmd, text=True, check=True, capture_output=True)
+    pw = p.stdout.strip()
+
+    return pw
+
+def getpw_cli() -> str:
+    pw = getpass(prompt='Password: ')
+
+    return pw
+
+def getpw() -> str:
+    # TODO
+    # # Platform is Android/Termux
+    # cmd = [
+    #     'termux-dialog', 'text', '-p', '-i', 'passphrase', '-t',
+    #     f'{EXE_NAME} - Enter KDBX password'
+    # ]
+    # *run command*
+    # pw = json.loads(pw)['text']
+
+    try:
+        # If password is in keyring, retrieve it from there
+        pw = get_db_pw_keyring()
+    except (FileNotFoundError, sp.CalledProcessError):
+        # Ask user for password
+        if FORCE_CLI == 'true':
+            pw = getpw_cli()
+        else:
+            try:
+                pw = getpw_gui()
+            except sp.CalledProcessError:
+                # If GUI is unavailable, prompt user via console
+                pw = getpw_cli()
+
+    # Save password in keyring
+    set_db_pw_keyring(pw)
+
+    return pw
+
+def get_pw_db() -> PyKeePass:
+    while True:
+        pw = getpw()
+        try:
+            kp = PyKeePass(cred_db_path, password=pw)
+        except CredentialsError:
+            print2("Failed to unlock KDBX: invalid password")
+            KEYRING_ID_PATH.unlink()
+            continue
+
+        return kp
+
+def get_cred_entry_attribute(
+    kp: PyKeePass,
+    cred_entry_path: Path,
+    cred_attr_name: str,
+) -> str|None:
+    """Get specific credential value."""
+
+    cred_entry = kp.find_entries(path=cred_entry_path.split('/'))
+
+    # If not cred with the given path was found, return None
+    if not cred_entry:
+        return None
+
+    # Select requested cred entry attribute (field)
+    match cred_attr_name:
+        case 'password':
+            cred_fragment = cred_entry.password
+        case 'username':
+            cred_fragment = cred_entry.username
+        case _:
+            try:
+                cred_fragment = cred_entry.custom_properties[cred_attr_name]
+            except KeyError:
+                # Requested attribute field does not exist
+                return False
+
+    if cred_fragment is None:
+        return ''
+
+    return cred_fragment
+
+
+# Main
+def main() -> None:
+    # Parse command line arguments
+    pos_args = list()
+    args = iter(sys.argv[1:])
+    for i in args:
+        if i.startswith('-'):
+            match i:
+                case '-t'|'--secret-timeout':
+                    global SECRET_TIMEOUT
+                    SECRET_TIMEOUT = int(next(args))
+                case _:
+                    print2("error: Invalid flag", i)
+                    sys.exit(1)
+        else:
+            pos_args.append(i)
+
+    try:
+        cred_entry_path, cred_attribute_name = pos_args
+    except ValueError:
+        print2(HELP_TEXT)
+        sys.exit(1)
+
+    # Load KeePass credential database
+    kp = get_pw_db()
+
+    # Retrieve requested credential
+    cred_fragment = get_cred_entry_attribute(
+        kp, cred_entry_path, cred_attribute_name
+    )
+
+    # Print credential fragment data
+    print(cred_fragment, end='')
+
+if __name__ == "__main__":
+    main()

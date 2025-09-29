@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Serve
+# Tags: file management
+# Description: Opens the firewall and then runs miniserve on the given path.
+# Dependencies: miniserve
+# Version: 2
+# Init: 02 Jun 2021
+# Updated: 27 Dec 2021
+
+
+if command -v firewall-cmd > /dev/null
+then
+	echo "Opening firewall..."
+	sudo firewall-cmd --zone=home --add-port=8080/tcp
+fi
+
+
+echo "For fastest possible transfer, use a P2P WiFi or Ethernet connection"
+ifdata -pa "$DFLT_NET_IFACE"
+miniserve "$1"
+
+
+if command -v firewall-cmd > /dev/null
+then
+	echo "Closing firewall..."
+	sudo firewall-cmd --zone=home --remove-port=8080/tcp
+fi

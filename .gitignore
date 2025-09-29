@@ -1,0 +1,5 @@
+*.pyc
+.trash
+bin/o
+bin/rotate-ls-output
+bin/sway-win-info

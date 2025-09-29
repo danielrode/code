@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Dependencies:
+#   fd
+# Created: 23 Feb 2025
+# Updated: -
+
+
+# Description: Sort results from fd by modification time.
+
+
+fd --print0 --no-ignore --follow "$@" \
+| xargs -0 -I '{}' stat --format '%y %n' '{}' \
+| sort | cut -d ' ' -f 4-

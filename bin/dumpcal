@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Dump Calendar
+# Tags: calendar, dump, dump calendar, cat calendar, parse calendar,
+#       print calendar, show calendar
+# Dependencies:
+#   Bash 4.3+
+#   fd
+# Created: 06 Jul 2025
+# Updated: -
+
+
+# Description: Dump calendar event details from DecSync to stdin.
+
+
+# Constants
+CAL_PATH="$HOME/union/decsync/calendars/"
+
+
+# Main
+
+# Setup temp directory and set it to be removed on exit
+umask 077
+tmpdir="$(mktemp -d)"
+function cleanup { rm -fr -- "$tmpdir"; }
+trap cleanup EXIT
+
+# Setup Python code
+cat <<EOF > "$tmpdir/py"
+import sys
+import json
+
+for line in sys.stdin:
+  print("-"*80)
+  try:
+    event_attr_list = json.loads(line)[-1].split('\n')
+  except AttributeError:
+    continue
+  for event_attr in event_attr_list:
+    try:
+      key, val = event_attr.split(':', maxsplit=1)
+    except ValueError:
+      continue
+    print(key, end='')
+    print(':\t', end='')
+    print(val.replace(r'\\n', '\n').replace(r'\,', ','))
+EOF
+
+# Dump calendar events
+fd -t f '^\w\w$' "$CAL_PATH" | xargs cat | python3 "$tmpdir/py"

@@ -1,0 +1,30 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Unicode Character Copy
+# Type: document creation
+# Description: Lists unicode characters and copies the selected one to the
+#              Wayland clipboard.
+# Dependencies: wl-clipboard, fzf, wtype, sway, text file of unicode symbols
+# Version: 4
+# Made: 02 Feb 2020
+# Last updated: 21 Dec 2023
+
+
+unicode_list_path="$HOME/store/system/unicode.txt"
+
+char="$(cat "$unicode_list_path" \
+	| fzf --multi --reverse --border --prompt="unicode: " --inline-info \
+	| cut -d' ' -f1)"
+
+
+if [ -n "$char" ]
+then
+	# Send character via wtype
+    swaymsg focus mode_toggle  # Move Sway focus to tiled layer
+    wtype "$char"
+fi
+
+
+
+# TODO
+# - figure out why a tab character is getting sent following the selected character

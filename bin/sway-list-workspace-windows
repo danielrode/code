@@ -1,0 +1,18 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   sway
+#   jq
+# Init: 15 Apr 2024
+# Updated: -
+
+
+# Get currently focused workspace ID
+jq_cmd='.[] | select(.focused==true) | .id'
+current_workspace_ID="$(swaymsg -t get_workspaces | jq "$jq_cmd")"
+
+# List windows on currently focused workspace
+jq_cmd='recurse(.nodes[])'
+jq_cmd="$jq_cmd | select(.id==$current_workspace_ID)"
+jq_cmd="$jq_cmd"' | recurse(.nodes[]) | select(.type=="con") | .name'
+swaymsg -t get_tree | jq -r "$jq_cmd"

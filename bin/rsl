@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Run Script Line
+# Tags: shell, macro, pipeline
+# Dependencies:
+#   fzf
+# Init: 30 Oct 2023
+# Updated: -
+
+
+# Description: Cats a file to fzf for the user to select a line. The selected 
+# line is passed to bash and executed.
+
+
+cat "$1" | fzf --disabled --cycle --reverse --border=none | tee >(cat) | bash
+

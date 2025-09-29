@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Dependencies:
+#   python 3.7+
+#   i3ipc
+#   hx
+#   lf
+#   foot
+#   firefox
+#   htop
+#   fish
+# Created: 26 Dec 2022
+# Updated: 01 Sep 2025
+
+
+# Description: Start list of defined programs under Sway session and then
+# arrange their windows.
+
+
+from i3ipc import Connection
+from i3ipc import Event
+
+
+# Functions
+def arrange_startup_windows(i3, e) -> None:
+    """New window hook for arranging windows opened on Sway init."""
+
+    e.container.command("move scratchpad")
+
+    global INIT_CONS
+    INIT_CONS[e.container.app_id] = e.container
+
+    if set(INIT_CONS) == {
+        'foot', 'foot_helix', 'foot_htop', 'Firefox'
+    }:
+        # Arrange startup program windows for workspace 1
+        INIT_CONS['foot'].command("move workspace 1")
+        INIT_CONS['foot'].command("floating disable")
+
+        INIT_CONS['foot_htop'].command("move workspace 1")
+        INIT_CONS['foot_htop'].command("floating disable")
+
+        INIT_CONS['foot_helix'].command("move workspace 1")
+        INIT_CONS['foot_helix'].command("floating disable")
+
+        INIT_CONS['foot'].command("splitv")
+        INIT_CONS['foot_htop'].command("move left")
+
+        # Arrange startup program windows for workspace 2
+        INIT_CONS['Firefox'].command("move workspace 2")
+        INIT_CONS['Firefox'].command("floating disable")
+
+        # Now that initial windows are arranged, switch to monitor mode
+        i3.off(arrange_startup_windows)
+        exit()
+
+
+# Initialize Sway IPC connection
+INIT_CONS = dict()
+i3 = Connection()
+i3.on(Event.WINDOW_NEW, arrange_startup_windows)
+
+# Launch programs I want to start when I login to Sway
+i3.command("exec foot-helix ~/union/notes/wiki/programs/helix.txt")
+i3.command("exec foot -e fish")
+i3.command("exec foot -a foot_htop -e htop")
+i3.command("exec firefox")
+
+# Run IPC event loop
+i3.main()

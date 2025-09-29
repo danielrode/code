@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Dependencies:
+#   sshfs
+# Created: 23 Feb 2025
+# Updated: 14 Jul 2025
+
+
+# Description: Alias/shortcuts for starting SSH sessions.
+
+
+# Constants
+source "$HOME/.crypt/private_code_vars.sh"
+
+SSH_ARGS=(
+    # Give up trying to connect if it takes too long
+    -o ConnectionAttempts=64
+    -o ConnectTimeout=5
+
+    # Disconnect if server disappears for too long
+    -o ServerAliveCountMax=4
+    -o ServerAliveInterval=11
+)
+SSH_CMD=(
+    # By using dtach, the user can simply close the terminal and it will
+    # leave any program in the remote SSH shell running without killing it.
+    bash --login -c ':
+        tmpdir="$(mktemp -d)"
+        function cleanup { rm -fr -- "$tmpdir"; }
+        trap cleanup EXIT
+        '"[[ -d $PWD ]] && cd '$PWD'"'
+        dtach -c "$tmpdir/dtach.sock" fish
+        exit
+    '
+)
+
+
+# Main
+if [[ $1 == s ]]; then
+    title="$HOME_SERVER_TITLE"
+    user="$USER"
+    ip="$HOME_SERVER_IP"
+elif [[ $1 == m ]]; then
+    title="$WORK1_TITLE"
+    user="$WORK1_USER"
+    ip="$WORK1_IP"
+elif [[ $1 == h ]]; then
+    title="$WORK2_TITLE"
+    user="$WORK2_USER"
+    ip="$WORK2_IP"
+    sock_path="$HOME/.ssh/$user@$ip.sock"
+    [[ -e "$sock_path" ]] || SSH_ARGS+=( -M )  # Use "master" mode
+    SSH_ARGS+=(
+        -S "$sock_path"
+        # -f  # Authenticate, then run in background
+        # -N  # Do not execute a remote command
+        -C  # Compress all data
+    )
+    SSH_CMD=( bash --login ) # -c ~/opt/fish
+else
+    echo "error: SSH remote host alias not defined"
+    exit 1
+fi
+
+# Set terminal window title
+echo -ne "\033]0;$title\007"
+
+# Connect to remote host via SSH
+echo "Connecting..."
+TERM=xterm ssh -t "${SSH_ARGS[@]}" -l "$user" "$ip" "${SSH_CMD[@]}"

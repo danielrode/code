@@ -1,0 +1,25 @@
+#!/usr/bin/env dash
+# Dependencies:
+#   syncthing
+#   dbus
+
+
+# Syncthing
+if ! pidof syncthing > /dev/null 2>&1
+then
+	syncthing --no-browser --audit \
+		--auditfile="$HOME/.local/var/log/syncthing-audit.log" \
+		2>&1 >> "$HOME/.local/var/log/syncthing-main.log" &
+fi
+
+# Set variables for Sway
+export _JAVA_AWT_WM_NONREPARENTING=1
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export MOZ_ENABLE_WAYLAND=1
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=sway
+
+
+# Launch Sway
+echo "Initializing Sway..."
+exec dbus-run-session sway

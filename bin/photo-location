@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+## Author: Daniel Rode
+## Name: Photo Location Displayer
+## Type: image utility
+## Description: Returns a human readable address for images with geolocation data
+## Dependencies: python3-pillow
+## Version: 1.2 BETA
+## Made: May 02 2015
+## Updated: July 12 2015
+
+
+# Import
+import sys, os, re, requests, PIL.Image, PIL.ExifTags
+
+
+# Variables
+exit = sys.exit
+args = sys.argv[1:]
+
+
+# Functions
+def get_gps_coords(img_file):
+## Searches the exif data of a image file and returns the GPS coordinates in "decimal degrees"
+## 'Picture of sky.png' -> ('26.26152844', '-81.51112916')"""
+
+	try:
+		img = PIL.Image.open(img_file)
+	except OSError as e:
+		error_message = str(e)
+		if error_message.startswith("cannot identify image file"):
+			print("error: '{}' is not a legitimate image file".format(img_file))
+			exit(1)
+		else:
+			raise
+
+	try:
+
+		exif = {
+			PIL.ExifTags.TAGS[k]: v
+			for k, v in img._getexif().items()
+			if k in PIL.ExifTags.TAGS
+		}
+
+		gps_info = {}
+		for key in exif['GPSInfo'].keys():
+			decoded_key = PIL.ExifTags.GPSTAGS.get(key, key)
+			gps_info[decoded_key] = exif['GPSInfo'][key]
+
+		latitude = [float(x)/float(y) for x, y in gps_info['GPSLatitude']]  # convert DMS (Degrees, Minutes, Seconds) to DD (Decimal Degrees)
+		longitude = [float(x)/float(y) for x, y in gps_info['GPSLongitude']]
+		latitude = latitude[0] + latitude[1]/60 + latitude[2]/3600
+		longitude = longitude[0] + longitude[1]/60 + longitude[2]/3600
+		latitude_ref = gps_info['GPSLatitudeRef']
+		longitude_ref = gps_info['GPSLongitudeRef']
+
+	except (AttributeError, KeyError):
+		print("error: This image does not contain geolocation data")
+		exit(1)
+	
+	if latitude_ref == 'S':
+		latitude = -latitude
+	if longitude_ref == 'W':
+		longitude = -longitude
+
+
+	return latitude, longitude
+
+def choords_to_address(latitude, longitude):
+## Uses Google to take GPS coordinateness and convert them to the more human readable address location format
+## 26.26152844', '-81.51112916' -> 'Collier County, FL, USA'
+
+	print("Retrieving data from Google...")
+	response = requests.get("http://maps.google.com/maps/api/geocode/json?latlng={},{}&sensor=false".format(latitude, longitude))
+	data = response.json()
+	location = data["results"][1]["formatted_address"]
+	return location
+
+
+# Setup
+if not args:
+	print("usage: photo-location IMAGE_FILE")
+	exit(1)
+
+input_file_path = args[0]
+if not os.path.isfile(input_file_path):
+	print("error: File '{}' does not exist".format(input_file_path))
+	exit(1)
+	
+
+# Main
+lat, lng = get_gps_coords(input_file_path)
+address = choords_to_address(lat, lng)
+print(address)
+
+
+
+  ###########
+ ## NOTES ##
+###########
+
+# Resources that helped me write this script:
+# - https://www.youtube.com/watch?v=2aZd6cKq9nE
+# - http://stackoverflow.com/questions/6945008/converting-latitude-longitude-valuesdmscompass-direction-format-to-correspond
+# - http://stackoverflow.com/questions/6460381/translate-exif-dms-to-dd-geolocation-with-python
+
+
+# Math notes:
+# - x/3600=x/60/60
+# - 60*60=3600
+
+
+# To do:
+# - Ruturn exact coords too?
+
+###########
+ ## NOTES ##
+  ###########

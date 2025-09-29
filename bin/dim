@@ -1,0 +1,21 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   gammastep
+# Init: 24 Apr 2024
+# Updated: -
+
+
+if pgrep wlsunset || pgrep gammastep
+then
+  echo "error: Another program (such as another gammastep instance or wlsunset"
+  echo ") is already controlling gamma"
+  exit 1
+fi
+
+
+gammastep -O 6500 -b 0.7:0.7 &  # Dim screen (reduce brightness)
+
+
+# TODO
+# - check out https://github.com/swaywm/sway/wiki/Useful-add-ons-for-sway#gamma and find way to let my normal wlsunset screen adjustment (redshift) work in while also allowing me to dim the screen when I need and change dim values

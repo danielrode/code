@@ -1,0 +1,61 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Directory Watcher Versioning Agent
+# Tags: watch-dir, watch directory
+# Dependencies:
+# Version: 1
+# Init: 26 Oct 2022
+# Updated: -
+
+
+# Description:
+# Initiates a `git` repo in the given directory (if one does not already
+# exist), tells `inotifywait` to watch the given directory, and then has `git`
+# commit file content changes every time `inotifywait` detects that a file has
+# been modified.
+
+
+# Variables
+help_text="Usage: ${0##*/} DIR_PATH"
+
+
+# Startup check(s)
+watch_dir_path="$1"
+if [ ! -d "$watch_dir_path" ]
+then
+	echo "error: directory does not exist: $watch_dir_path"
+	echo "$help_text"
+	exit 1
+fi
+
+
+# Init git repo
+git init "$watch_dir_path"
+
+
+# Watch directory for changes, and commit them upon file modificatioin
+# `inotifywait`
+# 	- --exclude: pattern appears to be matched against the full path
+#	- useful usage examples:
+# 		https://www.baeldung.com/linux/monitor-changes-directory-tree
+inotifywait \
+	--monitor \
+	--recursive \
+	--event modify \
+	--exclude '/\.' \
+	--format '%w%f' \
+	"$watch_dir_path" \
+| while read path
+do
+    echo "$path"
+	git -C "$watch_dir_path" add .
+	git -C "$watch_dir_path" commit --message 'created by `versioning-agent`'
+    sleep 1
+done
+
+
+
+# TODO
+# - why do files often get listed twice by inotifywait when modified?
+# - add documentation for how to easily browse git version history
+# 	- maybe mount repo?

@@ -1,0 +1,93 @@
+#!/usr/bin/env sh
+# Author: Daniel Rode
+# Name: BibTeX to APA
+# Tags: document conversion, research, academia
+# Dependencies:
+#   wget
+#   sd
+#   ripgrep
+#   pandoc
+#   pandoc-crossref
+# Init: 11 Apr 2023
+# Updated: 04 May 2023
+
+
+# Description:
+# Format/convert entries in a .bib file to APA format.
+
+
+# Variables
+CACHE_DIR="$HOME/.cache/daniel_rode_code/bib2apa"
+
+
+# Process user input
+in_path="$1"
+if [ -t 0 ]  # test if stdin is terminal
+then
+  # Expect file path passed as argument
+  if [ ! -f "$in_path" ]
+  then
+    echo "Invalid path to bib file: $in_path"
+    exit 1
+  fi
+else
+  # Read input from stdin
+  in_path=`mktemp --suffix=.bib`
+  cat /dev/stdin > "$in_path"
+fi
+
+
+# Check for APA specification file (cache); download if necessary
+apa_spec_path="$CACHE_DIR/apa.csl"
+if [ ! -f "$apa_spec_path" ]
+then
+	mkdir -p "$CACHE_DIR"
+
+	# The `apa.csl` file for the --csl pandoc flag specifies APA style.
+	# Other style definition file can be found at
+	# https://www.zotero.org/styles?q=apa&dependent=0
+	apa_spec_url="https://www.zotero.org/styles/apa"
+
+	echo "Downloading APA spec file to cache..."
+	wget -O "$apa_spec_path" "$apa_spec_url" || exit 1
+fi
+
+
+# Prep bib file for processing by pandoc (extract and format article IDs)
+tmp_file_path=$(mktemp)
+cat "$in_path" |
+	sd '\n' '' |
+	rg --ignore-case --only-matching '@[A-z]+\{([^,]+)' |
+	cut -d'{' -f2 |
+	sd '[ \n]*$' ']' |
+	sd '^[ \n]*' '[@' \
+		>"$tmp_file_path"
+
+echo '\\newline' >>"$tmp_file_path"
+echo '\\newline' >>"$tmp_file_path"
+
+
+# Convert BibTeX file to APA format
+tmp_docx_path=$(mktemp --suffix=.docx)
+cat "$tmp_file_path" | pandoc \
+	--output "$tmp_docx_path" \
+	--from markdown \
+	--pdf-engine lualatex \
+	--filter pandoc-crossref \
+	--citeproc --bibliography "$in_path" --csl "$apa_spec_path"
+
+# Print citation as Markdown to terminal
+pandoc --to markdown "$tmp_docx_path" | \
+  awk '{printf "%s ",$0} /^$/{print ""} END{print ""}'  # unwrap paragraphs
+
+
+# Cleanup temp directory
+rm "$tmp_docx_path"
+rm "$tmp_file_path"
+
+
+
+# TODO
+# - support processing .ris files
+# - support other citation formats (such as MLA, Chicago, etc...)
+

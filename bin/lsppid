@@ -1,0 +1,23 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: List Parent Process ID
+# Tags: system, process management, list
+# Created: 03 Sep 2023
+# Updated: 06 Sep 2025
+
+# Description: List parent process ID and command line of given process ID
+
+# Variables
+help_text="Usage: ${0##*/} PID"
+
+if [ -z "$1" ]; then
+	echo "$help_text"
+	exit 1
+fi
+
+the_ppid="$(cat /proc/"$1"/status | grep PPid | cut -f2)"
+echo "PPID: $the_ppid"
+echo "PPID cmd: $(cat "/proc/$the_ppid/cmdline")"
+
+# TODO
+# - if no pid is provided as argument, get ppid of current shell

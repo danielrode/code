@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Tags: text
+# Dependencies:
+#   wl-clipboard
+#   termux-clipboard-get
+# Updated: 17 Jun 2024
+
+
+# Description: Save the system clipboard text in the trash.
+
+
+if [ "$HOSTNAME" = "andtermuxd" ]
+then
+	paste_backend="termux-clipboard-get"
+else
+	paste_backend="wl-paste"
+fi
+paste_cmd() {
+	$paste_backend
+}
+
+suffix="_trash-journal $(date).txt"
+tmp_pth="$(mktemp --tmpdir="$HOME" --suffix="$suffix")"
+paste_cmd | tee "$tmp_pth"
+gio trash "$tmp_pth"

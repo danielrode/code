@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Dependencies:
+#   bash 4+
+# Created: 29 Jul 2025
+# Updated: 20 Aug 2025
+
+
+# DOC
+# 
+# Follow these directions
+# https://docs.openwebui.com/getting-started/quick-start/starting-with-llama-cpp/
+# to load the llama.cpp server in Open WebUI, except
+# use 'http://gemma3-27b:10000/v1' as the API Base URL under
+# http://<DOCKER_HOST_IP>:3000/admin/settings/connections instead of
+# 'http://host.docker.internal:10000/v1'
+
+
+# Prevent systemd from killing user processes upon SSH exit
+sudo loginctl enable-linger $(whoami)
+
+# Allow the following containers to see each other's ports
+podman network create llm
+
+# Setup and run Gemma 3 in llama.cpp container
+args=(
+    --net llm
+    --name gemma3-27b
+    --publish 10000:10000
+    --restart unless-stopped
+    --cpu-shares 256
+    --volume ~/progeny/llamacpp-cache:/root/.cache/llama.cpp:z
+
+    # Give container access to GPU
+    --device /dev/kfd
+    --device /dev/dri
+
+    # Main llama.cpp container path and args
+    ghcr.io/ggml-org/llama.cpp:full-vulkan
+    --server
+    # https://huggingface.co/unsloth/gemma-3-27b-it-GGUF?local-app=llama.cpp
+    --hf-repo unsloth/gemma-3-27b-it-GGUF:IQ3_XXS
+    --host 0.0.0.0
+    --port 10000
+    # Model context window (token memory; can increase if RAM allows)
+    --ctx-size 9216
+    # Offload some model layers onto GPU for faster performance
+    --gpu-layers 64
+
+)
+mkdir -p ~/progeny/llamacpp-cache
+podman create "${args[@]}"
+
+# Setup and run Open WebUI container
+args=(
+    --net llm
+    --name open-webui
+    --requires gemma3-27b
+    --publish 3000:8080
+    --cpu-shares 512
+    --volume ~/progeny/ollama:/root/.ollama:z
+    --volume ~/progeny/open-webui:/app/backend/data:z
+    --restart always
+    ghcr.io/open-webui/open-webui:ollama
+)
+mkdir -p ~/progeny/ollama
+mkdir -p ~/progeny/open-webui
+podman create "${args[@]}"
+podman start --attach open-webui
+
+
+
+# TODO
+# https://huggingface.co/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF?local-app=llama.cpp

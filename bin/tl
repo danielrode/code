@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Title: Tail Latest
+# Created: 23 Feb 2025
+# Updated: -
+
+
+dir_pth="$1"
+if [[ -z $1 ]]
+then
+	dir_pth='./'
+fi
+
+# Tail latest (most recently modified) log file under given directory
+log_pth="$(eza --absolute --sort=time "$dir_pth" | tail -1)"
+echo "Tailing log: $log_pth"
+tail --follow "$log_pth"

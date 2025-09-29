@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 16 Jan 2025
+# Updated: 16 Jun 2025
+
+
+# When restarting Sway (shift+ctrl+C) while it is connected to my docking
+# station, it causes the monitor positions to be come jumbled and doubled
+# and two instances of Waybar appears. This script fixes that.
+
+
+# Restart Kanshi and Waybar
+pkill kanshi
+pkill waybar
+while pgrep kanshi
+do
+    # Wait for process to die
+    sleep 0.01
+done
+while pgrep waybar
+do
+    # Wait for process to die
+    sleep 0.01
+done
+
+swaymsg exec kanshi

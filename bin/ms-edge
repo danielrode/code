@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Dependencies:
+#   bash 4+
+#   flatpak
+#   microsoft edge
+#   xdg-desktop-portal-wlr
+# Created: 13 Aug 2024
+
+
+# Troubleshooting MS Teams screen sharing issues:
+# https://github.com/emersion/xdg-desktop-portal-wlr/wiki/%22It-doesn't-work%22-Troubleshooting-Checklist
+
+
+# Grant Microsoft Edge Flatpak access to more paths
+flatpak override --user com.microsoft.Edge --filesystem=/tmp
+flatpak override --user com.microsoft.Edge --filesystem=/mnt/mesa
+flatpak override --user com.microsoft.Edge --filesystem=~/downloads
+
+
+# Run Microsoft Edge
+args=(
+  --enable-features=UseOzonePlatform
+  --ozone-platform=wayland
+  --enable-features=WebRTCPipeWireCapturer
+)
+if command -v microsoft-edge > /dev/null
+then
+  # Run Microsoft Edge via package manager install
+  edge_exe=( microsoft-edge )
+else
+  # Run Microsoft Edge via Flatpak
+  edge_exe=( flatpak run com.microsoft.Edge )
+fi
+"${edge_exe[@]}" "${args[@]}" "$@"

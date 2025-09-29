@@ -1,0 +1,63 @@
+[theme]
+theme = "nord-dark"
+
+[icons]
+icons = "material-nf"
+# icons = "awesome6"
+
+[[block]]
+block = "custom_dbus"
+name = "NerdDictationIndicator"
+initial_text = "󰍬"
+
+[[block]]
+block = "pomodoro"
+length = 20
+break_length = 0
+message = "Rest your eyes"
+break_message = ""
+notifier = "notifysend"
+
+[[block]]
+block = "disk_space"
+path = "/"
+info_type = "used"
+format = "{icon}  {available}"
+warning = 75
+alert = 95
+
+[[block]]
+block = "memory"
+display_type = "memory"
+format_mem = "{mem_used_percents}"
+
+[[block]]
+block = "cpu"
+interval = 2
+format = "{utilization}"
+
+[[block]]
+block = "load"
+interval = 1
+format = "{1m}"
+
+[[block]]
+block = "backlight"
+
+[[block]]
+block = "sound"
+
+[[block]]
+block = "net"
+interval = 5
+format = "{ssid} {signal_strength}"
+
+[[block]]
+block = "battery"
+interval = 10
+format = "{percentage}"
+
+[[block]]
+block = "time"
+interval = 1
+format = "%Y %b %d (%a) %H:%M:%S"

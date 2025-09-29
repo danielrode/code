@@ -1,0 +1,22 @@
+{
+    "fstring": {
+        "prefix": "fstring",
+        "body": ["f\"$1\""],
+        "description": "Insert f-string snippet"
+    },
+    "tripple0_double_quote": {
+        "prefix": "tq",
+        "body": ["\"\"\"$1\"\"\""],
+        "description": "\"\"\" \"\"\""
+    },
+    "tripple1_tick": {
+        "prefix": "tq",
+        "body": ["```$1```"],
+        "description": "``` ```"
+    },
+    "tripple2_single_quote": {
+        "prefix": "tq",
+        "body": ["'''$1'''"],
+        "description": "''' '''"
+    }
+}

@@ -1,0 +1,29 @@
+
+% ConTeXt document
+
+
+\startuseMPgraphic{WarningSymbol}
+	draw fulltriangle scaled 12 pt rotated 90 withcolor "red";
+	draw textext("!") scaled 0.6 pt shifted (0pt,0.6 pt);
+\stopuseMPgraphic
+
+\def\Warning[#1]{%
+	\scale[scale=#1]{\useMPgraphic{WarningSymbol}}%
+}
+
+
+\setuppagenumbering[location=none]
+\definedfont[name:dejavuserif*default at 12 pt] % this particular font is not necessary
+
+\starttext
+
+Welcome to my document.
+This document is an example of how to define and use a \Warning[1000] (warning/danger) symbol.
+
+Thanks, now have a good day. Or don't. Whatever.
+
+\stoptext
+
+
+% Sources:
+% http://www.pragma-ade.nl/general/manuals/metafun-s.pdf

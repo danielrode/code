@@ -1,0 +1,35 @@
+## Goneovim settings.toml
+
+[Editor]
+LineToScroll = 1
+RestoreWindowGeometry = false
+FontFamily = "FiraCode Nerd Font Mono"
+FontSize = 11
+
+## Neovim external UI features
+## The following is the default value of goneovim.
+## You can change the behavior of the GUI by changing the following boolean values.
+## If you prefer the traditional Vim UI, set it to false for all.
+## Also, `ExtMessages` is still experimental at this time and we don't recommend setting it to true if you want stability.
+ExtCmdline   = false
+ExtPopupmenu = true
+ExtTabline   = false
+ExtMessages  = false
+
+## Disables font ligatures.
+DisableLigatures = false
+
+## Configure externalized tabline UI.
+[Tabline]
+## Whether or not to display the external tabline
+Visible = true
+ShowIcon = true
+
+[MiniMap]
+## To view the minimap, launch an additional nvim instance;
+## setting Disable to true will not launch this additional nvim instance
+## and will completely disable the minimap feature.
+Disable = true
+
+## Specifies whether to show the minimap or not.
+Visible = false

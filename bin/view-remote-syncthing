@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Author: Daniel Rode
+# Dependencies:
+#   ~/code/bin/o
+# Created: 19 Jul 2025
+# Updated: 20 Jul 2025
+
+
+# View the Syncthing Web GUI for a Syncthing instance running on a remote host
+# NOTE: This script assumes you have SSH access to the remote host.
+
+
+REMOTE_HOST_IP="$1"
+{
+    sleep 2
+    o http://localhost:12345
+} &
+ssh -NL 12345:localhost:8384 "$REMOTE_HOST_IP"

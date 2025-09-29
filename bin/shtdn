@@ -1,0 +1,87 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   rclone
+#   gpg
+#   syncthing
+#   ~/code/bin/bs
+#   ~/code/bin/getcred
+# Updated: 26 Sep 2025
+
+
+set -e  # Exit on error
+
+
+export GETCRED_FORCE_CLI=true
+HOSTNAME="$(hostname)"
+
+
+# Verify Syncthing pushed
+verify_st_push_status=none
+verify_st_push() {
+	verify_st_push_status=0
+	remote_host_ID="$1"
+
+	connected_status="$(curl --silent -X GET -H "X-API-Key: $api_key" \
+		"http://localhost:8384/rest/system/connections" \
+		| jq ".connections.\"$remote_host_ID\".connected")"
+	if [ "$connected_status" = 'true' ]
+	then
+		echo "Syncthing remote connected"
+	else
+		verify_st_push_status=1
+		return
+	fi
+
+	sync_status="$(curl --silent -X GET -H "X-API-Key: $api_key" \
+		"http://localhost:8384/rest/db/completion?device=$remote_host_ID" \
+		| jq '.completion')"
+	if [ "$sync_status" = 100 ]
+	then
+		echo "Syncthing has pushed"
+	else
+		verify_st_push_status=2
+		return
+	fi
+}
+
+echo "Syncthing rescanning..."
+cred_path="code/shtdn/Syncthing API key/$HOSTNAME"
+api_key="$(getcred "$cred_path" password)"
+curl -X POST -H "X-API-Key: $api_key" "http://localhost:8384/rest/db/scan"
+
+verify_st_push "$(getcred 'code/shtdn/Syncthing device ID' password)"
+if [ "$verify_st_push_status" = 1 ]
+then
+	echo "error: Syncthing remotes are disconnected"
+	echo "Press ENTER to continue shutdown anyway"
+	read _
+elif [ "$verify_st_push_status" = 2 ]
+then
+	echo "error: Syncthing has not finished pushing to remotes"
+	echo "Press ENTER to continue shutdown anyway"
+	read _
+fi
+
+
+# Sync git repositories
+echo "Syncing Code repository..."
+git -C ~/code checkout cursory
+git -C ~/code add .
+git -C ~/code commit --message "shtdn $HOSTNAME auto-commit" || true
+git -C ~/code fetch
+git -C ~/code merge --ff-only
+git -C ~/code push origin cursory
+
+
+# Backup
+bs
+
+
+# Shutdown
+if command -v systemctl >/dev/null 2>&1
+then
+	systemctl poweroff
+else
+	loginctl poweroff
+fi

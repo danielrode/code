@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Blob Manager
+# Description: Opens up a text file in my Dropbox Journal Blob directory for
+#              me to journal in, and other useful tools for managing my blob
+#              journal
+# Dependencies: git, python3.6+
+# Version: 4.0.2 BETA
+# Init: 10 Jul 2016
+# Updated: 09 May 2021
+
+
+# Import
+import os
+import sys
+import platform
+import shutil
+import json
+import time
+import pathlib as pl
+import subprocess as sp
+
+
+# Variables
+exit = sys.exit
+running_system = platform.system()
+
+help_text = """\
+Usage: bm [OPTION]... MODE
+
+Modes:
+  b, entry-blob         enter a blob journal entry
+  t, query-blob-tags    list all tags used in blob journal entries
+  v, view               display journal entries
+
+Options:
+  -p, --journal-path  specify journal path ('[Dropbox]/Documents/Journal' is \
+default)
+  -e, --text-editor   specify text editor to open journal entry with
+  -x, --no-git        do not track with git"""
+
+text_editors = (
+    '/opt/sublime_text/sublime_text',  # linux
+    'C:/Program Files/Sublime Text 3/sublime_text.exe',  # windows
+    'sublime_text',
+    'gvim',
+    'leafpad',
+    'notepad'  # windows
+)
+
+
+# Functions
+def get_option_value(arg):
+    try:
+        option_value = next(args)
+    except StopIteration:
+        print(f"error: Option '{arg}' requires a value")
+        exit(1)
+
+    return option_value
+
+
+def open_text_processor(text_file_path):
+    """Open text editor in the background."""
+    if text_editor.split('/')[-1] == 'sublime_text':
+        # Place cursor at the end of the file
+        # (For text editors that support that)
+
+        with text_file_path.open('r') as f:
+            lines = f.readlines()
+            num_lines = len(lines)
+        file_path_str = str(text_file_path) + ':' + str(num_lines + 1)
+        sp.Popen([text_editor, file_path_str])
+    else:
+        sp.Popen([text_editor, text_file_path])
+
+
+def git_commit(path):
+    """Save git commit of given path."""
+    p = sp.run(
+        ['git', '-C', path, 'add', '.'], stdout=sp.PIPE, stderr=sp.PIPE)
+    if not p.returncode == 0:
+        print("error: Command 'git add' failed")
+        exit(2)
+    p = sp.run(
+        ['git', '-C', path, 'commit', '-m', 'Auto commit by Blob Manager'],
+        stdout=sp.PIPE, stderr=sp.PIPE)
+    if not p.returncode == 0:
+        print("error: Command 'git commit' failed")
+        exit(2)
+
+
+def git_status(path):
+    """
+    Check git status of given path.
+
+    Returns if given path differs from it's most recent git commit or if
+    that path is not a git repository.
+    """
+    p = sp.run(
+        ['git', '-C', path, 'status', '--porcelain'],
+        stdout=sp.PIPE, stderr=sp.PIPE)
+    if (p.stdout == b'') and (p.returncode == 0):
+        return 'clean'
+    elif p.stderr.startswith(b'fatal: Not a git repository'):
+        return 'not repo'
+    elif (not p.stdout == b'') and p.returncode == 0:
+        return 'uncommitted'
+    else:
+        print("error: Command 'git status' failed")
+        exit(2)
+
+
+def action_journal_entry_exists(entry_type, journal_entry_path):
+    """Action to perform if journal entry already exists."""
+    if entry_type == 'blob':
+        # Determine number of newline characters that need added before
+        # timestamp
+        with open(journal_entry_path, 'rb') as f:
+            n = 1
+            while True:
+                f.seek(-n, 2)
+                c = f.read(1)
+                if c == b"\n":
+                    n += 1
+                else:
+                    break
+
+        # Insert timestamp in to existing journal file
+        with open(journal_entry_path, 'a') as f:
+            newlines = "\n" * (4 - n)
+            f.write(time.strftime(f"{newlines}## %H:%M\n"))
+
+
+# Parse Input
+arg_mode = None
+text_editor = None
+journal_dir_path = None
+git_tracking_enabled = True
+args = iter(sys.argv[1:])
+for arg in args:
+    if arg.startswith("-"):
+        if arg in ('-h', '--help', '-?'):
+            print(help_text)
+            exit()
+
+        if arg in ('-p', '--journal-path'):
+            journal_dir_path = pl.Path(get_option_value(arg))
+            if not journal_dir_path.is_dir():
+                print(f"error: Path does not exist '{journal_dir_path}'")
+                exit(1)
+        elif arg in ('-e', '--text-editor'):
+            text_editor = get_option_value(arg)
+            if not shutil.which(text_editor):
+                print(f"error: Text editor not found '{text_editor}'")
+                exit(1)
+        elif arg in ('-x', '--no-git'):
+            print("Git tracking disabled")
+            git_tracking_enabled = False
+        else:
+            print(f"error: Invalid option '{arg}'")
+            exit(1)
+    else:
+        arg_mode = arg
+
+if not arg_mode:
+    print("No mode specified. Defaulting to 'entry-blob'.")
+    mode = 'entry'
+    entry_type = 'blob'
+elif arg_mode in ('b', 'entry-blob'):
+    mode = 'entry'
+    entry_type = 'blob'
+elif arg_mode in ('t', 'query-blob-tags'):
+    mode = 'query'
+    query_for = 'blob tags'
+elif arg_mode in ('v', 'view'):
+    mode = 'view'
+else:
+    print(f"error: Invalid mode '{arg_mode}'")
+    exit(1)
+
+
+# Setup Environment
+
+# Set defaults for options not specified by input
+if not text_editor:
+    for text_editor in text_editors:
+        if shutil.which(text_editor):
+            # if text_editor is a valid accessible executable
+            break
+    else:
+        print("No text editor program found.")
+        exit(1)
+
+if not journal_dir_path:
+    journal_dir_path = pl.Path.home() / 'record/blob/t'
+
+    if not journal_dir_path.is_dir():
+        print(f"error: Journal path '{journal_dir_path}' does not exist")
+        exit(1)
+
+
+# Main
+if mode == 'entry':
+
+    today = time.strftime("%Y%m%d")
+    journal_entry_path = journal_dir_path / f'{today}.txt'
+
+    # Create snapshot of journal with git
+    if git_tracking_enabled:
+        journal_entry_parent_dir_path_git_status = git_status(
+            journal_dir_path)
+        if journal_entry_parent_dir_path_git_status == 'uncommitted':
+            git_commit(journal_dir_path)
+            print("Git commit completed")
+        elif journal_entry_parent_dir_path_git_status == 'clean':
+            print("Journal matches most recent git commit")
+        elif journal_entry_parent_dir_path_git_status == 'not repo':
+            print("This journal does not have a git repository tracking it")
+
+    if not journal_entry_path.exists():
+
+        # Create parent path for journal entry if it doesn't exist
+        if not journal_entry_path.parent.is_dir():
+            journal_entry_path.parent.mkdir(parents=True)
+
+        # Create journal entry file if it doesn't exist
+        journal_entry_template = """# {}\n\n## {}\n""".format(
+            time.strftime("%A, %B %d, %Y"),
+            time.strftime("%H:%M")
+        )
+        with journal_entry_path.open('w') as f:
+            f.write(journal_entry_template)
+
+    else:
+        action_journal_entry_exists(entry_type, journal_entry_path)
+
+    open_text_processor(journal_entry_path)
+
+elif mode == 'query':
+    if query_for == 'blob tags':
+        # Show tag stats
+
+        tags = {}
+        blobs_path = journal_dir_path / 'Blobs'
+        for i in blobs_path.iterdir():
+            i_path = journal_dir_path / 'Blobs' / i
+            if not i_path.is_file():
+                continue
+            with i_path.open('r') as f:
+                for line in f.readlines():
+                    if line.startswith('#'):
+                        # Skip lines starting with '#' that do not define
+                        # tags. (Lines such as those denoting markdown
+                        # style).
+                        line_chunks_col = line.lstrip('#').split(':')
+                        line_chunks_spc = line.lstrip('#').split(' ')
+                        if (len(line_chunks_col) == 2 and
+                            line_chunks_col[0].strip().isdigit() and
+                            line_chunks_col[1].strip().isdigit()
+                            ):
+                            # Line matches time declaration of blob markdown
+                            # format (i.e. '## 00:35')
+                            continue
+                        elif (len(line_chunks_spc) == 5 and
+                            line.count(',') == 2 and
+                            line_chunks_spc[3].rstrip(',').strip().isdigit()
+                            and line_chunks_spc[4].strip().isdigit()):
+                            # Line matches date declaration of blob markdown
+                            # format (i.e. '# Sunday, May 11, 2017')
+                            continue
+
+                        # Else, if line does define tag, extract tags
+                        else:
+                            tags_to_process = line.split(' ')
+                            for t in tags_to_process:
+                                t = t.strip('#').strip()
+                                if t not in tags:
+                                    tags[t] = 1
+                                else:
+                                    tags[t] += 1
+                    elif line.startswith('//'):
+                        tags_to_process = line.split(',')
+                        for t in tags_to_process:
+                            t = t.lstrip('/').strip()
+                            if t not in tags:
+                                tags[t] = 1
+                            else:
+                                tags[t] += 1
+
+        for i in sorted(tags):
+            tag_occr = tags[i]
+            print(f"{i} ({tag_occr})")
+
+elif mode == 'view':
+    bat_flags = '--color=always --language=md --style=rule'
+    sp.call(
+        ['fd . -t f -d 1 ~/record/blob/t | sort | xargs bat ' + bat_flags],
+        shell=True
+    )
+
+
+
+"""
+TODO
+- Figure out how to backup the local git repository to a remote location when using bm on Android.
+- Make sure view mode displays entries in chronological order.
+- Add edit mode that allows me to easily find and select entry and then autocommit after editing.
+"""

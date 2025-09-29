@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Rmtrash
+# Type: file management
+# Description: Purge files within a specified time period from the trash
+#              directory.
+# Dependencies: Python3.6+
+# Version: 2
+# Init: 08 Aug 2020
+# Updated: 01 Apr 2022
+
+
+import os
+import sys
+from sys import exit
+
+import pathlib
+import shutil
+from datetime import datetime
+from datetime import timedelta
+
+
+# Variables: XDG Base Directory (user data paths)
+if 'XDG_DATA_HOME' in os.environ:
+    XDG_DATA_HOME = pathlib.Path(os.environ['XDG_DATA_HOME'])
+else:
+    XDG_DATA_HOME = pathlib.Path.home() / '.local/share'
+
+help_text = """Usage: rmtrash DAYS
+
+Files trashed that are older than DAYS are purged.
+
+Example:
+  rmtrash 90    Purges files that were trashed over 90 days ago."""
+
+
+# Variables
+trash_path =  pathlib.Path(XDG_DATA_HOME / "Trash")
+trash_info_path = trash_path / "info"
+trash_content_path = trash_path / "files"
+
+
+# Parse user input
+try:
+    days = int(sys.argv[1])
+except ValueError:
+    print("error: DAYS must be an integer")
+    print("Displaying help text...")
+    print(help_text)
+    exit(1)
+except IndexError:
+    print("error: Parameter was not given")
+    print("Displaying help text...")
+    print(help_text)
+    exit(1)
+
+
+# Compile list of files in trash
+trash_info_data = dict()
+id_counter = 0
+for info_file in trash_info_path.iterdir():
+    entry_id = id_counter
+    entry = dict()
+    entry['info_file_name'] = info_file.stem
+    with info_file.open('r') as f:
+        for line in f.readlines():
+            if '=' in line:
+                key, value = line.split('=')
+                entry[key] = value.strip()
+
+    trash_info_data[entry_id] = entry
+    id_counter += 1
+
+
+# Determine which files match the given time period and need removed
+now = datetime.now()
+cut_off_date = now + timedelta(days=-days)
+
+selected_for_removal = list()
+for entry_id in trash_info_data:
+    entry_date = trash_info_data[entry_id]['DeletionDate'].split("T")[0]
+    entry_date = datetime.strptime(entry_date, "%Y-%m-%d")
+    # If the entry (the trashed file) is older than the cut off date, then
+    # mark it for removal.
+    if entry_date < cut_off_date:
+        selected_for_removal.append(entry_id)
+
+
+# Purge specified files
+print("Deleting files...")
+counter = 0
+for entry_id in selected_for_removal:
+
+    # Purge trashed file
+    trash_file_name = pathlib.Path(
+        trash_info_data[entry_id]['info_file_name']
+    )
+    trash_file_path = pathlib.Path(trash_content_path / trash_file_name)
+    try:
+        if trash_file_path.is_file() or trash_file_path.is_symlink():
+            trash_file_path.unlink()
+        elif trash_file_path.is_dir():
+            shutil.rmtree(trash_file_path)
+    except PermissionError:
+        print(
+            "warning: Lack the required permissions to remove "
+            f"'{trash_file_path}'. Skipping..."
+        )
+        continue
+
+    # Purge trashinfo file
+    trash_info_file_path = trash_info_path / f"{trash_file_name}.trashinfo"
+    trash_info_file_path.unlink()
+
+    counter += 1
+
+print(f"Purged {counter} file(s)")

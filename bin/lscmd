@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: lscmds
+# Description: List commands by listing all the directories in the PATH
+#              variable
+# Version: 1.4
+# Made: Aug 11 2013
+# Last updated: Aug 05 2018
+
+
+import os
+import sys
+import pathlib
+
+PATH = os.environ['PATH'].split(':')
+
+args = sys.argv[1:]
+search_term = None
+if len(args) > 0:
+    search_term = args[0]
+
+def is_exe(path):
+    return os.access(path, os.X_OK)
+
+def match_search_term(path):
+    # Result is a match if it matches the search term and is an exe
+    return ((search_term in path.name) and is_exe(path))
+
+if search_term:
+    return_result = match_search_term
+else:
+    return_result = is_exe
+
+for directory in PATH:
+    directory = pathlib.Path(directory)
+    if directory.exists():
+        for path in directory.iterdir():
+            if return_result(path):
+                print(path)

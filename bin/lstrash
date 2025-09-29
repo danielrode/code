@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: List Trash Contents
+# Type: file management
+# Description: Lists the files in the trash directory and when they were
+#              deleted.
+# Dependencies: Python3.6+
+# Version: 1.0
+# Made: 29 Dec 2019
+# Last updated: 29 Dec 2019
+
+
+import os
+import pathlib
+from sys import exit
+
+
+# Variables: XDG Base Directory (user data paths)
+if 'XDG_DATA_HOME' in os.environ:
+    XDG_DATA_HOME = pathlib.Path(os.environ['XDG_DATA_HOME'])
+else:
+    XDG_DATA_HOME = pathlib.Path.home() / '.local/share'
+
+
+# Main
+processed_trash_list = list()
+trash_info_dir = pathlib.Path(XDG_DATA_HOME / "Trash/info")
+for info_file in trash_info_dir.iterdir():
+    entry = dict()
+    with info_file.open('r') as f:
+        for line in f.readlines():
+            if '=' in line:
+                key, value = line.split('=')
+                entry[key] = value.strip()
+
+    processed_trash_list.append(entry)
+
+
+sorted_trash_list = sorted(
+    processed_trash_list, key=lambda x: x['DeletionDate'])
+
+for i in sorted_trash_list:
+    print(f"{i['DeletionDate']}\t{i['Path']}")

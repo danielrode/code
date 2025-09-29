@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Hash Verify
+# Tags: hash, verify, sum, checksum
+# Description: Checks against a given hashsum against some path
+# Dependencies: -
+# Version: 1
+# Init: 07 Sep 2021
+# Updated: -
+
+
+if [[ -z "$1" || -z "$2" ]]
+then
+	echo "Usage: veri HASH PATH"
+	exit
+fi
+
+if [ "$(echo -n "$1" | wc -c)" = "64" ]
+then
+	echo "Verifying..."
+	echo "$1 $2" | sha256sum --check
+elif [ "$(echo -n "$1" | wc -c)" = "40" ]
+then
+	echo "Verifying..."
+	echo "$1 $2" | sha1sum --check
+elif [ "$(echo -n "$1" | wc -c)" = "128" ]
+then
+	echo "Verifying..."
+	echo "$1 $2" | sha1sum --check
+else
+	echo "error: Unknown hash"
+	exit 1
+fi
+
+
+
+# TODO
+# - add support for more than just sha hashes (such as md5)

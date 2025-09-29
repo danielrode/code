@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: (trash)can
+# Tags: file management, wrapper
+# Dependencies:
+#   gio [optional]
+#   trash-cli [optional]
+# Version: 9
+# Created: 21 Jul 2022
+# Updated: 11 Sep 2024
+
+
+# Description:
+# Sends a given set of files to the trash. Accounts for various platforms and
+# available tools.
+
+
+import os
+import sys
+import time
+import subprocess as sp
+from sys import exit
+from pathlib import Path
+
+
+HELP_TEXT="Usage: ${0##*/} PATH..." #TODO
+
+try:
+  if os.environ['XDG_DATA_HOME']:
+    TRASH_DIR = Path(os.environ['XDG_DATA_HOME'])
+  else:
+    TRASH_DIR = Path.home() / ".local/share/Trash"
+except KeyError:
+  TRASH_DIR = Path.home() / ".local/share/Trash"
+
+
+# Functions
+def dot_trash(path_list):
+  for p in path_list:
+    trash_pth = p.parent / ".trash"
+    trash_pth.mkdir(exist_ok = True)
+    dst_pth = trash_pth / f"{time.time_ns()}_{p.name}"
+    if dst_pth.exists():
+      print("skipping (dest already exists):", dst_pth)
+      continue
+    try:
+      p.rename(dst_pth)
+    except OSError as err:
+      print(f"skipping: {p}: {err}")
+      continue
+
+def trash_put(path_list):
+  p = sp.run(['trash-put', 'trash', *path_list], check=True)
+
+def gio_trash(path_list):
+  p = sp.run(['gio', 'trash', *path_list], check=True)
+
+def same_filesystem(path_list):
+  user_trash_dev_num = os.stat(TRASH_DIR).st_dev
+  for p in path_list:
+    if os.stat(p).st_dev != user_trash_dev_num:
+      return False
+  return True
+
+def command_exists(cmd):
+  try:
+    sp.run(['which', cmd], capture_output=True, check=True)
+  except CalledProcessError:
+    return False  
+  return True
+
+def force_manual_trash_set():
+  try:
+    if os.environ['DCV_CAN_FORCE_MANUAL_TRASH_YES'] == 'true':
+      return True
+  except KeyError:
+    pass
+  return False
+
+
+# Main
+path_list = []
+for p in [Path(i) for i in sys.argv[1:]]:
+  if not p.exists():
+    print("skipping (path does not exist):", p)
+    continue
+  path_list.append(p)
+  
+if force_manual_trash_set():
+  trash_func = dot_trash
+elif not same_filesystem(path_list):
+  print("Files not on same filesystem, so moving to .trash/...")
+  trash_func = dot_trash
+elif command_exists('gio'):
+  trash_func = gio_trash
+elif command_exists('trash-put'):
+  trash_func = trash_put
+else:
+  trash_func = dot_trash
+
+for pth in path_list:
+  print("trashing:", pth)
+  trash_func([pth])

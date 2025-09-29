@@ -1,0 +1,26 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Kill Menu
+# Tags: process management, menu
+# Dependencies: fzf
+# Version: 1
+# Init: 18 Dec 2022
+# Updated: -
+
+
+# Description: Lists processes, allows for selection via fzf, then kills
+# selected processes.
+
+
+ps -u $USER -o pid,start,time,command \
+| fzf --header-lines=1 --multi | awk '{ print $1 }' \
+| while read proc_id
+do
+    echo "Killing" "$proc_id"
+    kill "$proc_id"
+done
+
+
+
+# TODO
+# - verify killing was successful and notify user of success/failure

@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Flatten (Squash) XML
+# Tags: data processing
+# Dependencies: Python3.6+
+# Version: 1
+# Init: 01 Jul 2022
+# Updated: -
+
+
+# Description:
+# Takes a given XML file path, imports the file, and outputs each value
+# appended to the end of its XML tree path.
+
+
+import sys
+import pathlib as pl
+from lxml import etree
+
+
+# Parse arguments
+try:
+    xml_file_path = pl.Path(sys.argv[1])
+except IndexError:
+    print("error: Expected path to XML file")
+    print("usage: flatten-xml PATH")
+    exit(1)
+
+
+# Main
+tree = etree.parse(xml_file_path)
+for i in tree.iter():
+    if not i.text.strip():
+        # Skip elements with empty values
+        continue
+    print("/".join((tree.getpath(i), i.text.strip().replace('\n', '\\n'))))
+
+
+
+"""
+TODO
+- Account for elements whose value may contain "/" character.
+"""

@@ -1,0 +1,361 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Backup Sync
+# Tags: backup, file management, data management
+# Dependencies:
+#    Python3.7+
+#    restic
+#    getcred
+#    ncdu
+# Version: 39
+# Created: 23 Nov 2022
+# Updated: 07 Sep 2025
+
+
+# Description: Backs up my data online using restic.
+
+# NOTE: This script loads all needed credentials except for the SSH key.
+# Accessing repos on rsync.net requires SSH access. Public/private key
+# authentication is currently setup for several of my hosts. If I ever
+# reinstall these hosts or add a new host, SSH private/public key
+# authentication will need to be setup on that host before this script will
+# work (otherwise, the user will be prompted to enter a password after restic
+# is called).
+
+# NOTE: In order to make this script functional under Termux (on Android), it
+# must be run under a functional proot environment. This is probably already
+# setup, but in case it isn't, see comments in 'enter-void.sh' under Termux 
+# home directory.
+
+# NOTE: This script requires getcred can get the master password from the
+# user. Under termux, this is difficult. In order to work around this, start
+# getcred before calling this script. Use:
+#  dtach -c `mktemp -d`/sock getcred --server --password-prompt-fallback 
+# Enter the master KeePass credential password when prompted, then press
+# Ctrl+\ to detach, letting getcred continue on in the background.
+
+
+import os
+import sys
+import subprocess as sp
+
+from datetime import datetime
+from pathlib import Path
+
+
+# Variables
+HOME_PATH = Path.home()
+SDCARD_PATH = Path('/sdcard')
+HOSTNAME = os.environ['HOSTNAME']
+
+universal_exclude_patterns = [
+    str(Path(HOME_PATH, i)) for i in [
+
+    # Directories
+    '.AndroidStudio3.0/',
+    '.cache/',
+    '.cargo/',
+    '.claws-mail/imapcache/',
+    '.claws-mail/tmp/',
+    '.conda/pkgs/',
+    '.config/0ad/logs/',
+    '.config/Slack/',
+    '.config/chromium/',
+    '.config/discord/',
+    '.config/go/telemetry/',
+    '.config/google-chrome/',
+    '.config/libreoffice/',
+    '.config/microsoft-edge/',
+    '.config/pulse/',
+    '.config/sublime-text-3/Cache/',
+    '.config/sublime-text-3/Installed Packages/Package Control.sublime-package/',
+    '.config/sublime-text-3/Packages/User/Package Control.cache/',
+    '.config/sublime-text/Packages/regex/',
+    '.config/sublime-text/Packages/requests/',
+    '.config/syncthing/index-v*.db/',
+    '.config/zsh/.zprezto/.git/',
+    '.dropbox/',
+    '.dropbox-dist/',
+    '.emacs.d/',
+    '.flowblade/thumbnails/',
+    '.googleearth/Cache/',
+    '.gradle/',
+    '.julia/',
+    '.klei/',
+    '.local/lib/',
+    '.local/opt/MultiMC/assets/',
+    '.local/opt/MultiMC/bin/',
+    '.local/opt/MultiMC/cache/',
+    '.local/opt/MultiMC/libraries/',
+    '.local/opt/MultiMC/meta/',
+    '.local/opt/MultiMC/mods/',
+    '.local/opt/MultiMC/plugins/',
+    '.local/opt/MultiMC/translations/',
+    '.local/opt/MultiMC/update/',
+    '.local/opt/MultiMC/versions/',
+    '.local/opt/context/',
+    '.local/share/Anki/QtWebEngine/',
+    '.local/share/PrismLauncher/assets/',
+    '.local/share/PrismLauncher/libraries/',
+    '.local/share/Steam/',
+    '.local/share/TelegramDesktop/',
+    '.local/share/Trash/',
+    '.local/share/chaiNNer/',
+    '.local/share/containers/',
+    '.local/share/fish/generated_completions/',
+    '.local/share/geeqie/trash/',
+    '.local/share/gem/',
+    '.local/share/gvfs-metadata/',
+    '.local/share/jan/extensions/',
+    '.local/share/jan/models/',
+    '.local/share/nvim/lazy/',
+    '.local/share/nvim/mason/',
+    '.local/share/QGIS/QGIS3/profiles/default/proj/',
+    '.local/share/qutebrowser/pdfjs/',
+    '.local/share/qutebrowser/qtwebengine_dictionaries/',
+    '.local/share/qutebrowser/webengine/',
+    '.local/share/themes/',
+    '.local/share/tldr/',
+    '.local/share/torbrowser/tbb/',
+    '.local/share/tracker/',
+    '.local/share/waydroid/',
+    '.local/state/wireplumber/',
+    '.lyx/cache/',
+    '.minecraft/assets/',
+    '.minecraft/libraries/',
+    '.mozilla/',
+    '.npm/',
+    '.ollama/models/blobs/',
+    '.shheekretts/lost+found/',
+    '.steam/',
+    '.texlive20*/',
+    '.thumbnails/',
+    '.thunderbird/',  # TODO I need to implement way to backup my email, like perhaps by syncing thunderbird mbox to a maildir, then backup the maildir
+    '.var/app/com.microsoft.Edge/',
+    '.var/app/com.usebottles.bottles/',
+    '.var/app/com.valvesoftware.Steam',
+    '.var/app/io.mrarm.mcpelauncher/',
+    '.var/app/org.kde.falkon/cache/',
+    '.var/app/org.qgis.qgis/cache/',
+    '.zoom/',
+    '.wine/',
+    'Dropbox/',
+    'downloads/',
+    'job/csu/',
+    'progeny/android-studio/sdk/',
+    'progeny/go/',
+    'progeny/gocryptfs/dotcrypt/',
+    'progeny/virt-manager/',
+    'record/import_temp/',
+    'store/disk images/operating systems/',
+    'store/luks-home',
+    'union/csu-nrel/',
+    'union/github/',
+    'union/sch_laptop/',
+    'warehouse/disk images/operating systems/',
+
+    # Files
+    '.ICEauthority',
+    '.config/nnn/.selection',
+    '.esd_auth',
+    '.local/share/qutebrowser/history.sqlite*',
+    '.local/state/nvim/log',
+    '.local/var/log/syncthing-audit.log',
+    '.local/var/log/syncthing-main.log',
+    '.sway-session-stderr.log',
+    '.sway-session-stderr.log.old',
+    '.sway-session-stdout.log',
+    '.sway-session-stdout.log.old',
+    '.var/app/io.gpt4all.gpt4all/data/nomic.ai/GPT4All/*.gguf',
+]]
+
+# Host specific values for restic
+host_gramvoidd = {
+    'cred path': 'programs/restic/rsync.net',
+    'repo address': lambda: (RESTIC_USERNAME),
+    'backup paths': [HOME_PATH],
+    'exclude patterns': [
+        # Directories
+        '/home/daniel/working/nerd-dictation/model',
+    ],
+}
+host_andtermuxdvoid = {
+    'cred path': 'programs/restic/oneplus',
+    'repo address': lambda: (f'sftp:{RESTIC_USERNAME}@{RESTIC_USERNAME}'
+        '.rsync.net:restic-oneplus'),
+    'backup paths': [
+        '/etc',
+        HOME_PATH,
+        SDCARD_PATH / 'abode',
+        SDCARD_PATH / 'ArtFlow',
+        SDCARD_PATH / 'Audio Recordings',
+        SDCARD_PATH / 'Bluecoins',
+        SDCARD_PATH / 'Download/library',
+        SDCARD_PATH / 'Download/stagnate',
+        SDCARD_PATH / 'MyAppList',
+        SDCARD_PATH / 'Notebloc',
+        SDCARD_PATH / 'Pictures',
+        SDCARD_PATH / 'Snapseed',
+    ],
+    'exclude patterns': [
+        # Directories
+        '/data/data/com.termux/files/home/.cache',
+        '/data/data/com.termux/files/home/.cargo',
+        '/data/data/com.termux/files/home/.emacs.d',
+        '/data/data/com.termux/files/home/.local/lib',
+        '/data/data/com.termux/files/home/.local/opt',
+        '/data/data/com.termux/files/home/.local/share/gvfs-metadata',
+        '/data/data/com.termux/files/home/.local/share/tldr',
+        '/data/data/com.termux/files/home/.local/share/tracker',
+        '/data/data/com.termux/files/home/.local/share/Trash',
+        '/data/data/com.termux/files/home/.lyx/cache',
+        '/data/data/com.termux/files/home/.mozilla',
+        '/data/data/com.termux/files/home/.texlive20*',
+        '/data/data/com.termux/files/home/.thumbnails',
+        '/data/data/com.termux/files/home/downloads',
+        '/data/data/com.termux/files/home/progeny/go',
+        '/data/data/com.termux/files/home/progeny/virt-manager',
+        '/data/data/com.termux/files/home/record/import_temp',
+        '/sdcard/abode/dropbox',
+
+        # Files
+        '/data/data/com.termux/files/home/.config/nnn/.selection',
+        '/data/data/com.termux/files/home/.esd_auth',
+        '/data/data/com.termux/files/home/.ICEauthority',
+    ],
+}
+
+
+# Function
+def ncduX(exclude_patterns):
+    # Run this function to get an idea of what large directories/files to
+    # exclude. The command runs ncdu on your home directory and tells it to
+    # ignore paths that match patterns in the given exclusion list.
+
+    exclude_pattern_args = list()
+    for pattern in exclude_patterns:
+        exclude_pattern_args.append('--exclude')
+        exclude_pattern_args.append(pattern)
+
+    cmd = ['ncdu', *exclude_pattern_args, HOME_PATH]
+    sp.run(cmd, check=True)
+
+def log_system_state(host):
+    pass
+    #TODO
+
+
+# Determine host
+if HOSTNAME == 'gramvoidd':
+    print("Host 'gramvoidd' detected")
+    host = host_gramvoidd
+elif HOSTNAME == 'andtermuxd-void':
+    print("Host 'andtermuxd-void' detected")
+    host = host_andtermuxdvoid
+else:
+    print("error: Unsupported host")
+    sys.exit(1)
+
+
+# Parse command line input
+DRY_RUN_MODE = False
+args = iter(sys.argv[1:])
+for i in args:
+    match i:
+        case '-X'|'--ncdu':
+            ncduX(host['exclude patterns'] + universal_exclude_patterns)
+            sys.exit()
+        case '-d'|'-n'|'--dry-run':
+            DRY_RUN_MODE = True
+            print("Running in dry run mode")
+        case _:
+            print("error: Unsupported argument")
+            sys.exit(1)
+
+
+# Collect credentials for restic
+print("Loading credentials...")
+
+credentials = dict()
+credentials['RESTIC_PASSWORD_COMMAND'] = (
+    f'getcred {host["cred path"]} password'
+)
+p = sp.run(
+    ['getcred', host['cred path'], 'username'],
+    check=True, text=True, capture_output=True
+)
+RESTIC_USERNAME = p.stdout
+
+# From `backup-dtideapad.py` (useful reference for how to setup connection to
+# B2 repo, if I ever decide to back up to that service again):
+# cred_path = "programs/restic/dtideapad/B2"
+# cred_secrets = dict()
+# cred_secrets['RESTIC_PASSWORD_COMMAND'] = f'getcred {cred_path} password'
+# cred_secrets['B2_ACCOUNT_KEY'] = str(sp.Popen(
+#     ['getcred', cred_path, 'Application Key'],
+#     stdout=sp.PIPE).communicate()[0], 'utf8')
+# cred_secrets['B2_ACCOUNT_ID'] = str(sp.Popen(
+#     ['getcred', cred_path, 'Key ID'],
+#     stdout=sp.PIPE).communicate()[0], 'utf8')
+# cred_secrets['RESTIC_REPOSITORY'] = str(sp.Popen(
+#     ['getcred', cred_path, 'username'],
+#     stdout=sp.PIPE).communicate()[0], 'utf8')
+
+
+# Compile exclude pattern arguments for restic
+exclude_pattern_args = list()
+for pattern in (host['exclude patterns'] + universal_exclude_patterns):
+    exclude_pattern_args.append('-e')  # restic flag: -e = --exclude
+    exclude_pattern_args.append(pattern)
+
+
+# Finish structuring restic command array
+repo_addr = host['repo address']
+if callable(repo_addr):
+    # 'lambda' (which defines anonymous--nameless--functions) is used under
+    #  the 'host' dictionary for items that depend on the contents of other
+    #  variables that are not yet defined. 'lambda' allows these other
+    #  variables to be mentioned in the 'host' dictionary before they are
+    #  defined (because functions are do not call the variables they
+    #  reference until the function is run). For the 'repo address' key, where
+    #  the value does not depend on other variables, the value will just be a
+    #  plain string (and thus does not need to be called as a function).
+    repo_addr = repo_addr()
+
+cmd = [
+    'restic', 'backup',
+    '--repo', repo_addr,
+    *exclude_pattern_args,
+    *host['backup paths'],
+]
+
+if DRY_RUN_MODE:
+    cmd.insert(2, '--verbose=2')
+    cmd.insert(2, '--dry-run')
+
+
+# Backup
+print("Current time:", datetime.now())
+#TODO
+#print("Saving system state to log files for backup...")
+#log_system_state(host)
+print("Performing backup...")
+p = sp.run(cmd, check=True, env={**os.environ,**credentials})
+
+
+
+"""
+TODO
+- add --help text
+- replace ncdu with utility that can take multiple input paths
+    - must support interactively browsing tree, and exclusion patterns
+- save some system state information:
+    - recursive ls of downloads directory (but not the contents themselves)
+    - root (non-recursive) ls of /opt
+    - ls of /usr/local/bin
+    - ls of ~/.local/bin and ~/.local/opt/bin
+    - user id
+    - hostname
+    - services: `sudo vsv`
+"""

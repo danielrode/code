@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: Python Calculator
+# Type: wrapper, configuration, launcher
+# Description: Start Python with some useful math defs and imports.
+# Dependencies: numpy, scipy
+# Version: 9
+# Init: 13 Feb 2021
+# Updated: 01 Oct 2022
+
+
+import sys
+import subprocess as sp
+
+import math
+import statistics
+from numpy import *
+from scipy import stats
+
+# "If the readline module was loaded, then input() will use it to provide
+# elaborate line editing and history features."
+# source: https://stackoverflow.com/questions/45772230/
+
+import readline
+
+
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+
+def print_result(value):
+    print('=', color.BOLD + color.BLUE + str(value) + color.END, end='\n\n')
+
+
+def p():
+    """Paste content from clipboard."""
+
+    p = sp.Popen(['wl-paste'], stdout=sp.PIPE)
+    return str(p.communicate()[0].strip(), 'utf8')
+
+
+def id1(numbers_str=None):  # id = import data
+    """Import newline separated list of numbers as a list."""
+
+    if not numbers_str:
+        numbers_str = p()
+    numbers_str = numbers_str.strip().replace(',', '')
+    numbers_list = list()
+    for i in numbers_str.split('\n'):
+        numbers_list.append(float(i))
+    numbers_array = array(numbers_list)
+    # numbers_array.sort()
+
+    return numbers_array
+
+
+def id2(numbers_str=None, entry_delimiter='\n', pair_delimiter='\t'):
+    """Import newline separated list of paired numbers (tab separated) as
+    an x-list and y-list list. Discards first line (header)."""
+
+    if not numbers_str:
+        numbers_str = p()
+    x_list = list()
+    y_list = list()
+    for i in numbers_str.strip().split(entry_delimiter)[1:]:
+        x, y =  i.split(pair_delimiter)
+        x_list.append(float(x))
+        y_list.append(float(y))
+    x_array = array(x_list)
+    y_array = array(y_list)
+
+    return x_array, y_array
+
+
+def ssd(sample_list):
+    """Return sample standard deviation of list."""
+    return statistics.stdev(sample_list)
+
+
+def psd(population_list):
+    """Return sample standard deviation of list."""
+    return statistics.pstdev(population_list)
+
+
+def mode(numbers_array):
+    return stats.mode(numbers_array)
+
+
+def linreg(x_list, y_list, interactive=True):  # LinReg(ax+b)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x_list, y_list
+    )
+    if interactive:
+        print(f"a = {slope}")
+        print(f"b = {intercept}")
+        print(f"r = {r_value}")
+    else:
+        return slope, intercept, r_value
+
+def linregttest(x_list, y_list):  # LinRegTTest
+    r = linreg(x_list, y_list, interactive=False)[2]
+    n = len(x_list)
+    t = r/(sqrt((1-r**2)/(n-2)))
+    print(f"t = {t}")
+
+
+def ovarstats(numbers_array):  # 1-Var Stats
+    print("X̅ =", numbers_array.mean())
+    print("Σx =", sum(numbers_array))
+    print("Σx^2 =", "?")
+    print("Sx =", ssd(numbers_array))
+    print("σx =", psd(numbers_array))
+    print("n =", len(numbers_array))
+    print("minX =", numbers_array.min())
+    print("Q1 =", percentile(numbers_array, 25, interpolation='linear'))
+    print("Med =", percentile(numbers_array, 50))
+    print("Q3 =", percentile(numbers_array, 75, interpolation='linear'))
+    # Note, these quartiles often differ from the values given by the TI84
+    # but that is okay as Pearson knows that quartiles differ between
+    # technology and accept various values.
+    print("maxX =", numbers_array.max())
+
+
+def mth_expr_eval(prev_value, expression):
+    expression = expression.replace('^', '**')
+    expression = expression.replace('x', '*')
+    expression = expression.replace(';', prev_value)
+        # Substitute ';' for previous value (similar to what some calculators
+        # let you do with using 'ans' as a variable).
+
+    if (expression[0] == 'q') or (expression == 'exit'):
+        exit(0)
+
+    if expression[0] in ['+', '-', '*', '/']:
+        expression = str(prev_value) + expression
+
+    return str(eval(expression))
+
+
+# Evaluate expression passed as command line argument, if any
+result = ""
+try:
+    expression = sys.argv[1]
+except IndexError:
+    pass
+else:
+    result = mth_expr_eval(result, expression)
+    print_result(result)
+
+
+# Enter interactive mode
+while True:
+    expression = input('> ')
+    result = mth_expr_eval(result, expression)
+    print_result(result)
+
+
+
+"""
+# GUIDES
+
+- Expand tuple into arguments: function(*tuple)
+"""
+
+
+
+"""
+# TODO
+
+- create 1 var stats function
+    use special characters to represent the different values when displaying them. Here is how to do that: https://pythonforundergradengineers.com/unicode-characters-in-python.html
+"""

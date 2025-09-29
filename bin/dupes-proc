@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Fdupes Duplicate Report Processor
+# Type: file management
+# Dependencies:
+#   Python3.6+
+#   fdupes|jdupes
+# Version: 2
+# Init: 27 Dec 2020
+# Updated: 04 Sep 2023
+
+
+# Description: Parses the output of fdupes, providing an interactive way for
+# the user to decide which duplicates to keep and which ones to discard.
+
+
+import sys
+import pathlib
+import subprocess as sp
+from sys import exit
+
+
+# Variables
+help_text = """\
+Usage: dupes-proc FDUPES_REPORT
+
+FDUPES_REPORT is the output of 'fdupes -r DIR' saved in a text file.
+
+If you want to record the output of dupes-proc, first run the 'script' command
+and then run dupes-proc within that shell.
+
+  -h, --help    print this help text
+  -p, --purge   purge (delete) files rather than moving them to trash"""
+
+
+# Functions
+def purge(path):
+    print("Purging:", path)
+    path.unlink()
+
+def trash(path):
+    print("Trashing:", path)
+    return_code = sp.call(["gio", "trash", path])
+    if return_code != 0:
+        print("error: 'gio' exited with code", return_code)
+        exit(2)
+
+def select_duplicates(duplicates, pattern, match_pattern, index):
+
+    # If user specified index, use that to mark duplicates for removal instead
+    # of doing any pattern matching at all. Possible indexes are 0 (remove all
+    # duplicate copies besides the first one listed in fdupes report) and -1
+    # (remove all duplicate copies besides the last one listed in fdupes
+    # report)
+    if index == 0:
+        selection = list()
+        for d in duplicates:
+            selection.extend(d[1:])
+        remaining_duplicates = []
+        return selection, remaining_duplicates
+    elif index == -1:
+        selection = list()
+        for d in duplicates:
+            selection.extend(d[:-1])
+        remaining_duplicates = []
+        return selection, remaining_duplicates
+
+    # Find duplicates that match given patten, and only remove ones that have
+    # at least one complimentary duplicate that does not match the pattern.
+    remaining_duplicates = list()
+    selection = list()
+    for dupe_set in duplicates:
+
+        # Find duplicates that match the given pattern
+        matching_paths = list()
+        nonmatching_paths = list()
+        for path in dupe_set:
+            if match_pattern:
+                # Normal match mode
+                if pattern in str(path):
+                    matching_paths.append(path)
+                else:
+                    nonmatching_paths.append(path)
+            else:
+                # Inverse match mode
+                if pattern in str(path):
+                    nonmatching_paths.append(path)
+                else:
+                    matching_paths.append(path)
+
+        # If all duplicates would be removed, skip this set of duplicates
+        if len(nonmatching_paths) == 0:
+            remaining_duplicates.append(dupe_set)
+            continue
+
+        # If only some duplicates for this set would be removed, add them to
+        # the remove queue (selection)
+        selection.extend(matching_paths)
+
+        # Deal with remaining duplicates from the current set
+        if len(nonmatching_paths) > 1:
+            # Add remaining duplicates for this duplicate set (that did not
+            # match the given patten) back to the master duplicates list.
+            remaining_duplicates.append(nonmatching_paths)
+        else:
+            # If there is only one duplicate left in this list (all the ones
+            # in the other list will be removed), then do not add this path
+            # back to the master duplicates list (as this path is no longer
+            # considered a duplicate).
+            print("No more duplicates:", nonmatching_paths[0])
+
+    return selection, remaining_duplicates
+
+
+# Parse input
+remove_path = trash
+args = []
+for arg in sys.argv[1:]:
+    if arg in ['-h', '--help']:
+        print(help_text)
+        exit()
+    elif arg in ['-p', '--purge']:
+        remove_path = purge
+        print("PURGING ENABLED!")
+    elif arg in ['-d', '--dry-run']:
+        # Instead of removing files, print ones that would have been removed
+        print("DRY MODE")
+        remove_path = lambda path: print("Would have removed:", path) 
+    else:
+        args.append(arg)
+
+try:
+    fdupes_report_path = pathlib.Path(args[0])
+except IndexError:
+    print("error: No input path given")
+    exit(1)
+else:
+    if not fdupes_report_path.is_file():
+        print("error: Input path is not a file")
+        exit(1)
+
+
+# Import fdupes report
+with fdupes_report_path.open('r') as f:
+    fdupes_report = f.read().rstrip()
+
+duplicates = list()
+for dupe_set_str in fdupes_report.split('\n\n'):
+    duplicates.append(
+        [pathlib.Path(file) for file in dupe_set_str.split('\n')]
+    )
+
+
+# Process duplicates
+msg = (
+    "WARNING: This script has the potential destroy your data. It has been "
+    "put under several tests, but you should still be wary when using it and "
+    "ALWAYS BACKUP YOUR DATA.\n\n"
+
+    "TIP: If you want to record the output of this script, first run the "
+    "'script' command and then run this script within that shell.\n\n"
+
+    "NOTE: You will enter a pattern (pure string, non-regex) below. Files "
+    "that match this pattern will be removed only if such duplicates have "
+    "corresponding duplicates that do not match the pattern. If you press "
+    "enter without first typing a pattern, a list of remaining duplicates "
+    "will be printed. If you enter '\\!', inverse mode will activate and "
+    "paths _not_ matching the given pattern will be removed (if they have "
+    "corresponding duplicates that will not be removed). Entering '\\=' "
+    "turns inverse mode off. Alternatively, you may enter '\\0' to simply "
+    "remove all dupelicates except the first copy listed for each duplicate "
+    "in the fdupes report file. Entering '\\-1' will do the same thing, but "
+    "instead keep the last copy listed for each duplicate.\n"
+)
+print(msg)
+match_pattern = True
+while True:
+
+    # Prompt user for pattern of which duplicates to remove
+    print("Number of sets of duplicates:", len(duplicates))
+    while True:
+        index = None
+        if match_pattern:
+            prompt_str = "Enter pattern (=): "
+        else:
+            prompt_str = "Enter pattern (!): "
+        pattern = input(prompt_str)
+
+        # Print list of duplicates
+        if not pattern:
+            for i in duplicates:
+                print(i)
+
+        # Set inverse mode (match paths without the given pattern)
+        elif pattern == '\\!':
+            match_pattern = False
+
+        # Set normal mode (match paths with the given pattern)
+        elif pattern == '\\=':
+            match_pattern = True
+
+        # Immediately remove all duplicates besides the first copy listed for
+        # each duplicate in the fdupes report text file
+        elif pattern == '\\0':
+            index = 0
+            break
+
+        # Immediately remove all duplicates besides the last copy listed for
+        # each duplicate in the fdupes report text file
+        elif pattern == '\\-1':
+            index = -1
+            break
+
+        # When user enters pattern, use it to make selection
+        else:
+            break
+
+    # Make a selection of duplicates marked for removal based on rules
+    # determined above by user
+    selection, duplicates = select_duplicates(
+        duplicates, pattern, match_pattern, index)
+
+    # Remove duplicates that match the given pattern
+    for path in selection:
+        remove_path(path)
+
+    if len(duplicates) == 0:
+        print("Done")
+        exit()
+
+
+
+# TODO
+# - support regex as pattern
+# - add log function that notes which files are removed (saving this list to a
+# text file, as well as still printing it to the console)

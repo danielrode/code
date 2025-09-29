@@ -1,0 +1,47 @@
+#!/bin/bash
+## Author: Daniel Rode
+## Description: Makes 15 blank files in the current directory
+## Made: November 2011
+## Last Updated: April 2012
+
+# Display Help
+if [ "$1" = "--help" ];then
+  echo "Options:
+--cdir   Lets you choose a custom directory to make the files in
+--cname  Custom file name.  Default name is "file"
+--ask    Lets you enter how many files you want to make.  Default is 15"
+  exit
+fi
+
+# Options
+if [ "$1" = "--cdir" -o "$2" = "--cdir" -o "$3" = "--cdir" ];then
+  ddir=$(zenity --name="Choose a folder" --file-selection --directory)
+  if [ "$ddir" != "" ];then
+    cd "$ddir"
+  else
+    echo "No directory was selected.  Will make files in current directory."
+  fi
+fi
+
+numofiles=15
+if [ "$1" =  "--ask" -o "$2" =  "--ask" -o "$3" =  "--ask" ];then
+  read -p "Enter number of files to create: " num
+  numofiles=$(expr $num)
+fi
+
+name=file
+if [ "$1" =  "--cname" -o "$2" =  "--cname" -o "$3" =  "--cname" ];then
+  read -p "Enter name: " name
+fi
+
+
+# Making the files
+counter=0
+while [ $counter != $numofiles ];do
+   counter=$(expr $counter + 1)
+   touch $name$counter
+done
+
+
+# TODO
+# - add option to create files with random names

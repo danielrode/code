@@ -1,0 +1,14 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Verbose Run
+# Tags: system, launch, processes
+# Dependencies:
+#   foot
+# Init: 04 Sep 2023
+# Updated: 13 Oct 2023
+
+# Description: Runs the specified script/program in a foot terminal/console
+# window and holds the foot window open after the process completes (so that
+# any console messages can be read by the user).
+
+foot --title "$1" --hold sh -c "$1; echo; echo 'DONE! Close foot console window when desired'"

@@ -1,0 +1,56 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   foot
+#   dtach
+# Init: 14 Oct 2023
+# Updated: 16 Nov 2023
+
+
+dtach_session_dir="/tmp/dtach-sessions-helix"
+sock_link="$dtach_session_dir"/primary-session-0.socket
+
+
+# Create new session, if requested
+# TODO make it so that when o is run, if selected file should be opened by hx, o should scan my current Sway workspace for open foot-helix instances (`swaymsg -t get_tree`). The first instance it finds, o should open the selected file in a new hx tab in that foot-helix instance. Otherwise, if no foot-helix instances are found, open file in new foot-helix instance.
+[ "$1" = "--new-window" ] && shift
+# if [ "$1" = "--new-window" ]
+if true
+then
+	# shift
+	rm "$sock_link"
+fi
+
+
+# Set path to open from command line, if one was given
+open_pth="$1"
+if [ -z "$open_pth" ]
+then
+	hx_cmd=hx
+else
+	hx_cmd="hx '$open_pth'"
+fi
+
+
+# If Helix foot dtach session does not exist, create it, then open given file
+if [ ! -e "$sock_link" ]
+then
+	mkdir -p "$dtach_session_dir"
+	sock="$(mktemp --tmpdir="$dtach_session_dir" \
+		--suffix='-dtach-session-helix.socket')"
+	rm "$sock"  # dtach cannot create socket if path exists
+	foot --app-id=foot_helix --title=Helix \
+		dtach -c "$sock" -E bash -c "$hx_cmd" &
+	ln -sf "$sock" "$sock_link"
+ 	exit
+fi
+
+
+# Open file path passed on command line in existing Helix session
+#
+# For full list of key codes, see "Oct" column of "Control code chart" at
+# https://en.wikipedia.org/wiki/ASCII
+printf '\033' | dtach -p "$sock_link" # Send ESC
+echo -n ":open $open_pth" | dtach -p "$sock_link"
+printf '\015' | dtach -p "$sock_link" # Send ENTER
+

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 10 Jul 2025
+# Updated: -
+
+
+dbus-send \
+    --print-reply \
+    --dest=org.freedesktop.DBus \
+    /org/freedesktop/DBus \
+    org.freedesktop.DBus.ListNames \
+    "$@" \
+;

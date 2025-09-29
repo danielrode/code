@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Untrash
+# Type: file management
+# Description: Lists files sent to the trash and allows the user to restore
+#              these files to the current working directory.
+# Dependencies: Python3.6+, fzf
+# Version: 0.3
+# Init: 22 May 2020
+# Updated: 11 Aug 2020
+
+
+import os
+from sys import exit
+
+import pathlib
+import shutil
+import subprocess as sp
+
+import urllib.parse
+from datetime import datetime
+
+
+# Variables: XDG Base Directory (user data paths)
+if 'XDG_DATA_HOME' in os.environ:
+    XDG_DATA_HOME = pathlib.Path(os.environ['XDG_DATA_HOME'])
+else:
+    XDG_DATA_HOME = pathlib.Path.home() / '.local/share'
+
+
+# Variables
+trash_info_path = pathlib.Path(XDG_DATA_HOME / "Trash/info")
+trash_files_path = pathlib.Path(XDG_DATA_HOME / "Trash/files")
+
+
+# Compile list of files in trash
+trash_info_data = dict()
+id_counter = 0
+for info_file in trash_info_path.iterdir():
+    entry_id = id_counter
+    entry = dict()
+    entry['info_file_name'] = info_file.stem
+    with info_file.open('r') as f:
+        for line in f.readlines():
+            if '=' in line:
+                key, value = line.split('=')
+                entry[key] = value.strip()
+
+    trash_info_data[entry_id] = entry
+    id_counter += 1
+
+
+# Prompt user to select which files to restore
+data_for_fzf = bytes()
+for entry_id in trash_info_data:
+    date = trash_info_data[entry_id]['DeletionDate']
+    path = urllib.parse.unquote(trash_info_data[entry_id]['Path'])
+    line = f"{entry_id}\t{date}\t{path}\n"
+    data_for_fzf += bytes(line, 'utf8')
+
+current_date = datetime.now().strftime("%Y-%m-%dT ")
+p = sp.Popen(
+    [
+        'fzf', '--multi', '--delimiter=\\t', '--with-nth=2..', '--query',
+        current_date
+    ],
+    stdin=sp.PIPE,
+    stdout=sp.PIPE
+)
+out, _ = p.communicate(data_for_fzf)
+
+if not out:
+    print("No files were selected")
+    exit()
+
+selection = str(out, 'utf8').rstrip('\n').split('\n')
+
+
+# Restore selected files
+print("Restoring files to current working directory...")
+for entry in selection:
+    entry_id, _, path = entry.split('\t', 2)
+    entry_id = int(entry_id)
+    trash_file_name = trash_info_data[entry_id]['info_file_name']
+
+    # Verify that the restore path does not already exist
+    restore_path = pathlib.Path('./') / trash_file_name
+    if restore_path.exists():
+        print("error: Path already exists. Skipping:", restore_path)
+        continue
+
+    # Move file from trash to current working directory
+    shutil.move(
+        trash_files_path / trash_file_name,
+        restore_path
+    )
+    print(f"Restored:", trash_file_name)
+
+    # Delete trashinfo file
+    trash_info_file_path = trash_info_path / f"{trash_file_name}.trashinfo"
+    trash_info_file_path.unlink()
+
+
+
+# TODO
+# - Have files sorted by date when the selection prompt initially opens.

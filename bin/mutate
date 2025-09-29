@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Mutate
+# Tags: text processing, editing
+# Dependencies:
+#   Python3.6+
+# Version: 3
+# Init: 18 Oct 2021
+# Updated: 03 Oct 2023
+
+
+# Description: Edit string from stdin and print modified text to stdout.
+#
+#  unwrap: Unwrap paragraphs. Make paragraphs (strings joined by '\n') one 
+#  single line. Where '\n\n' is found, leave it be.
+
+
+import re
+import sys
+import pathlib as pl
+from sys import exit
+
+
+# Constants
+exe_name = sys.argv[0].split('/')[-1]  # This script's filename
+help_text = f"Usage: | {exe_name} CMD"
+# TODO include possible cmds in help text
+
+
+# Parse command line input
+try:
+    cmd = sys.argv[1]
+except IndexError:
+    print(help_text)
+    exit(1)
+
+in_text = sys.stdin.read()
+
+
+# Main
+if cmd == 'unwrap':
+    # TODO (added 2025/09) use pandoc instead
+    paragraphs = re.split(r"\n\n+", in_text)
+
+    flattened_paragraphs = list()
+    for para in paragraphs:
+        flattened_para = para.replace('\n', ' ')
+
+        # Remove multi-spaces
+        flattened_para = re.sub('  +', ' ', flattened_para)
+
+        flattened_paragraphs.append(flattened_para)
+
+    text = '\n\n'.join(flattened_paragraphs).strip()
+    text = text.replace('- ', '')
+elif cmd == 'title':
+    text = re.sub(r'\b\w', lambda m: m.group().upper(), in_text.lower())
+else:
+    print("Invalid command")
+    exit(1)
+
+
+print(text)

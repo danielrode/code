@@ -1,0 +1,188 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   pandoc
+#   pdflatex
+#   lualatex
+#   latexmk
+#   context (via `tlmgr` from Void texlive2023-bin pkg)
+#   zathura
+#   sd
+#   wl-clipboard
+#   rg (ripgrep)
+#   pantable
+#   sile
+#   typst
+#   dtach
+# Version: 17
+# Init: 28 Jan 2022
+# Updated: 15 Aug 2023
+
+# Description:
+# Generate PDF via compiler (latex, sile, etc.) from source file (Markdown,
+# TeX, etc.) and open in PDF viewer (zathura). If PDF is already open in
+# zathura, PDF will be regenerated but a new instance of zathura will not be
+# started.
+
+# Variables
+cache_dir_path="$HOME/.cache/daniel_rode_code/preview-cache.link"
+
+# Functions
+get_path_stem() {
+	# /path/to/file.ext --> /path/to/file
+	echo "${1%.*}"
+}
+
+get_path_base_stem() {
+	# /path/to/file.ext --> file
+	base_path="$(get_path_base "$1")"
+	echo "${base_path%.*}"
+}
+
+get_path_base() {
+	# /path/to/file.ext --> file.ext
+	echo "${1##*/}"
+}
+
+get_path_abs_parent() {
+	abs_path="$(realpath "$1")"
+	echo "${abs_path%/*}"
+}
+
+process_latex_math_snip() {
+	tmp_tex_path="./$source_base_stem_path".tex
+	tmp_md_path="./$source_base_stem_path".md
+
+	echo '\\documentclass{article}' >"$tmp_tex_path"
+	echo '\\usepackage{amsmath}' >>"$tmp_tex_path"
+	echo '\\begin{document}' >>"$tmp_tex_path"
+	cat "$1" |
+		sd --flags=e '\n+$' '' |
+		sd '\\f\{' '\\frac{' |
+		sd '\t' '    ' |
+		sd '^    ' '    &= ' |
+		sd '^' '    ' |
+		sd '$' ' \\\\' |
+		sd '(^[^=]+) = ' '$1 &= ' |
+		sd ' > ' ' &> ' |
+		sd ' < ' ' &< ' |
+		sd '(^| )([^/ ]+)/([^/ \n]+)($| )' ' \\frac{$2}{$3} ' |
+		sd '\*' ' \\ast ' |
+		sd --flags=e '^' '\\begin{math}\n\\begin{aligned}[t]\n' |
+		sd --flags=e '$' '\n\\end{aligned}\n\\end{math}' \
+			>>"$tmp_tex_path"
+	echo >>"$tmp_tex_path"
+	echo '\\end{document}' >>"$tmp_tex_path"
+
+	# Using `pdflatex` because `process_latex_doc` function currently uses
+	# lualatex, which is slower.
+	pdflatex "$tmp_tex_path"
+
+	echo "<!--" >>"$tmp_md_path"
+	cat "$1" >>"$tmp_md_path"
+	echo "-->" >>"$tmp_md_path"
+	echo >>"$tmp_md_path"
+	tail -n +4 "$tmp_tex_path" | head -n -1 | cat "$tmp_md_path" - | wl-copy
+	echo "Copied LaTeX/md content to clipboard"
+
+	mv "./$source_base_stem_path".pdf "$out_pdf_path"
+}
+
+process_markdown_doc() {
+	pandoc --standalone \
+		--filter=pantable \
+		--to latex \
+		--output "$source_base_stem_path.tex" \
+		"./$1"
+	process_latex_doc "$source_base_stem_path.tex"
+}
+
+process_latex_doc() {
+	latexmk -lualatex "./$1"
+	ln -sf "$build_dir_path/$source_base_stem_path".pdf "$out_pdf_path"
+}
+
+process_context_doc() {
+	# Use pretty quote marks
+	sed -i -e 's/"\</“/g' -e 's/\>"/”/g' "./$1"
+
+	mtxrun --autogenerate --script context "./$1"
+	ln -sf "$build_dir_path/$source_base_stem_path".pdf "$out_pdf_path"
+}
+
+process_sile_doc() {
+	sile --output="$out_pdf_path" "./$1"
+}
+
+process_typst_doc() {
+	typst compile "./$1" "$out_pdf_path"
+}
+
+# Parse input
+if [ ! -f "$1" ]; then
+	echo "error: Invalid input path"
+	exit 1
+fi
+source_base_path="$(get_path_base "$1")"
+source_base_stem_path="$(get_path_base_stem "$1")"
+
+# Setup cache directory
+mkdir -p "$HOME/.cache/daniel_rode_code"
+[ -e "$cache_dir_path" ] || ln -sf "$(mktemp -d)" "$cache_dir_path"
+doc_id="$(realpath "$1" | sha256sum | cut -d ' ' -f 1)"
+out_pdf_path="$cache_dir_path/$doc_id.pdf"
+
+# Setup build directory (under cache) and make it the working directory
+# (This directory is so that the parent directory of the given document does
+# not get cluttered with build files from tools like latexmk.)
+build_dir_path="$cache_dir_path/$doc_id.build_dir"
+mkdir -p "$build_dir_path"
+ln -sf "$(get_path_abs_parent "$1")"/* "$build_dir_path/"
+cd "$build_dir_path"
+
+# Main
+echo "Rendering..."
+if ! case "$1" in *.math) false ;; esac then
+	process_latex_math_snip "$source_base_path"
+elif ! case "$1" in *.md) false ;; esac then
+	process_markdown_doc "$source_base_path"
+elif ! case "$1" in *.Rmd) false ;; esac then
+	process_markdown_doc "$source_base_path"
+elif ! case "$1" in *.typ) false ;; esac then
+	process_typst_doc "$source_base_path"
+elif ! case "$1" in *.tex) false ;; esac then
+	file_type="$(file --dereference --brief \
+		"./$source_base_path" | cut -d, -f1)"
+	if [ "$file_type" = "ConTeXt document" ]; then
+		process_context_doc "$source_base_path"
+	elif [ "$file_type" = "LaTeX 2e document" ]; then
+		process_latex_doc "$source_base_path"
+	else
+		echo "error: Unrecognized TeX dialect: $file_type"
+		exit 1
+	fi
+elif ! case "$1" in *.sil) false ;; esac then
+	process_sile_doc "$source_base_path"
+else
+	echo "error: Unrecognized file extension"
+	exit 1
+fi
+
+error_code=$?
+if [ "$error_code" != 0 ]; then
+	echo "error: Document compilation failed"
+	exit "$error_code"
+fi
+ln -sf "$out_pdf_path" "$cache_dir_path/latest"
+echo "Saved to: $out_pdf_path"
+if pgrep --full --exact "zathura $out_pdf_path" >/dev/null; then
+	echo "Already open in Zathura"
+else
+	echo "Opening in Zathura"
+	dtach_socket_path="$cache_dir_path/$doc_id.dtach_sock"
+	dtach -n "$dtach_socket_path" zathura "$out_pdf_path"
+fi
+
+# TODO
+# - support previewing .lyx files
+# - cleanup tmp/build files

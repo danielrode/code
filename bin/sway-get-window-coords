@@ -1,0 +1,11 @@
+#!/usr/bin/env dash
+# Author: https://www.reddit.com/r/swaywm/comments/bw9m52/how_to_take_a_screenshot_of_currently_active/
+# Dependencies:
+#   sway
+#   jq
+# Created: 11 Mar 2025
+# Updated: -
+
+
+# Display coords and dimensions of active window
+swaymsg -t get_tree | jq -r '.. | (.nodes? // empty)[] | select(.focused) | .rect | "\(.x),\(.y) \(.width)x\(.height)"'

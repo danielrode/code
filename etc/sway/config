@@ -1,0 +1,988 @@
+# Sway Configuration File
+
+# Dependencies:
+#   foot
+#   grimshot
+#     jq
+#     grim
+#     slurp
+#     notify-send
+#     shotman
+#   lxsession (for `lxpolkit`)
+#   Nerd Fonts
+#   waybar
+#   ~/code/bin/sway-scale-output
+#   ~/code/bin/sway-get-window-coords
+#   wl-gammarelay-rs
+#   kanshi
+#   fish
+#   speedcrunch
+#   shotman
+#   ~/code/bin/bl
+#   ~/code/bin/sway-pick-color
+#   ~/code/bin/vl
+#   ~/code/bin/sway-scale-output
+#   possibly others?
+
+
+exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
+  WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+
+
+# Variables
+
+    set $HOSTNAME $(hostname)
+    set $DCV_CODE_PATH ~/code
+
+    # Main mod key
+    # Mod4 = Super
+    # Mod1 = Alt
+    set $mod Mod4
+    set $alt Mod1
+
+    # Preferred terminal
+    set $term foot -e fish
+
+    # Lightweight terminal
+    set $lw_term footclient --override=colors.background=111111
+
+    # Preferred file browser/search/opener
+    set $file_prompt $lw_term --window-size-chars=144x32 \
+        --app-id=sway_prompt_float ~/code/bin/o --cache-mode \
+            ~/union ~/downloads ~/record/screencaptures/current ~/working \
+            ~/code
+
+    # Preferred application launcher
+    set $menu $lw_term --window-size-chars=96x32 --app-id=sway_prompt_float \
+        ~/code/bin/launch
+
+    # Wallpaper
+    set $wallpaper_path "~/.wallpaper"
+    output * background $wallpaper_path fill
+    #output * background #303841 solid_color
+
+    # Pointer speed
+    set $pointer_speed_factor 0.4
+
+    # Bar font size
+    set $bar_font_size 12
+
+    # Open dialog size
+    set $open_dialog_size 1600 800
+
+
+# Include system level configuration
+
+    include /etc/sway/config.d/*
+
+
+# Idle Configuration
+
+    exec ~/code/bin/im secure
+
+    # Set session to lock upon lid closing
+    # (elogind manages this now)
+    # bindswitch lid:on exec ~/code/bin/im lock
+
+    # Exceptions
+    # This section inhibits idle trigger from firing for certain windows.
+    # Use the output of `swaymsg -t get_tree` to find window info (criteria)
+    # to use with the 'for_window' config command below.
+    for_window [class="Minetest"] inhibit_idle focus
+
+
+# Output (monitor/displays)
+
+    # Display available monitors:
+    # ```
+    # swaymsg -t get_outputs
+    # ```
+
+    # Display rotation
+    # Rotate display 180 degrees
+    #output * transform 180
+
+    # External LG monitors at work
+    output "LG Electronics LG Ultra HD 0x0000E7FF" {
+        # Position output on left side
+        pos 0 0
+
+        scale 2
+        # mode 1920x1080
+    }
+    output "LG Electronics LG Ultra HD 0x0000E801" {
+        scale 2
+        # mode 1920x1080
+    }
+
+
+# Input
+
+    # Mouse (touchpad)
+    input type:touchpad {
+        tap enabled
+
+        # Set pointer speed
+        pointer_accel $pointer_speed_factor
+
+        # Set touch-pad scroll direction
+        natural_scroll enabled
+
+        # Disable "click to stop select"
+        drag_lock disable
+    }
+
+    focus_follows_mouse always
+
+    # Keyboard
+    # NOTE: For available xkb_options, see /usr/share/X11/xkb/rules/base.lst
+    # NOTE: I also set some keyboard layouts using udev rules. See
+    #       ~/code/etc/udev for more details.
+    input type:keyboard {
+        # Set layout
+        xkb_layout us
+
+        # Make menu key act as super key
+        xkb_options altwin:menu_win
+
+        # Activate numlock by default
+        xkb_numlock enabled
+    }
+    # Set Colemak layout for Microsoft keyboard
+    input 1118:1957:Microsoft_Microsoft___Nano_Transceiver_v2.1 {
+        xkb_layout us(colemak),us
+        # xkb_variant colemak
+
+        # Make capslock normal for Colemak (not backspace)
+        # Make right alt key behave the same as left alt (disable AltGr)
+        # Make menu key act as super key
+        xkb_options caps:capslock,lv3:ralt_alt,altwin:menu_win
+    }
+    # Set QWERTY layout for Moonlander keyboard (it sends its own Colemak
+    # signals)
+    input 12951:6505:ZSA_Technology_Labs_Moonlander_Mark_I {
+        xkb_layout us
+    }
+    # HP Keyboard
+    input 1008:10826:Lite-On_Technology_Corp_HP_USB_Slim_Keyboard_-_Skylab {
+        xkb_layout us(colemak),us
+        # xkb_variant colemak
+
+        # Make capslock normal for Colemak (not backspace)
+        # Make right alt key behave the same as left alt (disable AltGr)
+        # Make menu key act as super key
+        xkb_options caps:capslock,lv3:ralt_alt,altwin:menu_win
+    }
+    input 16700:8195:Dell_Dell_USB_Keyboard {
+        xkb_layout us(colemak),us
+        # xkb_variant colemak
+
+        # Make capslock normal for Colemak (not backspace)
+        # Make right alt key behave the same as left alt (disable AltGr)
+        # Make menu key act as super key
+        xkb_options caps:capslock
+    }
+
+
+# Key Bindings: Main
+# See "Shortcut handling" [github.com/swaywm/sway/wiki/Shortcut-handling]
+# 'wev -f wl_keyboard' is a good tool for determining key symbols and
+# 'libinput debug-events --show-keycodes' is good for finding the input source
+# of various key events (given that one keyboard can appear as multiple
+# devices to libinput)
+
+    # Kill focused window
+    bindsym $alt+F4 kill
+    bindsym $mod+q kill
+
+    # Start a terminal
+    bindsym $mod+Return exec $term
+
+    # Start application launcher
+    bindsym $mod+m exec $menu
+    bindsym $alt+F2 exec $menu
+
+    # Start file search
+    bindsym $mod+Space exec $file_prompt
+
+    # Start unicode character picker
+    bindsym $mod+u exec $lw_term --window-size-chars=80x20 \
+        --app-id=sway_prompt_float ~/code/bin/uc
+
+    # Start dictation (Nerd Dictation)
+    bindsym $mod+period exec ~/code/bin/nerd-up
+
+    # Start calculator
+    bindsym XF86Calculator exec speedcrunch
+
+    # Start web browser
+    bindsym XF86HomePage exec firefox
+
+    # Start workspace renamer prompt
+    bindsym $mod+F2 exec $lw_term --window-size-chars=30x3 \
+       --app-id=sway_prompt_float ~/code/bin/sway-rename-workspace
+
+    # Toggle window border style
+    bindsym $mod+apostrophe border toggle
+
+    # Dismiss notification
+    bindsym $mod+y exec makoctl dismiss
+
+    # Display container information via notification
+    bindsym $mod+backslash exec ~/code/bin/sway-win-info
+
+    # Color picker
+    bindsym $mod+$alt+p exec ~/code/bin/sway-pick-color
+
+    # Show window coords
+    bindsym $mod+$alt+w exec notify-send \
+        "$(~/code/bin/sway-get-window-coords)"
+
+    # Drag windows by holding down $mod and left mouse button.
+    # Resize them with right mouse button + $mod.
+    # Change normal to inverse to use left mouse button for resizing and right
+    # mouse button for dragging.
+    floating_modifier $mod normal
+
+    # Reload configuration file
+    bindsym $mod+Shift+c reload
+
+    # Exit Sway (log out of your Wayland session)
+    bindsym $mod+Shift+escape exec swaynag \
+        -t warning \
+        -m 'Confirm exit. This will end your Wayland session.' \
+        -b 'Exit' \
+        'swaymsg exit'
+
+
+# Key Bindings: Moving around
+
+    # Move focus
+    bindsym $mod+Left focus left
+    bindsym $mod+Down focus down
+    bindsym $mod+Up focus up
+    bindsym $mod+Right focus right
+
+    # Move focused container
+    bindsym $mod+Shift+Left move left
+    bindsym $mod+Shift+Down move down
+    bindsym $mod+Shift+Up move up
+    bindsym $mod+Shift+Right move right
+
+    # Move and merge focused container
+    bindsym $mod+$alt+Left focus left; splitv; focus right; move left
+    bindsym $mod+$alt+Down focus down; splith; focus up; move down
+    bindsym $mod+$alt+Up focus up; splith; focus down; move up
+    bindsym $mod+$alt+Right focus right; splitv; focus left; move right
+
+
+# Key Bindings: Workspaces
+
+    # Switch to workspace
+    bindsym $mod+1 workspace 1
+    bindsym $mod+2 workspace 2
+    bindsym $mod+3 workspace 3
+    bindsym $mod+4 workspace 4
+    bindsym $mod+5 workspace 5
+    bindsym $mod+6 workspace 6
+    bindsym $mod+7 workspace 7
+    bindsym $mod+8 workspace 8
+    bindsym $mod+9 workspace 9
+    bindsym $mod+0 workspace 10
+    bindsym $mod+KP_1 workspace 1
+    bindsym $mod+KP_2 workspace 2
+    bindsym $mod+KP_3 workspace 3
+    bindsym $mod+KP_4 workspace 4
+    bindsym $mod+KP_5 workspace 5
+    bindsym $mod+KP_6 workspace 6
+    bindsym $mod+KP_7 workspace 7
+    bindsym $mod+KP_8 workspace 8
+    bindsym $mod+KP_9 workspace 9
+    bindsym $mod+KP_0 workspace 10
+    bindsym $mod+Ctrl+Right workspace next
+    bindsym $mod+Ctrl+n workspace next
+    bindsym $mod+Ctrl+Left workspace prev
+    bindsym $mod+Ctrl+e workspace prev
+    bindsym $mod+Tab workspace back_and_forth
+    bindsym --whole-window $mod+button4 workspace prev
+    bindsym --whole-window $mod+button5 workspace next
+
+    # Move focused container to workspace
+    bindsym $mod+Shift+1 move container to workspace 1
+    bindsym $mod+Shift+2 move container to workspace 2
+    bindsym $mod+Shift+3 move container to workspace 3
+    bindsym $mod+Shift+4 move container to workspace 4
+    bindsym $mod+Shift+5 move container to workspace 5
+    bindsym $mod+Shift+6 move container to workspace 6
+    bindsym $mod+Shift+7 move container to workspace 7
+    bindsym $mod+Shift+8 move container to workspace 8
+    bindsym $mod+Shift+9 move container to workspace 9
+    bindsym $mod+Shift+0 move container to workspace 10
+    bindsym $mod+Shift+KP_1 move container to workspace 1
+    bindsym $mod+Shift+KP_2 move container to workspace 2
+    bindsym $mod+Shift+KP_3 move container to workspace 3
+    bindsym $mod+Shift+KP_4 move container to workspace 4
+    bindsym $mod+Shift+KP_5 move container to workspace 5
+    bindsym $mod+Shift+KP_6 move container to workspace 6
+    bindsym $mod+Shift+KP_7 move container to workspace 7
+    bindsym $mod+Shift+KP_8 move container to workspace 8
+    bindsym $mod+Shift+KP_9 move container to workspace 9
+    bindsym $mod+Shift+KP_0 move container to workspace 10
+    # Note: workspaces can have any name you want, not just numbers.
+    # 1-10 is just the default.
+
+    # Rename (move) workspace
+    bindsym $mod+Shift+Ctrl+1 rename workspace to 1
+    bindsym $mod+Shift+Ctrl+2 rename workspace to 2
+    bindsym $mod+Shift+Ctrl+3 rename workspace to 3
+    bindsym $mod+Shift+Ctrl+4 rename workspace to 4
+    bindsym $mod+Shift+Ctrl+5 rename workspace to 5
+    bindsym $mod+Shift+Ctrl+6 rename workspace to 6
+    bindsym $mod+Shift+Ctrl+7 rename workspace to 7
+    bindsym $mod+Shift+Ctrl+8 rename workspace to 8
+    bindsym $mod+Shift+Ctrl+9 rename workspace to 9
+    bindsym $mod+Shift+Ctrl+0 rename workspace to 10
+    bindsym $mod+Shift+Ctrl+KP_1 rename workspace to 1
+    bindsym $mod+Shift+Ctrl+KP_2 rename workspace to 2
+    bindsym $mod+Shift+Ctrl+KP_3 rename workspace to 3
+    bindsym $mod+Shift+Ctrl+KP_4 rename workspace to 4
+    bindsym $mod+Shift+Ctrl+KP_5 rename workspace to 5
+    bindsym $mod+Shift+Ctrl+KP_6 rename workspace to 6
+    bindsym $mod+Shift+Ctrl+KP_7 rename workspace to 7
+    bindsym $mod+Shift+Ctrl+KP_8 rename workspace to 8
+    bindsym $mod+Shift+Ctrl+KP_9 rename workspace to 9
+    bindsym $mod+Shift+Ctrl+KP_0 rename workspace to 10
+
+
+# Key Bindings: Layout stuff
+
+    # Split focused container
+    bindsym $mod+h splith
+    bindsym $mod+v splitv
+
+    # Switch the current container between different layout styles
+    bindsym $mod+s layout stacking
+    bindsym $mod+w layout tabbed
+    bindsym $mod+j layout toggle split
+
+    # Make the current focus fullscreen
+    bindsym $mod+f fullscreen
+
+    # Toggle the current focus between tiling and floating mode
+    bindsym $mod+comma floating toggle
+
+    # Swap focus between the tiling area and the floating area
+    # TODO: this should cycle focus between all windows
+    #       (not just between the floating and tiling plane)
+    bindsym $alt+tab focus mode_toggle
+
+    # Move focus to the parent container
+    bindsym $mod+a focus parent
+
+    # Move focus to most recently focused child container
+    bindsym $mod+Escape focus child
+
+
+# Key Bindings: Scratchpad
+
+    # Sway has a "scratchpad", which is a bag of holding for windows.
+    # You can send windows there and get them back later.
+
+    # Move the currently focused window to the scratchpad
+    bindsym $mod+Shift+minus move scratchpad
+
+    # Show the next scratchpad window or hide the focused scratchpad window.
+    # If there are multiple scratchpad windows, this command cycles through
+    # them.
+    bindsym $mod+minus scratchpad show
+
+
+# Key Bindings: Opacity
+
+    mode "set opacity" {
+        # Change opacity
+        bindsym 0 opacity 0.00
+        bindsym 1 opacity 0.10
+        bindsym 2 opacity 0.20
+        bindsym 3 opacity 0.30
+        bindsym 4 opacity 0.40
+        bindsym 5 opacity 0.50
+        bindsym 6 opacity 0.60
+        bindsym 7 opacity 0.70
+        bindsym 8 opacity 0.80
+        bindsym 9 opacity 0.90
+
+        bindsym KP_0 opacity 0.00
+        bindsym KP_1 opacity 0.10
+        bindsym KP_2 opacity 0.20
+        bindsym KP_3 opacity 0.30
+        bindsym KP_4 opacity 0.40
+        bindsym KP_5 opacity 0.50
+        bindsym KP_6 opacity 0.60
+        bindsym KP_7 opacity 0.70
+        bindsym KP_8 opacity 0.80
+        bindsym KP_9 opacity 0.90
+
+        bindsym Equal opacity 1.00
+
+        # Change opacity and exit mode
+        bindsym Shift+0 opacity 0.00; mode "default"
+        bindsym Shift+1 opacity 0.10; mode "default"
+        bindsym Shift+2 opacity 0.20; mode "default"
+        bindsym Shift+3 opacity 0.30; mode "default"
+        bindsym Shift+4 opacity 0.40; mode "default"
+        bindsym Shift+5 opacity 0.50; mode "default"
+        bindsym Shift+6 opacity 0.60; mode "default"
+        bindsym Shift+7 opacity 0.70; mode "default"
+        bindsym Shift+8 opacity 0.80; mode "default"
+        bindsym Shift+9 opacity 0.90; mode "default"
+
+        bindsym Shift+KP_0 opacity 0.00; mode "default"
+        bindsym Shift+KP_1 opacity 0.10; mode "default"
+        bindsym Shift+KP_2 opacity 0.20; mode "default"
+        bindsym Shift+KP_3 opacity 0.30; mode "default"
+        bindsym Shift+KP_4 opacity 0.40; mode "default"
+        bindsym Shift+KP_5 opacity 0.50; mode "default"
+        bindsym Shift+KP_6 opacity 0.60; mode "default"
+        bindsym Shift+KP_7 opacity 0.70; mode "default"
+        bindsym Shift+KP_8 opacity 0.80; mode "default"
+        bindsym Shift+KP_9 opacity 0.90; mode "default"
+
+        bindsym Shift+Equal opacity 1.00; mode "default"
+
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+o mode "set opacity"
+
+
+# Key Bindings: Resize containers
+
+    mode "resize" {
+        # Left will shrink the containers width
+        # Right will grow the containers width
+        # Up will shrink the containers height
+        bindsym Left resize shrink width 10 px
+        bindsym Down resize grow height 10 px
+        bindsym Up resize shrink height 10 px
+        bindsym Right resize grow width 10 px
+
+        # Resize containers in small increments
+        bindsym Shift+Left resize shrink width 1 px
+        bindsym Shift+Down resize grow height 1 px
+        bindsym Shift+Up resize shrink height 1 px
+        bindsym Shift+Right resize grow width 1 px
+
+        # Resize containers in large increments
+        bindsym Ctrl+Left resize shrink width 100 px
+        bindsym Ctrl+Down resize grow height 100 px
+        bindsym Ctrl+Up resize shrink height 100 px
+        bindsym Ctrl+Right resize grow width 100 px
+
+        # Resize container by 10ths of parent container size
+        bindsym 1 resize set width 10 ppt
+        bindsym 2 resize set width 20 ppt
+        bindsym 3 resize set width 30 ppt
+        bindsym 4 resize set width 40 ppt
+        bindsym 5 resize set width 50 ppt
+        bindsym 6 resize set width 60 ppt
+        bindsym 7 resize set width 70 ppt
+        bindsym 8 resize set width 80 ppt
+        bindsym 9 resize set width 90 ppt
+        bindsym Shift+1 resize set height 10 ppt
+        bindsym Shift+2 resize set height 20 ppt
+        bindsym Shift+3 resize set height 30 ppt
+        bindsym Shift+4 resize set height 40 ppt
+        bindsym Shift+5 resize set height 50 ppt
+        bindsym Shift+6 resize set height 60 ppt
+        bindsym Shift+7 resize set height 70 ppt
+        bindsym Shift+8 resize set height 80 ppt
+        bindsym Shift+9 resize set height 90 ppt
+        bindsym Ctrl+1 resize set 10 ppt 10 ppt
+        bindsym Ctrl+2 resize set 20 ppt 20 ppt
+        bindsym Ctrl+3 resize set 30 ppt 30 ppt
+        bindsym Ctrl+4 resize set 40 ppt 40 ppt
+        bindsym Ctrl+5 resize set 50 ppt 50 ppt
+        bindsym Ctrl+6 resize set 60 ppt 60 ppt
+        bindsym Ctrl+7 resize set 70 ppt 70 ppt
+        bindsym Ctrl+8 resize set 80 ppt 80 ppt
+        bindsym Ctrl+9 resize set 90 ppt 90 ppt
+
+        bindsym KP_1 resize set width 10 ppt
+        bindsym KP_2 resize set width 20 ppt
+        bindsym KP_3 resize set width 30 ppt
+        bindsym KP_4 resize set width 40 ppt
+        bindsym KP_5 resize set width 50 ppt
+        bindsym KP_6 resize set width 60 ppt
+        bindsym KP_7 resize set width 70 ppt
+        bindsym KP_8 resize set width 80 ppt
+        bindsym KP_9 resize set width 90 ppt
+        bindsym Shift+KP_1 resize set height 10 ppt
+        bindsym Shift+KP_2 resize set height 20 ppt
+        bindsym Shift+KP_3 resize set height 30 ppt
+        bindsym Shift+KP_4 resize set height 40 ppt
+        bindsym Shift+KP_5 resize set height 50 ppt
+        bindsym Shift+KP_6 resize set height 60 ppt
+        bindsym Shift+KP_7 resize set height 70 ppt
+        bindsym Shift+KP_8 resize set height 80 ppt
+        bindsym Shift+KP_9 resize set height 90 ppt
+        bindsym Ctrl+KP_1 resize set 10 ppt 10 ppt
+        bindsym Ctrl+KP_2 resize set 20 ppt 20 ppt
+        bindsym Ctrl+KP_3 resize set 30 ppt 30 ppt
+        bindsym Ctrl+KP_4 resize set 40 ppt 40 ppt
+        bindsym Ctrl+KP_5 resize set 50 ppt 50 ppt
+        bindsym Ctrl+KP_6 resize set 60 ppt 60 ppt
+        bindsym Ctrl+KP_7 resize set 70 ppt 70 ppt
+        bindsym Ctrl+KP_8 resize set 80 ppt 80 ppt
+        bindsym Ctrl+KP_9 resize set 90 ppt 90 ppt
+
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+r mode "resize"
+
+
+# Key Bindings: Move containers
+
+    mode "move" {
+        # Move position of floating containers
+        # (not designed to move containers that are non-floating)
+        bindsym Left move left 100
+        bindsym Down move down 100
+        bindsym Up move up 100
+        bindsym Right move right 100
+
+        # Move in smaller increments
+        bindsym $alt+Left move left 1
+        bindsym $alt+Down move down 1
+        bindsym $alt+Up move up 1
+        bindsym $alt+Right move right 1
+
+        # Move in smaller increments
+        bindsym Shift+Left move left 10
+        bindsym Shift+Down move down 10
+        bindsym Shift+Up move up 10
+        bindsym Shift+Right move right 10
+
+        # Move in larger increments
+        bindsym Ctrl+Left move left 250
+        bindsym Ctrl+Down move down 250
+        bindsym Ctrl+Up move up 250
+        bindsym Ctrl+Right move right 250
+
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+x mode "move"
+
+
+# Key Bindings: Change keyboard layout
+
+    # bindsym $mod+$alt+1 {
+    #     input type:keyboard xkb_variant ""
+    # }
+    # bindsym $mod+$alt+0 {
+    #     input type:keyboard xkb_variant colemak
+    # }
+
+
+# Key Bindings: Screen
+
+    # Lock
+    bindsym $mod+l exec ~/code/bin/im lock
+
+
+# Key Bindings: Screen Brightness
+
+    bindsym XF86MonBrightnessDown       exec --no-startup-id \
+        ~/code/bin/bl --subtract 5
+    bindsym XF86MonBrightnessUp         exec --no-startup-id \
+        ~/code/bin/bl --add 5
+    bindsym Shift+XF86MonBrightnessDown exec --no-startup-id \
+        ~/code/bin/bl --subtract 1
+    bindsym Shift+XF86MonBrightnessUp   exec --no-startup-id \
+        ~/code/bin/bl --add 1
+    bindsym Ctrl+XF86MonBrightnessDown  exec --no-startup-id \
+        ~/code/bin/bl --subtract 20
+    bindsym Ctrl+XF86MonBrightnessUp    exec --no-startup-id \
+        ~/code/bin/bl --add 20
+
+
+# Key Bindings: Volume
+
+    # Raise/Lower volume
+    set $vl_cmd_head ~/code/bin/vl
+    bindsym XF86AudioLowerVolume exec $vl_cmd_head -5
+    bindsym XF86AudioRaiseVolume exec $vl_cmd_head +5
+    bindsym Shift+XF86AudioLowerVolume exec $vl_cmd_head -1
+    bindsym Shift+XF86AudioRaiseVolume exec $vl_cmd_head +1
+    bindsym Ctrl+XF86AudioLowerVolume exec $vl_cmd_head -20
+    bindsym Ctrl+XF86AudioRaiseVolume exec $vl_cmd_head +20
+
+    # Mute
+    bindsym XF86AudioMute exec $vl_cmd_head 0
+
+
+# Key Bindings: Capture screen
+
+    # Warning: This will overwrite a screenshot (without confirmation) if it
+    # has the same name. One instance where this could occur is if the print
+    # screen key is pressed twice in the same second.
+
+    # Screenshot region and copy to clipboard
+    bindsym $mod+Print exec grimshot save area - | wl-copy --type image/png
+    
+    # Print Screen / Screenshot mode
+    mode "screenshot: w=window, m=monitor, r=select" {
+        # Capture and save currently active output (monitor)
+        bindsym m exec shotman --capture output; mode "default"
+
+        # Capture and save specific region
+        bindsym r exec shotman --capture region; mode "default"
+
+        # Capture and save currently focused window
+        bindsym w exec shotman --capture window; mode "default"
+    
+        # Return to default mode
+        bindsym Escape mode "default"
+    }
+    bindsym Print mode "screenshot: w=window, m=monitor, r=select"
+
+
+# Key Bindings: Image macros/utilities
+
+    # View image stored in clipboard (open with imv)
+    bindsym $mod+p exec wl-paste | imv -
+
+
+# Key Bindings: Control cursor with keyboard
+
+    mode "cursor" {
+        # Move cursor position
+        bindsym Left seat - cursor move -1 0
+        bindsym Down seat - cursor move 0 1
+        bindsym Up seat - cursor move 0 -1
+        bindsym Right seat - cursor move 1 0
+
+        # Move in smaller increments
+        bindsym Shift+Left seat - cursor move -10 0
+        bindsym Shift+Down seat - cursor move 0 10
+        bindsym Shift+Up seat - cursor move 0 -10
+        bindsym Shift+Right seat - cursor move 10 0
+
+        # Move in larger increments
+        bindsym Ctrl+Left seat - cursor move -250 0
+        bindsym Ctrl+Down seat - cursor move 0 250
+        bindsym Ctrl+Up seat - cursor move 0 -250
+        bindsym Ctrl+Right seat - cursor move 250 0
+
+        # Click
+        bindsym Space seat - cursor press button1; \
+            seat - cursor release button1
+        bindsym w seat - cursor press button1; \
+            seat - cursor release button1
+        bindsym r seat - cursor press button1
+        bindsym s seat - cursor release button1
+
+        bindsym t seat - cursor press button2; \
+            seat - cursor release button2
+        bindsym f seat - cursor press button3; \
+            seat - cursor release button3
+        bindsym x seat - cursor press button4; \
+            seat - cursor release button4
+        bindsym c seat - cursor press button5; \
+            seat - cursor release button5
+        bindsym z seat - cursor press button6; \
+            seat - cursor release button6
+        bindsym v seat - cursor press button7; \
+            seat - cursor release button7
+        bindsym a seat - cursor press button8; \
+            seat - cursor release button8
+        bindsym q seat - cursor press button9; \
+            seat - cursor release button9
+
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+c mode "cursor"
+
+
+# Key Bindings: Change screen brightness
+
+    mode "brightness" {
+        # Note that these commands change the brightness on the software side
+        # (the backlight is not changed)
+
+        set $gamma_cmd busctl --user set-property rs.wl-gammarelay / \
+          rs.wl.gammarelay Brightness d
+        bindsym 1 exec $gamma_cmd 0.1
+        bindsym 2 exec $gamma_cmd 0.2
+        bindsym 3 exec $gamma_cmd 0.3
+        bindsym 4 exec $gamma_cmd 0.4
+        bindsym 5 exec $gamma_cmd 0.5
+        bindsym 6 exec $gamma_cmd 0.6
+        bindsym 7 exec $gamma_cmd 0.7
+        bindsym 8 exec $gamma_cmd 0.8
+        bindsym 9 exec $gamma_cmd 0.9
+        bindsym 0 exec $gamma_cmd 1.0
+        bindsym KP_1 exec $gamma_cmd 0.1
+        bindsym KP_2 exec $gamma_cmd 0.2
+        bindsym KP_3 exec $gamma_cmd 0.3
+        bindsym KP_4 exec $gamma_cmd 0.4
+        bindsym KP_5 exec $gamma_cmd 0.5
+        bindsym KP_6 exec $gamma_cmd 0.6
+        bindsym KP_7 exec $gamma_cmd 0.7
+        bindsym KP_8 exec $gamma_cmd 0.8
+        bindsym KP_9 exec $gamma_cmd 0.9
+        bindsym KP_0 exec $gamma_cmd 1.0
+        
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+b mode "brightness"
+
+
+# Key Bindings: Monitor stuff
+# - Change current monitor scale (zoom/pseudo resolution)
+# - Move workspaces across outputs/displays/monitors
+
+    mode "monitor" {
+        # Move the current workspace to the next output
+        bindsym Tab move workspace to output right
+
+        # Set scale value of currently focused output
+        bindsym 1 exec ~/code/bin/sway-scale-output 1.0
+        bindsym 2 exec ~/code/bin/sway-scale-output 2.0
+        bindsym 3 exec ~/code/bin/sway-scale-output 3.0
+        bindsym 4 exec ~/code/bin/sway-scale-output 4.0
+
+        bindsym 5 exec ~/code/bin/sway-scale-output 1.5
+        bindsym 6 exec ~/code/bin/sway-scale-output 1.6
+        bindsym 7 exec ~/code/bin/sway-scale-output 1.7
+        bindsym 8 exec ~/code/bin/sway-scale-output 1.8
+        bindsym 9 exec ~/code/bin/sway-scale-output 1.9
+
+        bindsym KP_1 exec ~/code/bin/sway-scale-output 1.0
+        bindsym KP_2 exec ~/code/bin/sway-scale-output 2.0
+        bindsym KP_3 exec ~/code/bin/sway-scale-output 3.0
+        bindsym KP_4 exec ~/code/bin/sway-scale-output 4.0
+
+        bindsym KP_5 exec ~/code/bin/sway-scale-output 1.5
+        bindsym KP_6 exec ~/code/bin/sway-scale-output 1.6
+        bindsym KP_7 exec ~/code/bin/sway-scale-output 1.7
+        bindsym KP_8 exec ~/code/bin/sway-scale-output 1.8
+        bindsym KP_9 exec ~/code/bin/sway-scale-output 1.9
+
+        # Return to default mode
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+    }
+    bindsym $mod+z mode "monitor"
+    bindsym $mod+d mode "monitor"
+
+
+# Key Bindings: Passthrough
+
+    mode "passthrough" {
+        # Return to default mode
+        bindsym $mod+Shift+p mode "default"
+    }
+    bindsym $mod+Shift+p mode "passthrough"
+
+
+# Gesture Bindings: Workspaces
+
+    bindgesture swipe:3:left workspace next
+    bindgesture swipe:3:right workspace prev
+
+
+# Gesture Bindings: Windows
+
+    bindgesture swipe:3:up fullscreen toggle
+
+
+# Status Bar
+
+    # Read `man 5 sway-bar` for more information about this section.
+    bar {
+        font pango:DejaVu Sans Condensed, Font Awesome 5 Free $bar_font_size
+        position top
+
+        swaybar_command waybar
+
+        # When the status_command prints a new line to stdout, swaybar
+        # updates.
+        # status_command i3status-rs ~/code/etc/i3status-rs.toml
+
+        colors {
+            separator #666666
+            background #242424
+            statusline #dddddd
+
+            inactive_workspace #32323200 #32323200 #5c5c5c
+            focused_workspace #0088CC #0088CC #ffffff
+            active_workspace #333333 #333333 #ffffff
+            urgent_workspace #2f343a #900000 #ffffff
+        }
+    }
+
+
+# Window Decorations
+
+    font pango:NotoSans Nerd Font 10
+    # hide_edge_borders vertical
+    smart_borders on
+    smart_gaps on
+    default_border pixel 2
+    gaps inner 5
+    titlebar_padding 5 2
+
+
+# New Windows
+# How to treat newly created windows based on certain criteria.
+
+    # Google Earth "new polygon" window
+    for_window [class="Google Earth Pro" title="Google Earth - New Polygon"] \
+        resize set 500 500; move position 0 0
+
+    # My Sway prompts (file search, program launcher, unicode picker, etc...)
+    for_window [app_id="^sway_prompt_float$"] floating enable, border pixel, \
+        sticky enable
+
+    # My Python (Tkinter) Sway prompts (dialogs spawned by my scripts)
+    for_window [title="^sway_prompt_float$"] floating enable, border pixel
+
+    # "Open File" Dialog
+    for_window [title="Open File"] resize set $open_dialog_size
+
+    # Sublime Text Open Folder Dialog
+    for_window [app_id="sublime_text" title="Select Folder"] floating \
+        enable; resize set $open_dialog_size
+
+    # Audacity Open File Dialog
+    for_window [app_id="[Aa]udacity" title="Select one or more files"] \
+        floating enable; resize set $open_dialog_size
+
+    # MtPaint "Load Image File" Dialog
+    for_window [class="Mtpaint" title="Load Image File"] floating enable
+
+    # Qutebrowser
+    for_window [app_id="org.qutebrowser.qutebrowser"] border none
+    for_window [class="qutebrowser"] border none
+
+    # PQIV
+    for_window [app_id="pqiv"] floating enable; border none
+    for_window [title="floating_redx"] floating enable; border none
+
+    # IMV
+    for_window [app_id="imv"] border none
+
+    # MPV
+    for_window [app_id="mpv"] border none; inhibit_idle fullscreen
+
+    # LxPolKit
+    for_window [class="Lxpolkit"] floating enable; fullscreen
+    for_window [app_id="lxpolkit"] floating enable; fullscreen
+
+    # XfcePolKit
+    for_window [app_id="pinentry-qt"] floating enable; fullscreen
+
+    # Xournal++
+    for_window [app_id="xournalpp" title="Pick a Font"] floating enable
+
+    # LyX Outliner
+    for_window [app_id="lyx" title="Outline"] floating disable; \
+        border pixel; resize set width 20; move left
+
+    # Steam
+    assign [class="Steam"] 3
+
+    # Microsoft Edge
+    assign [app_id="microsoft-edge"] 2
+
+    # Firefox
+    assign [app_id="Firefox"] 2
+    for_window [app_id="Firefox"] inhibit_idle fullscreen
+
+    # Kill Firefox webcam in-use dialog
+    for_window [app_id="Firefox" title="Firefox — Sharing Indicator"] kill
+
+    # Float getcred dialog box
+    for_window [title="getcred - Enter KDBX password"] floating enable; \
+        fullscreen
+
+    # QGIS
+    for_window [app_id="org.qgis.qgis" title="QGIS - *"] move scratchpad
+    for_window [app_id="org.qgis.qgis" title=".* — QGIS"] move scratchpad
+    for_window [app_id="org.qgis.qgis" title="Edit Vector Join"] floating enable
+    for_window [app_id="org.qgis.qgis" title="Add Vector Join"] floating enable
+
+    # VPN Authenticator
+    for_window [app_id="gp-saml-gui" title="SAML Login"] fullscreen
+
+    # VPN concole
+    for_window [app_id="foot" title="CSU VPN"] \
+        floating enable; \
+        resize set 70 ppt 70 ppt; \
+        move position center; \
+        move scratchpad; \
+
+    # LibreOffice
+    for_window [app_id="soffice" title="^Text Import - .*"] floating enable
+    for_window [title="^LibreOffice$" window_type="splash"] kill
+
+
+# Window shortcut overrides
+
+    for_window [app_id="org.remmina.Remmina"] shortcuts_inhibitor disable
+
+
+# Layout defaults
+
+    # workspace_layout tabbed
+    workspace_layout default
+
+
+# Include system Sway configuration
+
+    include @sysconfdir@/sway/config.d/*
+
+
+# Autostart
+
+    # Startup tasks that require a WM in order to run. If task should be run
+    # at login but it does not require a WM/DE then run it from my
+    # ~/code/bin/launch-swaywm file.
+
+    # Polkit (Policy Kit) authentication agent
+    exec /usr/bin/lxpolkit
+
+    # Mako notification daemon
+    exec mako --config ~/code/etc/mako.conf
+
+    # Screen tint daemon
+    exec wl-gammarelay-rs
+
+    # Foot terminal daemon
+    exec foot --server --config ~/code/etc/foot.ini
+
+    # Pomodoro timer
+    exec ~/code/bin/pomodoro --force
+
+    # Workspace/output manager
+    exec kanshi
+
+    # Pipewire
+    exec --no-startup-id /usr/bin/pipewire
+    # `wireplumber` must be started after pipewire. This is configured under
+    # /etc/. For instructions on how to implement this, see 
+    # https://docs.voidlinux.org/config/media/pipewire.html#session-management
+    exec --no-startup-id /usr/bin/pipewire-pulse
+
+    # Launch startup programs (like browser, terminals, notes, etc...)
+    exec ~/code/bin/sway-startup-windows

@@ -1,0 +1,77 @@
+~/code/bin/foot-helix --new-window  # Text Editor (New Window)
+~/code/bin/foot-helix  # Text Editor
+firefox  # Web Browser
+~/code/bin/ms-edge  # Microsoft Edge Web Browser
+foot ~/code/bin/nn  # New Note
+thunderbird  # Email
+chromium  # Web Browser
+xournalpp  # PDF Editor
+gimp  # Image Editor
+inkscape  # Vector Graphic Editor
+meld  # Text Diff
+audacity  # Audio Editor
+mtpaint  # Lightweight Image Editor
+pavucontrol  # Audio Mixer, Sound, Volume
+foot  # Terminal
+~/code/bin/latest-screenshot  # View Latest Screenshots
+gnumeric  # Spreadsheet
+libreoffice --nologo --calc  # Spreadsheet
+virt-manager  # Virtual Machine Manager
+remmina  # Remote Desktop Viewer (VNC)
+simple-scan  # Document Scanner
+qrscan-screen  # Copy contents of on-screen bar codes to clipboard
+~/code/bin/sway-pick-color  # Color Picker
+wl-paste | ~/code/bin/strip-newline | wl-copy  # Clipboard Strip Newline
+bluetoothctl power off  # Turn off Bluetooth
+pactl set-sink-mute '@DEFAULT_SINK@' toggle  # Toggle mute/unmute
+qrgen "$(wl-paste | ~/code/bin/strip-newline)"  # Display clipboard contents as qrcode
+kmonad ~/code/etc/kmonad/colemak2qwerty.kbd  # Keyboard Layout: Qwerty (qwfpgj)
+foot ~/code/bin/sway-rename-workspace  # Sway: Rename Workspace
+launch-obs  # Screen Recorder/Streamer
+font-manager
+flatpak run com.valvesoftware.Steam  # Games
+kdenlive  # Video Editor
+keepassxc  # Passwords/Credentials
+wl-paste | ~/code/bin/mutate unwrap | wl-copy --trim-newline  # Flatten Clibpoard Text
+wl-paste | ~/code/bin/mutate title | wl-copy --trim-newline  # Title-Case Clipboard Text
+zim  # Wiki
+~/code/bin/nerd-up  # Dictation
+flatpak run net.ankiweb.Anki  # Anki (Flashcards)
+geogebra  # Calculator
+flatpak run us.zoom.Zoom  # Zoom (Video Chat)
+googleearth  # Maps, GIS
+audacious  # Music Player
+pomodoro  # Eye Timer
+~/code/bin/qgis  # QGIS
+system-config-printer  # Manage Printers
+~/job/csu/bin/init-workspace.sh  # Job workspace
+prismlauncher  # Minecraft (Game)
+~/code/bin/redx  # Overlay Red Crosshair
+wl-copy 'https://www.amazon.com/dp/'`wl-paste | sed 's,.*/dp/,,' | sed 's,[/\?].*,,'`  # Shorten Amazon clipboard link
+nm-connection-editor  # Network Manager (wifi, eth)
+~/code/bin/nvn  # Neovim via Neovide (Text Editor)
+nwg-look  # Desktop Environment GTK Theme Settings
+wlsunset -s 00:00 -t 5000 -g 1.5  # Nice screen (gentle contrast and temp)
+~/code/bin/dim  # Dim screen (reduce brightness)
+keymapp  # Moonlander Keyboard
+sudo vsv up waydroid-container && waydroid app launch eu.faircode.email  # FairEmail (Android app)
+foot bluetuith  # Bluetooth Manager
+wl-paste | tr '\\' '/' | wl-copy  # Fix path slashes
+flatpak run io.github.openhv.OpenHV  # OpenHV (game)
+openra-ra  # OpenRA (game)
+flatpak run net.minetest.Minetest  # Luanti (Minecraft clone)
+hedgewars  # Game
+~/code/bin/sway-fix-displays
+calibre  # E-Books
+wl-paste | nl -w 1 -s ' ' | wl-copy  # Enumerate/count/number clipboard lines
+swaymsg input type:touchpad dwt disable  # Allow touchpad while keyboarding/typing
+flatpak run com.usebottles.bottles  # Run Windows programs with configed and patched WINE
+flatpak run io.gpt4all.gpt4all  # LLM Chat
+speedcrunch  # Calculator
+darktable  # Virtual lighttable and darkroom for photos
+chromium  # Google Chrome browser
+doublecmd  # File Manager
+cheese  # Webcam
+zeal  # Offline Documentation Viewer
+foot htop  # System Monitor
+~/code/bin/sway-startup-windows  # Workspace

@@ -1,0 +1,198 @@
+
+# Dependencies:
+#   fish
+#   can (my script)
+#   o (my program)
+#   7zip
+#   ov
+#   wl-clipboard
+
+
+# Documentation:
+# - https://pkg.go.dev/github.com/gokcehan/lf
+# - https://github.com/gokcehan/lf/wiki/Tips
+#
+# Prefixes:
+#   :  read (default)  builtin/custom command
+#   $  shell           shell command
+#   %  shell-pipe      shell command running with the ui
+#   !  shell-wait      shell command waiting for key press
+#   &  shell-async     shell command running asynchronously
+# 
+# Variables:
+#   f   Current file selection as a full path.
+#   fs  Selected file(s) separated with value of 'filesep' as full path(s).
+#   fx  $fs if any selected files, otherwise $f.
+
+
+# Warn about nested instances
+&{{
+    if [ ! $LF_LEVEL -eq 1 ]
+	then
+	    lf -remote "send $id echoerr \"Warning: This is a nested lf instance\""
+	fi
+}}
+
+
+# Settings
+set shell dash
+# I am using dash to avoid "unbound variable" bash error. If you would rather
+# use bash, make sure /etc/bash.bashrc has
+# `"${PROBLEM_VAR:-}"` instead of `"$PROBLEM_VAR"`
+
+# Safer shell commands.
+# '-e': exit on error
+# '-u': give error for unset variables
+# '-f': disable pathname expansion (can be useful when $f, $fs, and $fx 
+#   variables contain names with '*' or '?' characters; however, this option 
+#   is used selectively within individual commands as it can be limiting)
+set shellopts '-euf'
+
+# Set internal field separator (IFS) to "\n" for shell commands.
+# This is useful to automatically split file names in $fs and $fx properly
+# since default file separator used in these variables (i.e. 'filesep' option)
+# is newline. You need to consider the values of these options and create your
+# commands accordingly.
+set ifs "\n"
+
+set mouse true
+# set dirfirst false
+set ratios '1:3:3'
+set wrapscroll true
+# set period 5
+set sixel true
+
+
+# Commands
+cmd trash &can $fx
+cmd new_file ${{
+    echo -n '> '
+	read new_path
+	[ ! -e "$new_path" ] && touch "$new_path" && $EDITOR "$new_path"
+}}
+cmd new_txt_exe ${{
+    echo -n '> '
+	read np  # New path
+	[ ! -e "$np" ] && touch "$np" && chmod +x "$np" && $EDITOR "$np"
+}}
+cmd new_dir %{{
+	read new_path
+	mkdir -p "$new_path"
+}}
+cmd open &o $fx  # '&' runs 'o' in lf background
+cmd bulk_rename ${{
+    old="$(mktemp)"
+    new="$(mktemp)"
+    if [ -n "$fs" ]; then
+        fs="$(basename -a $fs)"
+    else
+        fs="$(ls)"
+    fi
+    printf '%s\n' "$fs" >"$old"
+    printf '%s\n' "$fs" >"$new"
+    $EDITOR "$new"
+    [ "$(wc -l < "$new")" -ne "$(wc -l < "$old")" ] && exit
+    paste "$old" "$new" | while IFS= read -r names; do
+        src="$(printf '%s' "$names" | cut -f1)"
+        dst="$(printf '%s' "$names" | cut -f2)"
+        if [ "$src" = "$dst" ] || [ -e "$dst" ]; then
+            continue
+        fi
+        mv -- "$src" "$dst"
+    done
+    rm -- "$old" "$new"
+    lf -remote "send $id unselect"
+}}
+cmd yank_path $printf '%s' "$fx" | wl-copy
+cmd paste_cow ${{
+    set -- $(cat ~/.local/share/lf/files)
+    mode="$1"
+    shift
+
+    if [ "$#" -eq 0 ]; then
+        lf -remote "send $id echoerr paste: no file selected"
+        exit
+    fi
+
+    case "$mode" in
+        copy)
+            for file in "$@"; do
+                name="$(basename -- "$file")"
+                while [ -e "$name" ]; do
+                    name="$name"_dup
+                done
+
+				cp --verbose --archive --no-clobber --recursive --reflink=auto \
+					"$file" "./$name"
+            done
+        	;;
+        move)
+			lf -remote "send $id paste"
+			;;
+    esac
+}}
+
+
+# Report working directory path changes to terminal
+cmd on-cd &printf '\033]7;file://%s\033\\' "$PWD" > /dev/tty
+cmd on-quit &printf '\033]7;\033\\' > /dev/tty
+# on-cd  # trigger on-cd upon startup
+
+
+# Mappings
+map <c-d> quit
+map e $"$EDITOR" $fx
+map i $ov $f
+map X trash
+map bf new_file
+map bt new_file
+map bd new_dir
+map be new_txt_exe
+map <enter> open
+map w $fish
+map W &{{
+	DCV_SHELL_PROMPT_MSG= LF_LEVEL= foot --working-directory "$PWD"
+}}
+map ~ cd ~
+map ` cd /
+map . set hidden!
+map c :clear; unselect
+# map C clear  # u is unselect/deselect
+map <f-5> reload
+map ss :{{ set sortby natural; set info; }}
+map su :{{ set sortby size; set info size; }}
+map R bulk_rename
+map Y yank_path
+# map p paste_cow
+
+map z1 :{{
+	set preview false
+	set ratios 1
+}}
+map z3 :{{
+	set ratios '1:3:3'
+	set preview true
+}}
+map zz :{{
+	set info
+	set ratios '1:3:3'
+	set preview true
+}}
+
+map al !{{
+	7z l $fx
+}}
+map ap !{{
+	echo "Enter new archive name: "
+	read filename
+	7z a "$filename" $fx
+}}
+map ax !{{
+	7z x -o"${f%.*}" $f
+}}
+
+
+
+# TODO
+# - use LF_LEVEL var to tell shell it is running inside lf (and thus to exit 
+#   when calling lf, rather than starting another recursive instance)

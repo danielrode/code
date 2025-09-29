@@ -1,0 +1,22 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies:
+#   sway
+#   jq
+# Init: 11 Apr 2024
+# Updated: -
+
+
+
+if [ -n "$2" ]
+then
+  outputID="$2"
+else
+  # If user does not provide outputID, use ID of currently focused output
+  jq_cmd='.[] | select(.focused==true) | .name'
+  focused_output="$(swaymsg -t get_outputs | jq "$jq_cmd")"
+  outputID="$focused_output"
+fi
+
+echo "$outputID"
+swaymsg output "$outputID" scale "$1"

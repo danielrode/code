@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: (La)TeX Math Calculator
+# Tags: math, school, text processing
+# Dependencies: latex2sympy2
+# Version: 3
+# Init: 06 Dec 2021
+# Updated: 08 Dec 2021
+
+
+# Description:
+# Reads stdin (assumes the content is TeX math), converts TeX math syntax to
+# standard math notation, then mathematically evaluates the output.
+
+
+import sys
+import re
+from latex2sympy2 import latex2sympy, latex2latex
+
+
+tex_str = sys.stdin.read()
+tex_str = re.sub(r'\\hspace{[^}]*}', '', tex_str)  # remove horizontal spaces
+tex_str = tex_str.lstrip('=')
+sympy_object = latex2sympy(tex_str)
+evaluated_tex = float(sympy_object.evalf())
+print(evaluated_tex)
+
+
+# TODO
+# - consider packaging this in a container and using https://github.com/huggingface/latex2sympy2_extended
+

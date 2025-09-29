@@ -1,0 +1,60 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: LyX Grammar Checker
+# Type: school, document processing
+# Dependencies: LyX, LanguageTool, pandoc, moreutils (sponge), sd
+# Version: 4
+# Init: 24 Aug 2021
+# Updated: 10 Dec 2021
+
+
+# Variables
+help_text="Usage: ${0##*/} DOCUMENT_PATH"
+
+
+# Parse input
+input_file_path="$1"
+if [ -z "$input_file_path" ]
+then
+	echo "$help_text"
+	exit 1
+elif [ ! -f "$input_file_path" ]
+then
+	echo "error: file not found: $input_file_path"
+	echo "$help_text"
+	exit 1
+fi
+
+
+# Convert document to plain text
+tmp_txt_path=$(mktemp --suffix=.txt)
+file_type="$(file -b "$input_file_path")"
+if [ "$file_type" = "LyX document text" ]
+then
+	echo -n "Converting lyx file to plain text... "
+	lyx -batch --export-to text "$tmp_txt_path" "$input_file_path"
+	cat "$tmp_txt_path" | sed '/<Graphics file: /d' \
+		| sd '([^\n])\n([^\n])' '$1$2' | sd ' +' ' ' | sponge "$tmp_txt_path"
+else
+	echo "Converting file to plain text..."
+	pandoc -o "$tmp_txt_path" "$input_file_path"
+	if [ $? != 0 ]
+	then
+		echo "error: Pandoc failed"
+		rm "$tmp_txt_path"
+		exit 1
+	fi
+fi
+echo "done"
+
+
+# Run grammar checker
+echo "Running grammar check..."
+report_output=$(mktemp --suffix=.txt)
+# subl "$tmp_txt_path"  # Dubugging
+languagetool "$tmp_txt_path" > "$report_output"
+o "$report_output"
+
+
+# Cleanup
+rm "$tmp_txt_path"

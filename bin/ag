@@ -1,0 +1,15 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Agenda
+# Tags: calendar, tasks, time management, wrapper
+# Dependencies:
+#   bat
+#   agenda (my script)
+# Init: 30 Sep 2023
+# Updated: -
+
+# Show items on today's agenda with color highlighting
+
+agenda | bat \
+	--language=org \
+	--pager="$PAGER --pattern=$(date +%Y-%m-%d)"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Sway Pick Color
+# Dependencies:
+#   hyprpicker
+#   notify-send
+# Created: 13 Sep 2025
+
+
+color="$(hyprpicker)"
+notify-send "$color"
+wl-copy "$color"

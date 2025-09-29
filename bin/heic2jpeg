@@ -1,0 +1,20 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Tags: macro
+# Dependencies: libheif-tools
+# Version: 1
+# Init: 25 Oct 2022
+# Updated: -
+
+
+if [ "$1" = '' ]
+then
+	echo "error: No input HEIC file given"
+	exit 1
+fi
+
+file_name="$1"
+file_name="${file_name%.heic}"
+file_name="${file_name##*/}"  # without file extension
+
+heif-convert -q 85 "$1" "$file_name".jpg

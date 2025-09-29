@@ -1,0 +1,36 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: PDF to PNG
+# Tags: image, conversion, file management
+# Dependencies:
+#   Poppler
+# Version: 1
+# Init: 16 May 2024
+# Updated: -
+
+
+# Description:
+# Convert a given PDF file to a PNG with the same name, but the .pdf suffix is
+# replaced with .png
+
+
+# Variables
+help_text="Usage: ${0##*/} PATH"
+
+
+# Parse command line arguments
+out_pth="$(dirname "$1")/$(basename "$1" .pdf)".png
+if [ -e "$out_pth" ]
+then
+  echo "error: Path already exists: $out_pth"
+  exit 1
+fi
+if [ ! -f "$1" ]
+then
+  echo "error: File not found: $1"
+  exit 1
+fi
+
+
+# Main
+pdftoppm -png "$1" > "$out_pth"

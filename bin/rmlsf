@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: Remove List of Files
+# Type: file management
+# Description: Discards a provided list of files
+# Dependencies: Python 3.6+, trash-cli
+# Version: 2.0.2
+# Init: 26 Jul 2017
+# Updated: 27 Dec 2020
+
+
+# Import
+import sys, os
+import subprocess as sp
+
+
+# Variables
+exit = sys.exit
+help_text = """Usage: rmlsf [TXTFILE]
+Trashes a list of files in TXTFILE.
+
+With no TXTFILE provided, or when TXTFILE is -, read standard input.
+
+  -h, --help	print this help text
+  -p, --purge	purge (delete) files rather than moving them to trash"""
+
+
+# Functions
+def purge(path):
+	os.remove(path)
+
+def trash(path):
+	sp.call(["gio", "trash", path])
+
+
+# Parse input
+read_from_stdin = False
+remove_path = trash
+args = []
+for arg in sys.argv[1:]:
+	if arg.startswith("-"):
+	    if arg in ("-h", "--help"):
+	    	print(help_text)
+	    	exit()
+	    if arg in ("-p", "--purge"):
+	    	print("Purging enabled!")
+	    	remove_path = purge
+	    if arg == "-":
+	    	read_from_stdin = True
+	else:
+		args.append(arg)
+
+try:
+	input_file_path = args[0]
+
+	if not os.path.isfile(input_file_path):
+		print(f"Error: path '{input_file_path}' does not exist")
+		exit(1)
+
+except IndexError:
+	read_from_stdin = True
+
+
+# Main
+if read_from_stdin:
+	path_list = sys.stdin.readlines()
+else:
+	with open(input_file_path, 'r') as f:
+		path_list = f.readlines()
+
+for i in path_list:
+	i = i.strip()
+	if not os.path.exists(i):
+		print("Path does not exist: " + i)
+		continue
+
+	print("Removing: " + i)
+	remove_path(i)
+
+
+# TODO
+# - account for file paths that end or start with spaces

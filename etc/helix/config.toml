@@ -1,0 +1,127 @@
+#
+# Dependencies:
+#   (LSPs for Python, Go, Rust, LaTeX, Lua, Bash)
+#   python3-lsp-server
+#   gopls
+#   delve
+#   rust-analyzer
+#   lldb
+#   taplo
+#   texlab
+#   lua-language-server
+#   bash-language-server
+#   marksman
+#   hard-wrap-text (my script)
+
+
+theme = "tokyonight_storm"
+# theme = "catppuccin_macchiato"
+
+[editor]
+rulers = [80]
+bufferline = "multiple"
+auto-completion = true
+
+[editor.soft-wrap]
+enable = true
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.file-picker]
+git-ignore = false
+
+[keys.normal]
+C-d = ":quit-all"  # save file
+y = ["yank", ":clipboard-yank-join"]
+D = ["ensure_selections_forward", "extend_to_line_end", "delete_selection"]
+# C = ["ensure_selections_forward", "extend_to_line_end", "change_selection"]
+Y = ["ensure_selections_forward", "extend_to_line_end", "yank"]
+V = ["select_mode", "extend_to_line_bounds"]
+C-s = ":update"  # save file
+C-q = ":quit-all"  # save file
+"^" = "goto_line_start"
+"$" = "goto_line_end"
+"C-7" = "toggle_comments"  # C-7 maps to C-/ in some terminals
+"C-/" = "toggle_comments"
+F3 = ":insert-output date '+%Y-%m-%d %R'"
+# F9 = ["select_all", ":pipe sort", "collapse_selection", "goto_file_start"]
+F9 = ":pipe sort"
+C-right = "move_next_word_start"
+C-left = "move_prev_word_end"
+C-home = "goto_file_start"
+C-end = ["goto_last_line", "goto_line_end"]
+del = "delete_selection_noyank"
+g.N = ":buffer-previous"  # gN: previous tab (buffer)
+"space".x = ":buffer-close"
+"space".X = ":buffer-close!"
+C-y = "yank_joined"
+F10 = ":toggle-option soft-wrap.enable"
+ret = "insert_newline"
+A-ret = ["move_line_up", "insert_newline"]
+A-down = ["extend_to_line_bounds", "delete_selection", "paste_after"]
+A-up = ["extend_to_line_bounds", "delete_selection", "move_line_up", "paste_before"]
+up = "move_line_up"
+down = "move_line_down"
+p = "paste_before"
+P = "paste_after"
+# "space".p = "paste_clipboard_before"
+"space".p = ":insert-output md-paste"
+"space".P = "paste_clipboard_after"
+"C-," = ["extend_to_line_bounds", "extend_to_line_end", ":pipe hard-wrap-text"]
+# Copy currently focused file to clipboard
+"space".A-y = ":sh echo -n $(pwd)/%{buffer_name} | wl-copy"
+
+[keys.insert]
+C-d = ":quit-all"  # save file
+F3 = [":insert-output date '+%Y-%m-%d %R'", "ensure_selections_forward"]
+C-s = ["normal_mode", "commit_undo_checkpoint", ":update"]  # save file
+# del = "delete_selection_noyank"
+C-right = "move_next_word_start"
+C-left = "move_prev_word_end"
+C-home = "goto_file_start"
+C-end = ["goto_last_line", "goto_line_end"]
+"C-7" = "toggle_comments"  # C-7 maps to C-/ in some terminals
+"C-/" = "toggle_comments"
+F10 = ":toggle-option soft-wrap.enable"
+# A-ret = ["insert_newline", ":append-output printf -- -\\ "]
+A-down = ["normal_mode", "extend_to_line_bounds", "delete_selection", "paste_after"]
+A-up = ["normal_mode", "extend_to_line_bounds", "delete_selection", "move_visual_line_up", "paste_before"]
+"C-," = ["extend_to_line_bounds", "extend_to_line_end", ":pipe hard-wrap-text"]
+
+[keys.select]
+C-d = ":quit-all"  # save file
+y = ["yank", ":clipboard-yank-join"]
+C-q = ":quit-all"  # save file
+F3 = ["delete_selection", ":insert-output date '+%Y-%m-%d %R'"]
+C-s = ":update"  # save file
+"C-7" = "toggle_comments"  # C-7 maps to C-/ in some terminals
+"C-/" = "toggle_comments"
+del = "delete_selection_noyank"
+F9 = ":pipe sort"
+C-right = "move_next_word_start"
+C-left = "move_prev_word_end"
+C-home = "goto_file_start"
+C-end = ["goto_last_line", "goto_line_end"]
+A-5 = ["search_selection", "select_all", "select_regex"]
+C-y = "yank_joined"
+F10 = ":toggle-option soft-wrap.enable"
+ret = "insert_newline"
+A-ret = ["move_line_up", "insert_newline"]
+A-down = ["extend_to_line_bounds", "delete_selection", "paste_after"]
+A-up = ["extend_to_line_bounds", "delete_selection", "move_line_up", "paste_before"]
+p = "paste_before"
+P = "paste_after"
+"space".p = "paste_clipboard_before"
+"space".P = "paste_clipboard_after"
+"C-," = ["extend_to_line_bounds", "extend_to_line_end", ":pipe hard-wrap-text"]
+
+[keys.select."minus"]
+e = ":pipe nl --number-width 1 --number-separator ' '"
+
+
+# TODO
+# - F7 to build/run current file in new terminal window
+

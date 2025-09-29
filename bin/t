@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Task Access
+# Type: productivity, file management
+# Description: Processes my task file and opens it in a text editor.
+# Dependencies:
+#   Python3.6+
+#   helix
+# Version: 7
+# Init: 15 Aug 2021
+# Updated: 08 Oct 2023
+
+
+import sys
+from sys import exit
+
+import re
+import tempfile
+import pathlib as pl
+import subprocess as sp
+
+
+# Variables
+help_text = "Usage: t TODO_FILE [@context|+tag]..."
+
+
+# Parse arguments
+args = sys.argv[1:]
+filters = args[1:]
+
+try:
+    todo_path = args[0]
+except IndexError:
+    print(help_text)
+    exit(1)
+
+todo_path = pl.Path(todo_path)
+
+
+# Import task file
+try:
+    tasks = todo_path.read_text().splitlines()
+except FileNotFoundError:
+    print("error: File not found:",  todo_path)
+    exit(1)
+
+
+# Filter tasks by given tags/contexts and move completed tasks to done.todo
+tasks_included = list()
+tasks_excluded = list()
+tasks_completed = list()
+tasks_archived = list()
+for t in tasks:
+    if t.startswith('x '):
+        tasks_completed.append(t)
+        continue
+    elif t.startswith('z '):
+        tasks_archived.append(t)
+        continue
+
+    for f in filters:
+        if not re.search(re.escape(f) + r'\b', t):
+            tasks_excluded.append(t)
+            break
+    else:
+        tasks_included.append(t)
+
+with open("done.todo", 'a') as f:
+    f.write("\n".join(tasks_completed))
+    f.write("\n")
+
+
+# Sort tasks by due date, then priority
+tasks_sorted = list()
+for t in tasks_included:
+	try:
+		due_date = re.search('due:[0-9-]+', t)[0][4:]
+	except TypeError:
+		due_date = '_'
+	tasks_sorted.append([t, due_date])
+
+tasks_sorted.sort(key=lambda x: (x[1], x[0]))
+
+
+# Open filtered and sorted todo file in editor
+tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix='.todo')
+tmp_path = pl.Path(tmp_path.name)
+tmp_path.write_text('\n'.join([i[0] for i in tasks_sorted]))
+
+sp.run(['hx', tmp_path])
+
+
+# Verify that the tags/contexts given on the command line are included in new
+# tasks just added by the user
+all_tasks = list()
+tasks_from_tmp = tmp_path.read_text().strip().split('\n')
+for t in tasks_from_tmp:
+    for f in filters:
+        if not re.search(re.escape(f) + r'\b', t):
+            t = f"{t} {f}"
+
+    all_tasks.append(t)
+
+
+# Write edited todo file to original path
+all_tasks += tasks_excluded
+all_tasks += tasks_archived
+todo_path.write_text("\n".join(sorted(all_tasks)))
+tmp_path.unlink()
+
+
+
+# TODO
+# - ...

@@ -1,0 +1,31 @@
+#
+# Hard remap in-build LG Gram laptop keyboard to Colemak
+#
+# Device input ID was obtained from
+#   cat /sys/class/input/eventNUMBER/device/modalias
+# and NUMBER was determined via `evtest` utility.
+# `evtest` and `cat /usr/include/linux/input-event-codes.h` were used to
+# determine keycodes. See https://deskthority.net/viewtopic.php?t=24076 for
+# more details. Finally, enforce new rules:
+#   sudo su
+#   udevadm hwdb --update && udevadm control --reload-rules && udevadm trigger
+#
+evdev:input:b0011v0001p0001eA*
+ KEYBOARD_KEY_12=f
+ KEYBOARD_KEY_13=p
+ KEYBOARD_KEY_14=g
+ KEYBOARD_KEY_15=j
+ KEYBOARD_KEY_16=l
+ KEYBOARD_KEY_17=u
+ KEYBOARD_KEY_18=y
+ KEYBOARD_KEY_19=semicolon
+ KEYBOARD_KEY_1f=r
+ KEYBOARD_KEY_20=s
+ KEYBOARD_KEY_21=t
+ KEYBOARD_KEY_22=d
+ KEYBOARD_KEY_23=h
+ KEYBOARD_KEY_24=n
+ KEYBOARD_KEY_25=e
+ KEYBOARD_KEY_26=i
+ KEYBOARD_KEY_27=o
+ KEYBOARD_KEY_31=k

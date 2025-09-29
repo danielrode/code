@@ -1,0 +1,7 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies: dict
+# Updated: 19 Nov 2022
+
+
+dict "$1" | $PAGER

@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Created: 25 Jul 2024
+# Updated: 15 Jul 2025
+
+
+# Description: Alias/shortcuts for mounting remote directories via SSH.
+
+
+import os
+import sys
+import time
+import json
+import socket
+import subprocess as sp
+from pathlib import Path
+
+
+# Constants
+HOSTNAME = socket.gethostname()
+HOME = Path.home()
+
+SSHFS_ARGS = (
+    '-o', 'delay_connect',
+    '-o', 'reconnect',
+    '-o', 'noatime',
+    # '-o', 'umask=177',
+
+    # Give up trying to connect if it takes too long
+    '-o', 'ConnectionAttempts=3',
+    '-o', 'ConnectTimeout=10',
+
+    # Disconnect if server disappears for too long
+    '-o', 'ServerAliveCountMax=4',
+    '-o', 'ServerAliveInterval=11',
+)
+
+with open(HOME / '.crypt/private_code_vars.json') as f:
+    VARS = json.load(f)
+VARS |= json.loads(sp.run(
+    [
+        'bash', '-c', '''
+            source ~/.crypt/private_code_vars.sh
+            python3 -c "import os, json; print(json.dumps(dict(os.environ)))"
+        ''',
+    ],
+    check=True, capture_output=True, text=True,
+).stdout)
+
+
+# Functions
+def mountpoint(pth: Path) -> bool:
+    pth = Path(pth)
+    p = sp.run(['mountpoint', pth])
+    if p.returncode == 0:
+        return True  # pth is a mount point
+    elif p.returncode == 32:
+        return False  # pth is not a mount point
+    else:
+        raise Exception("mountpoint gave unexpected exit code:", p.returncode)
+
+def sshfs(
+    mnt_point: Path,
+    sshfs_args: list,
+    remote_user: str,
+    remote_addr: str,
+    remote_dir: Path
+) -> None:
+    if mountpoint(mnt_point):
+        print("Already mounted:", mnt_point)
+        return
+
+    cmd = (
+        'sshfs', *sshfs_args,
+        f"{remote_user}@{remote_addr}:{remote_dir}",
+        mnt_point,
+    )
+    sp.run(cmd, check=True)
+
+
+# Main
+try:
+    arg1 = sys.argv[1]
+except IndexError:
+    print("Enter mount point")
+    sys.exit(1)
+
+match arg1:
+    case 's':
+        ip = VARS['HOME_SERVER_IP']
+        user = os.environ['USER']
+        mnt_list = {'/': '/mnt/s'}
+    case 'm':
+        ip = VARS['WORK1_IP']
+        user = VARS['WORK1_USER']
+        mnt_list = VARS['WORK1_MOUNTS']
+    case 'h':
+        ip = VARS['WORK2_IP']
+        user = VARS['WORK2_USER']
+        mnt_list = VARS['WORK2_MOUNTS']
+        sock_path = HOME / f'.ssh/{user}@{ip}.sock'
+        SSHFS_ARGS += (
+            '-o', f'ssh_command=ssh -S {sock_path}',
+        )
+        # Wait for master SSH connection to be established by user
+        while not sock_path.exists():
+            print("Waiting for user to establish SSH session via `s`...")
+            time.sleep(5)
+    case _:
+        print("error: Unknown mount alias:", arg1)
+        sys.exit(1)
+
+for dir in mnt_list:
+    mnt = mnt_list[dir]
+    sshfs(mnt, SSHFS_ARGS, user, ip, dir)

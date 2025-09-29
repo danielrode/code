@@ -1,0 +1,5 @@
+#!/usr/bin/env dash
+# Updated: 21 Jun 2025
+
+
+loginctl suspend

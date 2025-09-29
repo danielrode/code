@@ -1,0 +1,38 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Fancy Embed
+# Tags: school, document processing
+# Description: Save screenshots (graphics) to the fancy-embed directory within
+# 			   the current working directory, then copy image path to
+# 			   clipboard.
+# Dependencies: wl-clipboard, gm
+# Version: 3
+# Init: 08 Sep 2021
+# Updated: 12 Sep 2021
+
+
+
+if [ ! -d fancy-embed ]
+then
+	echo "error: Directory './fancy-embed' does not exist"
+	exit 1
+fi
+
+if [ -z "$1" ]
+then
+	img_title="$(date +'%Y-%m-%d-%H%M%S').jpg"
+else
+	img_description="$1"
+	img_title="$(date +'%Y-%m-%d-%H%M%S') - $img_description.jpg"
+fi
+
+wl-paste | gm convert - -scale 90% -quality 60 "./fancy-embed/$img_title"
+
+wl-copy "fancy-embed/$img_title"
+echo "Image written to ./fancy-embed/$img_title"
+echo "Image path copied to clipboard..."
+
+
+
+# TODO
+# - only risize image if it is large (gm may have an in-built option for this)

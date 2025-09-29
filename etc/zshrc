@@ -1,0 +1,85 @@
+# Daniel's ZSH Config
+
+# Dependencies:
+#   starship
+#   NerdFonts (at least for starship)
+#   an emoji font (for starship, such as noto-fonts-emoji, if your distro's 
+#       NerdFonts do not include emojis)
+#   zoxide
+#   prezto (https://github.com/sorin-ionescu/prezto)
+#   moreutils (for `ifdata`)
+#   progress
+#   pstree
+#   exa OR lsd
+
+
+# USER TIPS
+# - "Private Mode": To prevent a command from being recorded in the history,
+#   add a space in front of it.
+# - To display the "guts" of functions or aliases, use
+#   `whence -f FUNC_OR_ALIAS`
+
+
+# Initialize Prezto
+if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]
+then
+    source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+    unalias o 2>/dev/null
+fi
+
+
+# History
+HISTFILE="$XDG_DATA_HOME/zsh/zsh_history"
+HISTSIZE=524288
+SAVEHIST=$HISTSIZE
+setopt hist_ignore_all_dups
+
+
+# Set terminal window title
+function precmd () {
+    window_title="\033]0;zsh  •  ${PWD}\007"
+    echo -ne "$window_title"
+}
+
+
+# Initialize Zoxide
+eval "$(zoxide init --cmd d zsh)"
+
+
+# Initialize Starship
+eval "$(starship init zsh)"
+
+
+# Aliases: Universal (aliases I use on all my systems)
+alias cp='cp --interactive'  # Redefine `cp` to avoid accidental overwrites
+alias mv='mv --interactive'  # Redefine `mv` to avoid accidental overwrites
+alias rm='rm --interactive'  # Redefine `rm` to avoid require confirmation
+alias py='python3'
+alias ipy='ipython'
+alias c='wl-copy'  # Shortcut to pipe content to the clipboard
+alias p='wl-paste'
+alias m='micro'
+alias lo2pdf="libreoffice --headless --invisible --convert-to pdf"
+alias lo2txt="libreoffice --headless --invisible --convert-to txt"
+alias cl="cal -3"
+alias myip="ifdata -pa $DFLT_NET_IFACE"
+alias noise="play -r48000 -c2 -n synth -1 pinknoise .1 60"
+alias pg='progress --monitor'
+alias lscpt='pstree -s -p $$'  # List current process tree
+alias mntusb='echo "Use '"'"'mntm'"'"'"'
+alias ls='exa'
+alias lst='exa --sort=modified'
+alias ls='lsd --icon=never'
+alias lst='lsd --icon=never --sort=time'
+alias ll='lsd --icon=never -lh'
+alias r='R --no-save'
+alias lswifi='nmcli device wifi list'
+alias lsfonts='fc-list : family'
+alias ag='agenda | bat \
+    --language=org \
+    --pager="$PAGER --pattern=`date +%Y-%m-%d`"'
+alias log='svlogtail'
+# th = terminal here
+alias th='env -u DCV_SHELL_PROMPT_MSG nohup alacritty --command zsh 1>/dev/null 2>/dev/null & disown'
+# alias btm='btm --basic --regex --process_command --hide_table_gap --battery --hide_avg_cpu'
+alias btm='btm --basic --regex --group --hide_table_gap --battery --hide_avg_cpu --mem_as_value'

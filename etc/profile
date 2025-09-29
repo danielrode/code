@@ -1,0 +1,82 @@
+# ~/.profile: executed by the command interpreter for login shells.
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
+# exists.
+
+# Dependencies:
+#   fish
+#   swaywm
+
+
+export VISUAL=hx
+export EDITOR="$VISUAL"
+export PAGER=less
+export LESS='--RAW-CONTROL-CHARS --ignore-case --jump-target=.3 --mouse -XF'
+export LESSEDIT="%E < %f"
+export DEFAULT_TERM=foot
+export STARSHIP_LOG=error  # Disable Starship warning messages
+export LS_COLORS="$LS_COLORS"':ow=01;33'  # Color 777 orange
+export DFLT_NET_IFACE="$(route | grep '^default ' | grep -o '[^ ]*$')"
+export HOSTNAME=`hostname`
+
+# Daniel's Constant Variables
+export DCV_CODE_PATH="$HOME"/code
+export DCV_HOME_OPT="$HOME"/.local/opt
+
+# XDG
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_DESKTOP_DIR="$HOME/working"
+export XDG_DOCUMENTS_DIR="$HOME/progeny"
+export XDG_DOWNLOAD_DIR="$HOME/downloads"
+export XDG_MUSIC_DIR="$HOME/store/music"
+export XDG_PICTURES_DIR="$HOME/record"
+export XDG_VIDEOS_DIR="$HOME/record"
+export XDG_TEMPLATES_DIR="$HOME/code/tplt"
+export XDG_PUBLICSHARE_DIR="$HOME/union/public"
+export XDG_SCREENSHOTS_DIR="$XDG_PICTURES_DIR/screencaptures/current"
+
+# Program Config
+export BAT_PAGER="$PAGER"
+export GOPATH="$HOME/progeny/go"
+# export LESSKEY="$DCV_CODE_PATH/etc/less-bindings"
+export R_LIBS_USER="$HOME/.local/lib/R"
+export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+
+# Path
+export PATH="$PATH":/opt/bin
+export PATH="$PATH":"$HOME/.local/bin"
+export PATH="$PATH":"$DCV_CODE_PATH/bin"
+export PATH="$PATH":"$DCV_HOME_OPT/bin"
+export PATH="$PATH":"$HOME/.cargo/bin"
+export PATH="$PATH":"$GOPATH/bin"
+
+# Initialize session
+
+# Initialize session: Termux (Android) Void Linux proot
+if [ "$HOSTNAME" = "andtermuxd-void" ]
+then
+	exec fish
+
+# Initialize session: Run Sway on gramvoidd if logging in from certain TTY
+elif [ "$HOSTNAME" = gramvoidd ] && [ "$(tty)" = /dev/tty1 ] && \
+	[ -z "$XDG_SESSION_TYPE" -o "$XDG_SESSION_TYPE" = tty ]
+then
+	echo "Initializing session..."
+
+	# Mount encrypted vault
+	while ! mountpoint --quiet ~/.crypt
+	do
+	    gocryptfs ~/progeny/gocryptfs/dotcrypt/ ~/.crypt/
+	done
+
+	# Start Sway
+	[ ! -f "$HOME/.sway-session-stdout.log" ] || mv \
+		"$HOME/.sway-session-stdout.log" "$HOME/.sway-session-stdout.log.old"
+	[ ! -f "$HOME/.sway-session-stderr.log" ] || mv \
+		"$HOME/.sway-session-stderr.log" "$HOME/.sway-session-stderr.log.old"
+	exec "$HOME/code/bin/launch-swaywm" \
+		> "$HOME/.sway-session-stdout.log" \
+		2> "$HOME/.sway-session-stderr.log" \
+	;
+fi

@@ -1,0 +1,50 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Launch
+# Description: Prompt to launch programs
+# Dependencies:
+#   dash
+#   ~/code/bin/verbrun
+
+
+# NOTE: I use a .txt file to pull the list of commands from (rather than
+# simply reading PATH) because there are many commands that should not be run
+# via a GUI launcher and that should be run via CLI only (I want to avoid
+# accidentally running such commands).
+
+
+# Pass list of commands to FZF (when selected in FZF, they will be executed
+cat ~/code/etc/launch.txt ~/.crypt/launch.txt \
+|   fzf \
+    --tiebreak=index \
+    --no-extended \
+    --reverse \
+    --border \
+    --prompt="run: " \
+    --bind "ctrl-U:clear-query+top" \
+    --bind "f5:reload(cat ~/code/etc/launch.txt ~/.crypt/launch.txt)" \
+    --inline-info \
+    --multi \
+| \
+while read i
+do
+    swaymsg -t command exec "$i"
+done
+
+
+
+# TODO
+
+# Sway 1.5 added the ability to use the PPID criteria:
+#
+# set PPID (sh -c 'echo $$; exec kitty' &)
+# swaymsg -t command exec "for_window [pid=$PPID] floating true"
+#
+# This would execute an sh shell, capture its process number, then start the desired process (in this case, kitty) and replace the sh shell with the desired process so that the new process (kitty) will have the known pid ($PPID). The second command tells sway to set any windows spawned by the process (kitty) to floating mode.
+#
+# I could also use this to make sure a process's window starts on the workspace I launched it on, even if I navigate away from that workspace before the window spawns.
+#
+# I am not convinced that this is a good idea, but I am keeping this here just in case.
+
+# Integrate awk -F ' # ' '{printf "%-60s %1-s\n", $2, $1}' for pretty printing
+# columns.

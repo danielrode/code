@@ -1,0 +1,87 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Description: Captures a screenshot and notifies the user
+# Dependencies: jq, grim, slurp, wl-clipboard
+# Version: 5
+# Init: 17 Mar 2020
+# Updated: 09 Oct 2021
+
+
+# Init environment
+capture_path="$HOME/record/screencaptures/current"
+tmp_path="$(mktemp --suffix=.png)"
+jq_cmd_str='.. | (.nodes? // empty)[] | select(.focused and .pid) | .rect |'\
+' "\(.x),\(.y) \(.width)x\(.height)"'
+post_clipboard=false
+capture_region=screen
+
+
+# Parse input
+while [ $# -gt 0 ]
+do
+    arg="$1"
+    case $arg in
+        -c|--clipboard )
+            post_clipboard=true ;;
+        window|manual|screen )
+            capture_region="$arg" ;;
+        * )
+            echo "Invalid argument passed. Ignoring: $arg" ;;
+    esac
+    shift
+done
+
+
+# Capture screen
+if [ "$capture_region" = 'manual' ]
+then
+    # Allow the user to select a region of the screen, then capture that
+    # region
+    slurp_output="$(slurp)"
+    if [ $? != 0 ]
+    then
+        echo "No screenshot captured"
+        exit
+    fi
+    # This command to move the cursor is a workaround to keep the tip of the
+    # cursor out of the screenshot, since grim is not hiding the cursor like
+    # it is supposed to.
+    swaymsg seat - cursor move 10 10
+    grim -t png -g "$slurp_output" "$tmp_path"
+
+elif [ "$capture_region" = 'window' ]
+then
+    # Capture currently focused window
+    window_geometry=$(
+        swaymsg -t get_tree \
+        | jq "$jq_cmd_str"
+    )
+    grim -t png -g "$(eval echo $window_geometry)" "$tmp_path"
+
+else
+    # Capture the whole screen
+    grim -t png "$tmp_path"
+fi
+
+
+# Store captured image
+if [ "$post_clipboard" = "true" ]
+then
+    # Send image to Wayland clipboard
+    cat "$tmp_path" | wl-copy --type image/png
+    rm "$tmp_path"
+else
+    # Save to screenshot library
+    mv "$tmp_path" "$capture_path/$(date +'%Y-%m-%d-%H%M%S_grim.png')"
+
+    # Notify that a screenshot has been saved
+    if [ "$capture_region" = 'manual' ]
+    then
+        notify-send -t 2000 "Screenshot of selection saved"
+    elif [ "$capture_region" = 'window' ]
+    then
+        notify-send -t 2000 "Screenshot of window saved"
+    else
+        notify-send -t 2000 "Screenshot of entire screen saved"
+    fi
+fi

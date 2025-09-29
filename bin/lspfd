@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: List Process File Descriptors
+# Type: System Tool
+# Description: Prints list of file descriptors open by a process
+# Dependencies: Python 3.6+
+# Version: 1.2
+# Made: Apr 25 2013
+# Last updated: Aug 30 2017
+
+
+# Import
+import os, sys
+import subprocess as sp
+from sys import exit
+
+
+# Parse Input
+if len(sys.argv) < 2:
+    print("Must enter a process ID or search term")
+    exit(1)
+arg = sys.argv[1]
+
+
+# Main
+## Set procID var
+if not arg.isdigit():
+    p = sp.run(['pgrep', '-f', '-l', arg], stdout=sp.PIPE)
+    pgrepOutput = p.stdout.decode('utf-8').rstrip()
+    procList = [ i.split(' ') for i in pgrepOutput.split('\n') ]
+    procIDList = [ int(i[0]) for i in procList ]
+    if len(procList) > 1:
+        counter = 0
+        for i in procList:
+            counter += 1
+            counterNumWithDecimal = str(counter) + '.'
+            processNum, processName = i
+            print(f"{counterNumWithDecimal: <4}  {processNum: <6} {processName}")
+        while True:
+            try:
+                userInput = int(input("Select process: "))
+            except KeyboardInterrupt:
+                exit()
+            except ValueError:
+                print("You must enter a number")
+            if not (userInput in procIDList or (userInput > 0 and userInput <= counter)):
+                print("Selection must be within range or match a process ID")
+            else:
+                break
+        try:
+            procID = procList[userInput - 1][0]
+        except IndexError:
+            procID = str(userInput)
+    else:
+        procID = procList[0][0]
+else:
+    procID = arg
+
+## List processes open file descriptors
+print(procID)
+if os.path.exists('/proc/' + procID) and procID:
+    sp.Popen(['ls', '-l', f'/proc/{procID}/fd'])
+else:
+    print("No such process exists")

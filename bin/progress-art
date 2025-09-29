@@ -1,0 +1,269 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Progress (Formating Printer)
+# Type: Art, Engine, Print
+# Description: Displays progress bars of various kind - Digital prop
+# Version: 3.0.0.1 ALPHA
+# Created: 23 December 2012
+# Updated: 14 Jun 2025
+
+
+# Import
+import subprocess, os, time, sys
+import select, tty, termios
+from optparse import OptionParser
+from sys import exit
+from signal import *
+
+# Variables
+helpText = """Keyboard actions:
+ SPACE - Pauses and unpauses the progress bar
+ ESC   - Exits the program
+ b     - Brings progress bar back to the beginning
+ r     - Restarts script in current mode with user set pre_blocks setting
+ R     - Restarts script in current mode and brings progress bar back to the beginning
+
+ Modes:
+ e     - Encrypting
+ d     - Decrypting
+ g     - Guttman
+"""
+digs = [
+"""
+ 00000
+0000000
+00   00
+00   00
+00   00
+0000000
+ 00000""",
+"""
+  000
+ 0000
+00000
+  000
+  000
+0000000
+0000000""",
+"""
+ 00000
+0000000
+00  000
+    000
+   000
+ 0000
+0000000""",
+"""
+ 00000
+0000000
+00  000
+   000
+00  000
+0000000
+ 00000""",
+"""
+   000
+  00 0
+ 00  0
+0000000
+0000000
+   000
+   000""",
+"""
+0000000
+0000000
+000
+ 00000
+     00
+00  000
+ 00000""",
+"""
+ 00
+000
+000
+0000000
+00   00
+00   00
+ 00000""",
+"""
+ 00000
+0000000
+    000
+    000
+    000
+    000
+    000""",
+"""
+ 00000
+00   00
+00   00
+0000000
+00   00
+00   00
+ 00000""",
+"""
+ 00000
+000 000
+00   00
+000 000
+ 000000
+    000
+    000""",]
+spins = ['▏', '▎', '▍', '▌', '▋', '▊', '▉']
+rows, columns = os.popen('stty size', 'r').read().split()
+termRows = int(rows)
+termColumns = int(columns)
+ESC_KEY = '\x1b'
+old_settings = termios.tcgetattr(sys.stdin) # Store terminals old settings
+pre_sleep = 0
+pre_prompt_pause = ''
+color_changed = False
+
+# Parse Options
+parser = OptionParser()
+parser.add_option("-m", "--mode", action="store", dest="mode", help="Define script mode")
+parser.add_option("-t", "--tick", action="store", dest="tick", default=False, help="Set delay between frames (in milliseconds)")
+parser.add_option("-p", "--pre-blocks", action="store", dest="pre_blocks", default=0, help="Set percentage of completion that progress bar starts with")
+
+## Display help
+if len(sys.argv) > 1 and sys.argv[1] == '?':
+	parser.print_help()
+	print("\n\n" + helpText)
+	exit()
+
+(options, args) = parser.parse_args()
+o = options
+
+o.pre_blocks = int(o.pre_blocks)
+
+## Check for bad parameters
+try:
+	int(o.pre_blocks)
+except:
+	print("-p must be an integer")
+	exit(1)
+if o.pre_blocks > 100:
+	print("-p can't be larger than 100")
+	exit(1)
+
+# Classes
+class RestartException(Exception):
+	pass
+
+# Functions
+def exit_during_print(*args):
+	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+	if color_changed:
+		subprocess.call(['ctc', '-r'])
+	print()
+	exit()
+
+def checkForInKey():
+	## Check for key
+	if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []): # check if stdin contains data
+		c = sys.stdin.read(1)
+		global counter, cc, tick, space_flush
+		## Set Actions for input keys
+		if c == ' ':
+			while True:
+				c2 = sys.stdin.read(1)
+				if c2 == ' ':
+					break
+				elif c2 == ESC_KEY:
+					exit_during_print()
+		elif c == 'b':
+			counter = 0
+			cc = ''
+			print('\r' + ' ' * termColumns)
+		elif c == 'r':
+			raise RestartException
+		elif c == 'R':
+			o.pre_blocks = 0
+			raise RestartException
+		elif c == 's': # Progress bar speed: slower
+			tick += 0.01
+		elif c == 'f': # Progress bar speed: faster
+			if tick >= 0.011:
+				tick -= 0.01
+		elif c == ESC_KEY:
+			exit_during_print()
+
+def main():
+	global counter, cc, message, tick, pre_prompt_pause, pre_sleep
+	subprocess.call('clear', shell=True)
+
+	# Pre options
+	if not pre_prompt_pause == '':
+		raw_input(pre_prompt_pause)
+	time.sleep(pre_sleep)
+
+	# Format message
+	formattedMessage = (' ' * int((termColumns - len(message)) / 2)) + message
+
+	print('\n' * int((termRows / 2) - 4))
+
+	# Set tick
+	if o.tick:
+		tick = float(o.tick) / 1000
+
+	# Set terminal in 'special' mode
+	tty.setcbreak(sys.stdin.fileno())
+
+	# Printing
+	print(formattedMessage)
+	pre_blocks = int(float(termColumns) / 100 * o.pre_blocks) # Calculate percentage
+	cc = '▉' * pre_blocks
+	counter = pre_blocks
+	while not counter == termColumns:
+		for c in spins:
+			sys.stdout.write('\r' + cc + c)
+			sys.stdout.flush()
+			checkForInKey()
+			time.sleep(tick)
+		counter += 1
+		cc = cc + '▉'
+
+
+##########
+## Main ##
+##########
+
+## Setup Mode
+if o.mode == 'd':
+	message = "Decrypting..."
+	tick = 0.1
+elif o.mode == 'e':
+	pre_prompt_pause = "# key-scan -e -s fast -k random-ultra-strong"
+	message = "Encrypting..."
+	tick = 0.05
+elif o.mode == 'g':
+	subprocess.call(['ctc', '-twhite', '-bred'])
+	color_changed = True
+	pre_prompt_pause = "# guttman"
+	pre_sleep = 1
+	message = "Preforming Guttman..."
+	tick = 0.2
+else:
+	print("You did not enter a mode that exists")
+	exit(1)
+
+# Trap Signals
+for sig in (SIGABRT, SIGINT, SIGTERM):
+    signal(sig, exit_during_print)
+
+# Run Core
+while True:
+	try:
+		main()
+	except RestartException:
+		pass
+	else:
+		break
+
+# Restore terminals old settings
+if color_changed:
+	subprocess.call(['ctc', '-r'])
+termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+raw_input()

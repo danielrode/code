@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+## Author: Daniel Rode
+## Description: Compares two or more strings
+## Made: Jan 31 2014
+## Last updated: Jul 31 2017
+
+
+import sys
+from sys import exit
+
+def printe(message):
+	print("Error: " + message, file=sys.stderr)
+
+if len(sys.argv) < 3:
+	printe("Not enough arguments")
+	exit(1)
+
+argOne = sys.argv[1]
+args = sys.argv[2:]
+
+counter = 2
+for arg in args:
+	if arg != argOne:
+		print("String {} does not match".format(counter))  # this is not an error, only a different outcome
+		exit(1)
+	counter += 1
+
+print("All strings are equal!")

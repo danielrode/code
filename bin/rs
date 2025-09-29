@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Restic Shell
+# Type: macro, wrapper
+# Dependencies:
+#   restic
+#   starship
+#   fish
+#   ~/code/bin/getcred
+# Created: 17 May 2020
+# Updated: 28 Sep 2025
+
+
+# Description:
+# Lists restic profiles, then loads credentials into environment variables.
+# Depending on which flags are passed (if any), these variables will either be
+# dumped to stdout or made available by entering a sub-shell.
+
+# DOCUMENTATION
+# Dry run: To get an idea of how much space will used by the next backup
+# (for instance, if some new software is installed and you wonder if it has
+# installed some files which may blow up the size of your next backup).
+# There is a `ncdu` command to see how effective your restic exclude list
+# will be. To find this command, see the restic exclude file (under
+# ~/code/etc).
+
+
+# Functions
+echo2() {
+    echo "$@" >&2
+}
+
+
+# Prompt user to select profile
+profile=$(
+	{
+		# Menu
+		echo 'backblazeB2'
+		echo 'local: ext HDD named "Seagate Backup Plus Drive"'
+		echo 'local: Acer School Laptop'
+	} | fzf
+)
+
+if test ! "$profile"
+then
+    echo2 "error: No selection made"
+    exit 1
+fi
+
+
+# Init selected profile
+echo2 "Loading credentials..."
+if test "$profile" = 'backblazeB2'
+then
+	# Load credentials into environment variables
+	cred_path='programs/restic/Backblaze B2'
+	export RESTIC_REPOSITORY="$(getcred "$cred_path" username)"
+	export B2_ACCOUNT_ID="$(getcred "$cred_path" 'Key ID')"
+	export B2_ACCOUNT_KEY="$(getcred "$cred_path" 'Application Key')"
+	export RESTIC_PASSWORD_COMMAND="getcred \"$cred_path\" password"
+
+elif test "$profile" = 'local: ext HDD named "Seagate Backup Plus Drive"'
+then
+	# Load credentials into environment variables
+    RESTIC_REPOSITORY="/run/media/daniel/Seagate Backup Plus Drive"
+    export RESTIC_REPOSITORY="$RESTIC_REPOSITORY/restic dtideapad"
+	cred_path='programs/restic/dtideapad/Seagate Backup Plus Drive'
+	export RESTIC_PASSWORD_COMMAND="getcred \"$cred_path\" password"
+
+elif test "$profile" = 'local: Acer School Laptop'
+then
+	# Load repo info into environment variables
+	export RESTIC_REPOSITORY="$HOME/.backup_restic"
+	cred_path='programs/restic/daspirecu'
+	export RESTIC_PASSWORD_COMMAND="getcred \"$cred_path\" password"
+
+else
+    echo2 "error: Invalid profile"
+    exit 1
+fi
+
+
+# Print environment and exit
+if [ "$1" = '--dump-env' ]
+then
+    env
+    exit
+fi
+
+
+# Mount chosen restic repo and exit
+if [ "$1" = '--mount' ]
+then
+	restic mount "$2" &
+	exit
+fi
+
+
+# Spawn subshell
+echo "PROFILE: $profile"
+echo "You are now running in a subshell."
+echo
+echo "Exmaple restic commands:"
+echo
+echo "# Restore a path"
+echo "restic restore --target ~/working --include PATH_TO_RESTORE latest"
+echo
+echo "# Compare two most recent snapshots"
+echo "restic diff \`restic snapshots --compact | awk '{print \$1}'" \
+	"| tail -4 | head -2 | tr '\n' ' '\`"
+echo
+echo "# Show size of latest snapshot"
+echo "# (Use diff command shown above)"
+echo
+
+# Tells starship (shell prompt setter) to notify user (via prompt decoration)
+# that this script has spawned the sub-shell. (This only works with shells
+# that I configured to load starship and when my starship config is in place.)
+export DCV_SHELL_PROMPT_MSG="${DCV_SHELL_PROMPT_MSG}[RSTSH]"
+echo $0
+fish

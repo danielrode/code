@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: dif
+# Type: file comparison, office
+# Dependencies:
+#   difft (difftastic)
+#   odt2txt
+#   unzip
+#   bat
+#   xxd
+# Version: 10
+# Init: 04 Oct 2019
+# Updated: 23 Apr 2024
+
+
+# Description:
+# Compare the textual contents of two various files. If the files
+# are not TXT attempt extracting textual content first and then
+# comparing. ODT, docx, and PDF files are the only supported non-TXT
+# file-types currently.
+
+
+# Parse input
+if [ -z "$1" -o -z "$2" ]
+then
+	echo "usage: dif FILE1 FILE2"
+	echo "error: Expected two file paths"
+	exit 1
+fi
+
+for arg in "$1" "$2"
+do 
+  if [ ! -f "$arg" ]
+  then
+    echo "error: Not a regular file: $arg"
+    exit 1
+  fi
+done
+
+
+# Setup tmp environment
+tmp_path=$(mktemp -d)
+
+
+# Convert file to plain text format
+for side in left right 
+do
+  if [ "$side" == "left" ]
+  then
+    arg="$1"
+  else
+    arg="$2"
+  fi
+
+  side_file="$tmp_path/side_file"
+  lower="$(echo "$arg" | awk '{print tolower($0)}')"  # lower case
+  case "$lower" in
+    *.odt )
+      odt2txt --width=-1 "$arg" > "$side_file"
+      ;;
+    *.docx )
+      unzip -p "$arg" \
+      | sed -e \
+        's/<\/w:p>/\n/g; s/<[^>]\{1,\}>//g; s/[^[:print:]\n]\{1,\}//g' \
+      | strings > "$side_file"
+      ;;
+    *.pdf )
+      pdftotext "$arg" "$side_file"
+      ;;
+    *)
+      xxd "$arg" > "$side_file"
+      ;;
+  esac
+
+  if [ "$side" == "left" ]
+  then
+    mv "$side_file" "$tmp_path/left_file"
+  else
+    mv "$side_file" "$tmp_path/right_file"
+  fi
+done 
+
+left_file="$tmp_path/left_file"
+right_file="$tmp_path/right_file"
+
+
+# If files are identical, do not compare
+if cmp --silent "$left_file" "$right_file"
+then
+	echo "Textual content of files is identical"
+else
+	# Compare the textual contents of files
+	difft \
+        --display=side-by-side-show-both \
+        --color=always \
+        --width=80 \
+        "$left_file" "$right_file" \
+        | bat --style=plain
+fi
+
+
+# Cleanup environment
+rm -r $tmp_path
+
+
+
+# TODO
+# - Add support for other file types (.doc, etc...)
+# - Consider using pandoc instead of odt2txt.

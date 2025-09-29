@@ -1,0 +1,13 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: List LAN
+# Tags: network, list
+# Dependencies: nmap
+# Version: 1
+# Init: 27 Jan 2023
+# Updated: -
+
+
+gateway=`ip route | sed -n 2p | cut -d' ' -f1`
+
+nmap -sP "$gateway"

@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Word Metrics
+# Tags: word processing, text processing, statistics, search
+# Dependencies:
+#   Python 3.10+
+# Version: 1
+# Init: 21 Feb 2024
+# Updated: 22 Feb 2024
+
+
+# Description:
+# Display an occurance count for words and phrases in a text file.
+
+
+import sys
+from pathlib import Path
+from sys import exit
+
+import re
+from collections import Counter as CollectionCounter
+
+
+# Constants
+exe_name = sys.argv[0].split('/')[-1]  # This script's filename
+help_text = f"Usage: {exe_name} TEXT_FILE_PATH"
+
+fluff_words = (
+    "-",
+    "my",
+    "the",
+    "i",
+    "as",
+    "is",
+    "a",
+    "to",
+    "of",
+    "on",
+    "it",
+    "an",
+    "at",
+)
+
+
+# Main
+txt_pth = sys.argv[1]
+txt = Path(txt_pth).read_text()
+
+pattern = r"[ \n\(\),\./]+"
+words = txt.lower()
+words = re.sub("^" + pattern, "", words)
+words = re.sub(pattern + "$", "", words)
+words = re.split(pattern, words)
+
+filtered_words = []
+for w in words:
+    if w not in fluff_words:
+        filtered_words.append(w)
+
+words = filtered_words
+
+all_phrases = []
+counter = 2
+while True:
+    zip_items = [words[i:] for i in range(counter)]
+    phrases = [' '.join(i) for i in zip(*zip_items)]
+    if CollectionCounter(phrases).most_common(1)[0][1] == 1:
+        break
+
+    all_phrases.extend(phrases)
+    counter += 1
+
+all_phrases.extend(words)
+phrase_counts = CollectionCounter(all_phrases)
+phrase_counts = dict(sorted(
+    phrase_counts.items(), 
+    key=lambda item: item[1],
+    reverse=True,
+))
+for phrase in phrase_counts:
+    count = phrase_counts[phrase]
+    print(count, phrase)
+ 
+
+
+# TODO
+"""
+- spell check / grammar check
+- remove fluff words like "a" "the" "is"
+"""

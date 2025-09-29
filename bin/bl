@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Name: Backlight Modifier
+# Type: system configuration, hardware configuration, display management
+# Description: Changes the brightness level of a display
+# Dependencies: Python3.6+
+# Version: 3
+# Init: 14 Jun 2019
+# Updated: 06 Oct 2021
+
+
+import sys
+import os
+import pathlib
+from sys import exit
+
+
+# Variables
+man_text = """NAME
+    backlight - Backlight Modifier
+
+SYNOPSIS
+    backlight [OPTION]... VALUE
+
+OPTIONS
+    -a, --add
+
+        Add new brightness value to current brightness value
+        cannot use with -s flag.
+
+    -s, --subtract
+
+        Subtract new brightness value from current brightness value
+        cannot use with -a flag.
+
+    -r, --raw-value
+
+        Treat value as an absolute raw value rather than a percent.
+
+    -d, --display <display string>
+
+        `ls /sys/class/backlight` for possible display string values.
+
+EXAMPLES
+    backlight -d intel_backlight -p -a 10
+        Increase display backlight by 10 percent. Specifies display string.
+
+    backlight -s 20
+        Decrease display backlight by an increment of 20 (of whatever the
+        display defines as an increment).
+
+    backlight 30
+        Set display backlight value to 30.
+
+    backlight -p 40
+        Set display backlight to 40 percent of max brightness value."""
+
+
+# Determine display string
+display = None
+if os.environ['HOSTNAME'] == 'gramvoidd':
+    display = 'intel_backlight'
+elif os.environ['HOSTNAME'] == 'dtideapad':
+    display = 'intel_backlight'
+else:
+    print("Unknown host. Display string must be specified manually.")
+
+
+# Parse arguments
+args = iter(sys.argv[1:])
+value_operation = 'set'
+value_percent = True
+leftover_ags = list()
+for i in args:
+    if i in ['-h', '--help']:
+        print(man_text)
+        exit()
+    elif i in ['-a', '--add']:
+        value_operation = 'add'
+    elif i in ['-s', '--subtract']:
+        value_operation = 'sub'
+    elif i in ['-r', '--raw-value']:
+        value_percent = False
+    elif i in ['-d', '--display']:
+        display = next(args)
+    else:
+        if i.startswith('-'):
+            print("error: Invalid option")
+            exit(1)
+        else:
+            leftover_ags.append(i)
+
+if not display:
+    print("error: Display string not specified")
+    exit(1)
+
+try:
+    value = int(leftover_ags[0])
+except IndexError:
+    print("error: Display brightness value not specified")
+    exit(1)
+except ValueError:
+    print("error: Invalid new value for display brightness")
+    exit(1)
+
+
+# Verify valid arguments were provided
+backlight_path = pathlib.Path("/sys/class/backlight/" + display)
+if not backlight_path.exists():
+    print(f"error: Invalid display value '{display}'")
+    exit(1)
+
+if value_percent and value > 100:
+    print("error: Percentage values cannot exceed 100")
+    exit(1)
+
+
+# Main
+# Main: Calculate new brightness value
+if value_percent:
+    with open(backlight_path / "max_brightness", 'r') as f:
+        max_value = int(f.read())
+    value = int(max_value * (value / 100))
+
+if value_operation == 'set':
+    new_value = value
+elif value_operation == 'add':
+    with open(backlight_path / "brightness", 'r') as f:
+        current_value = int(f.read())
+    new_value = current_value + value
+    with open(backlight_path / "max_brightness", 'r') as f:
+        max_value = int(f.read())
+    if new_value > max_value:
+        new_value = max_value
+elif value_operation == 'sub':
+    with open(backlight_path / "brightness", 'r') as f:
+        current_value = int(f.read())
+    new_value = current_value - value
+    if new_value < 0:
+        new_value = 0
+
+
+# Main: Set new brightness value
+with open(backlight_path / "brightness", 'w') as f:
+    f.write(str(new_value))

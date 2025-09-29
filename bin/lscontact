@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: List Contacts
+# Tags: contacts, office, viewer
+# Dependencies: Python3.7+, python3-vobject
+# Version: 3
+# Init: 01 Dec 2022
+# Updated: 16 Dec 2023
+
+
+# Description: List contacts recursively from vCard files in a given
+# directory.
+
+
+import sys
+import pathlib as pl
+from sys import exit
+
+import re
+import vobject
+import json
+
+
+# Variables
+HOME = pl.Path.home()
+contacts_dir = HOME / 'union/decsync/contacts'
+
+
+# Functions
+def get_vcard_property(vcard, prop):
+    try:
+        prop_contents = vcard.contents[prop]
+    except KeyError:
+        return
+    if type(prop_contents) is not list:
+        prop_contents = list(prop_contents)
+    propery_items = list()
+    for i in prop_contents:
+        value = r'\n'.join(str(i.value).strip().split('\n'))
+        value = re.sub("  +", " ", value)
+        propery_items.append(value)
+        try:
+            propery_items.append(f'({i.type_param})')
+        except AttributeError:
+            pass
+
+    return ' '.join(propery_items)
+
+
+# Main
+for pth in contacts_dir.rglob('*'):
+    if not pth.is_file():
+        continue
+
+    body = pth.read_text()
+    for line in body.strip().split('\n'):
+        jsn = json.loads(line)
+        for i in jsn:
+            try:
+                vcard = vobject.readOne(i)
+            except (vobject.base.ParseError, AttributeError):
+                continue
+            line = list()
+            properties = ['n', 'tel', 'email', 'adr', 'note']
+            for p in properties:
+                value = get_vcard_property(vcard, p)
+                if value:
+                    if p == 'adr':
+                        value = value.replace('\\n', ', ').replace(', ,', ' ')
+                    line.append(value)
+            if line:
+                print('\t'.join(line))
+
+
+
+"""
+TODO
+- ...
+"""

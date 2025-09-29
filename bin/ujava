@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+
+# Author: Daniel Rode
+# Name: uJava
+# Type: Software Management, Software Updater
+# Description: Installs and updates Java from Oracle
+# Dependencies: Python 3.6+
+# Version: 1.2
+# Made: Nov 21 2012
+# Last updated: Dec 04 2017
+
+
+# DEV NOTES:
+# Does the rpm need installed while in the usr/java dirctory
+# or can it be installed from tmp?
+
+
+import os
+import sys
+import platform
+import subprocess
+import tempfile
+from sys import exit
+from glob import glob
+from urllib.request import urlopen
+from optparse import OptionParser
+
+
+print("WARNING! This script should be used with caution")
+print(("WARNING! Added new code on Dec 4 2017"
+    "and haven't tested this script since (for installing and updating"))
+
+
+# Parse Options
+parser = OptionParser()
+parser.add_option(
+    "-c", "--only-check", action="store_true", dest="only_check",
+    default=False, help="Only checks for update")
+parser.add_option(
+    "-i", "--only-install", action="store_true",
+    dest="only_install", default=False, help=(
+        "Only installs Java"
+        "(doesn't check if it is already installed or latest version)"))
+
+if len(sys.argv) > 1 and (sys.argv[1] in ('-h', '--help')):
+    parser.print_help()
+    exit()
+(options, args) = parser.parse_args()
+o = options
+
+# Check for conflicting options
+if o.only_check and o.only_install:
+    print("Options -i and -c can't be used together")
+    exit(1)
+
+
+# Variables
+os_arch = platform.architecture()[0]
+
+# Set arch specific strings
+if os_arch == '32bit':
+    url_scrape_begin = b'Linux RPM" href="'
+    url_scrape_end = b'" '
+    mozilla_java_plugin_alternative_command = (
+        "alternatives --install /usr/lib/mozilla/plugins/libjavaplugin.so "
+        "libjavaplugin.so /usr/java/latest/lib/i386/libnpjp2.so 20000;"
+        "alternatives --set libjavaplugin.so "
+        "/usr/java/latest/lib/i386/libnpjp2.so;")
+elif os_arch == '64bit':
+    url_scrape_begin = b'Linux x64 RPM" href="'
+    url_scrape_end = b'" '
+    mozilla_java_plugin_alternative_command = (
+        "alternatives --install /usr/lib64/mozilla/plugins/libjavaplugin.so "
+        "libjavaplugin.so.x86_64 /usr/java/latest/lib/amd64/libnpjp2.so 20000;"
+        "alternatives --set libjavaplugin.so.x86_64 "
+        "/usr/java/latest/lib/amd64/libnpjp2.so;")
+else:
+    print("What arch do you have?!")
+    exit(2)
+
+
+# Check if Java is installed
+if not os.path.exists("/usr/java/latest/bin/java"):
+    print("Java is not installed, beginning install...")
+    o.only_install = True
+
+
+# Get webpage
+if o.only_install:
+    print("Getting Java package url...")
+else:
+    print("Checking for latest version...")
+for count in range(10):
+    try:
+        url = 'http://www.java.com/en/download/manual.jsp'
+        java_page = urlopen(url).read()
+    except:
+        print(f"\rtrying again...({count + 1})", end='', flush=True)
+    else:
+        if count > 0:
+            print()
+        break
+else:
+    print()
+    raise Exception("error: Failed to get webpage")
+
+# Parse page
+java_package_url = java_page.split(
+    url_scrape_begin)[1].split(url_scrape_end)[0]
+java_package_url = str(java_package_url, 'utf8')  # convert from bytes
+if not java_package_url.startswith('http://'):
+    print("error: Scraping for Java package URL failed")
+    exit(1)
+
+
+# Checking
+if not o.only_install:
+    # Parse page, Get latest version number
+    current_version_string = java_page.split(
+        b'<h4 class="sub">Recommended Version ')[1].split(b'</h4>')[0]
+    current_version = current_version_string.split(b' Update ')
+    current_major_version = int(current_version[0])
+    current_minor_version = int(current_version[1])
+
+    # Check if newest version and installed version match
+    installed_version = glob('/usr/java/jre*')[0].split('/')[3]
+    installed_major_version = int(installed_version.split('.')[1])
+    installed_minor_vesrion = int(
+        installed_version.split('.')[2].split('_')[1].lstrip("0"))
+
+    # Print results
+    if current_major_version > installed_major_version:
+        print("There is a major update available")
+    elif current_minor_version > installed_minor_vesrion:
+        print("There is a minor update available")
+    else:
+        print(("Current version: "
+               f"{current_major_version}.{current_minor_version}"))
+        print("Java is up to date")
+        exit()
+
+    print(" -- Versions -- ")
+    print(f"Installed:\t{installed_major_version}.{installed_minor_vesrion}")
+    print(f"Current:\t{current_major_version}.{current_minor_version}")
+
+    if o.only_check:
+        exit()
+
+
+# Updating
+# Download package
+tmp_file = tempfile.mkstemp()[1]
+print("Downloading new version...")
+for i in range(10):
+    p = subprocess.call(
+        ['wget', java_package_url, '--show-progress', '--quiet',
+            '--output-document', tmp_file])
+    if p != 0:
+        print(f"Download failed, retrying({i + 1})")
+    else:
+        break
+else:
+    raise Exception("Download failed! Too many attempts. Exiting...")
+
+# Install new package
+print("Installing new version...")
+subprocess.call(f'sudo su -c "rpm -Uvh {tmp_file}"', shell=True)
+
+
+# Set Oracle Java as default
+if o.only_install:
+    print("Configuring as default...")
+    alternatives_shell_glob = (
+        'alternatives --install /usr/bin/java java '
+        '/usr/java/latest/bin/java 20000;'
+        'alternatives --set java /usr/java/latest/bin/java;' +
+        mozilla_java_plugin_alternative_command)
+    subprocess.call(['sudo', 'bash', '-c', alternatives_shell_glob])
+
+os.remove(tmp_file)
+
+
+# Done
+print("Java has been updated")
+
+
+
+# TODO:
+# - check if install fails
+# - keep old version of java for backup to install if installing new version fails
+# - make more specific browser aware. for example:
+# -- if firefox is not installed, then a link has to be created in /opt/google/chrome/plugins to the java web applet (because chrome can't auto detect the one for  the non installed firefox)
+# -- also if firefox is not installed, the alternative command shouldn't be run for firefox java plugin
+# -- and other things?
+# - consider using https://javadl-esd-secure.oracle.com/update/1.8.0/map-m-1.8.0.xml to check for latest Java version
+# - if not already, print new version number when found rather than just saying there is a new version
+# - remove code setting Java as default alternative browser Java plugin (Java shouldn't be used in web browsers)

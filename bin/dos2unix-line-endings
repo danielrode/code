@@ -1,0 +1,17 @@
+#!/usr/bin/env dash
+# Author: https://stackoverflow.com/a/16768848/1635116
+# Tags: file management, editing, text
+# Version: 2
+# Init: 12 Aug 2023
+# Updated: 25 Aug 2023
+
+# Description: Convert given text file or stdin with Windows line endings to
+# Unix line endings (outputs to stdout).
+
+if [ -n "$1" ]
+then
+	sed 's/\r$//' "$1"
+else
+  # If no path is provided as command line argument, read from stdin
+	sed 's/\r$//'
+fi

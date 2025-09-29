@@ -1,0 +1,17 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Tags: macro, wrapper, launcher, files, documents
+# Dependencies: nv 
+# Version: 1
+# Init: 27 Feb 2023
+# Updated: -
+
+
+# Description: Open a given set of files in current instance of
+# Neovide/Neovim. If one does not exist, create one.
+# `nvn` = NeoVim New [window]
+
+
+# Tell `nv` to run neovim in a new window (not in current terminal)
+NV_NEW_WINDOW=true nv "$@"
+

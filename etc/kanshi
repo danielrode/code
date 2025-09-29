@@ -1,0 +1,36 @@
+
+profile Default {
+    output "LG Display 0x0645 Unknown" enable
+
+    # Set laptop display brightness low
+    exec bl 55
+}
+
+profile HomeDesk {
+    # Ensure laptop display is on
+    # output "LG Display 0x0645 Unknown" enable position 0,0
+
+    # Turn laptop display off
+    output "LG Display 0x0645 Unknown" disable
+
+    # Set laptop display brightness low
+    exec bl 1
+
+    # Ensure external display is on
+    output "Dell Inc. DELL P2722H 2G5D8P3" enable position 1920,0
+
+    # Send all workspaces except workspace #1 to external monitor
+    # exec swaymsg workspace 1, move workspace to '"LG Display 0x0645 Unknown"'
+    # exec swaymsg workspace 0, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 9, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 8, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 7, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 6, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 5, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 4, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 3, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+    # exec swaymsg workspace 2, move workspace to '"Dell Inc. DELL P2722H 2G5D8P3"'
+
+    # Restart waybar (it glitches out when external display is attached)
+    exec pkill waybar; sleep 1; swaymsg exec waybar
+}

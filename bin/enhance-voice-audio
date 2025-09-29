@@ -1,0 +1,34 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Enhance Voice Audio
+# Tags: media, processing, ffmpeg
+# Dependencies:
+#   ffmpeg
+# Version: 1
+# Init: 27 Apr 2023
+# Updated: -
+
+
+# Description:
+# Run given audio file through some ffmpeg filters to improve voice quality
+# (remove background noise, normalize levels, and reduce clicks)
+
+
+for i in "$@"
+do
+  # Strip current file extension and append '-enhanced' to file name
+  new_file_name="$(echo "$i" | sed 's/\.[^/]*$/-enhanced/')"
+
+	# `afftdn` filter removes background noise
+  # `adeclick` filter removes impulsive noise
+  # TODO consider changing when the adeclick filter is run (it might go better
+  # first or last... research/testing will need to be done to determine)
+	# `loudnorm` is industry standard normalization filter (EBU R128)
+	# `pcm_s16le` specifies that the output should be lossless
+	ffmpeg \
+    -i "$i" \
+    -af 'afftdn,adeclick,loudnorm=I=-16:LRA=11:TP=-1.5' \
+    -c:a pcm_s16le \
+    "${new_file_name}.wav"
+done
+

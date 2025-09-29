@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 10 Jul 2025
+# Updated: -
+
+
+# Description: Print a given page range to a specific printer from a given PDF.
+
+# NOTE: List available printer names
+# lpstat -p
+
+# NOTE: Cancel print jobs
+# lprm -P PRINTER-NAME
+
+# Main
+printer_name="$1"
+page_range="$2"
+pdf_path="$3"
+# Example lp command
+# lp -d Zebra-Technologies-ZTC-ZD421-203dpi-ZPL -o 4x3 -P "$pages" "$1"
+lp -d "$printer_name" -P "$page_range" "$pdf_path"

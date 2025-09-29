@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: ls dtach (sessions)
+# Tags: process, list
+# Dependencies: Python3.6+
+# Version: 1
+# Init: 24 Dec 2021
+# Updated: -
+
+
+# Description:
+# Lists dtach sessions and their child processes.
+
+
+import pathlib as pl
+import subprocess as sp
+from sys import exit
+
+
+def run_cmd(cmd_list):
+    p = sp.Popen(cmd_list, stdout=sp.PIPE)
+    p_stdout = str(p.communicate()[0], 'utf8').strip()
+
+    return p_stdout
+
+
+out = run_cmd(['pgrep', '-a', 'dtach'])
+sessions = dict()
+for i in out.split('\n'):
+    pid, cmdline = i.split(' ', 1)
+    try:
+        sessions[cmdline].append(int(pid))
+    except KeyError:
+        sessions[cmdline] = list()
+        sessions[cmdline].append(int(pid))
+
+for cmdline in sessions:
+    pid = max(sessions[cmdline])
+    print(cmdline)
+    print(run_cmd(['pstree', str(pid)]))
+    print()

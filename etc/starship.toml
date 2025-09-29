@@ -1,0 +1,330 @@
+
+command_timeout = 1
+scan_timeout = 1
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$cmd_duration\
+$line_break\
+$python\
+$character"""
+
+[time]
+disabled = true
+time_format = "%R"
+style = "bg:color_bg1"
+format = '[[ $time ](fg:color_fg0 bg:color_bg1)]($style)'
+
+[git_state]
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+style = "bright-black"
+
+[cmd_duration]
+format = "[$duration]($style) "
+style = "yellow"
+
+[character]
+success_symbol = "[>](bold green)"
+error_symbol = "[x](bold red)"
+vimcmd_symbol = "[<](bold green)"
+
+[git_commit]
+tag_symbol = " tag "
+
+[git_status]
+ahead = ">"
+behind = "<"
+diverged = "<>"
+renamed = "r"
+deleted = "x"
+
+[aws]
+disabled = true
+symbol = "aws "
+
+[azure]
+disabled = true
+symbol = "az "
+
+[buf]
+disabled = true
+symbol = "buf "
+
+[bun]
+disabled = true
+symbol = "bun "
+
+[c]
+disabled = true
+symbol = "C "
+
+[cobol]
+disabled = true
+symbol = "cobol "
+
+[conda]
+disabled = true
+symbol = "conda "
+
+[crystal]
+disabled = true
+symbol = "cr "
+
+[cmake]
+disabled = true
+symbol = "cmake "
+
+[daml]
+disabled = true
+symbol = "daml "
+
+[dart]
+disabled = true
+symbol = "dart "
+
+[deno]
+disabled = true
+symbol = "deno "
+
+[dotnet]
+disabled = true
+symbol = ".NET "
+
+[directory]
+read_only = " ro"
+
+[docker_context]
+disabled = true
+symbol = "docker "
+
+[elixir]
+disabled = true
+symbol = "exs "
+
+[elm]
+disabled = true
+symbol = "elm "
+
+[fennel]
+disabled = true
+symbol = "fnl "
+
+[fossil_branch]
+disabled = true
+symbol = "fossil "
+
+[gcloud]
+disabled = true
+symbol = "gcp "
+
+[git_branch]
+symbol = "git "
+
+[gleam]
+disabled = true
+symbol = "gleam "
+
+[golang]
+disabled = true
+symbol = "go "
+
+[gradle]
+disabled = true
+symbol = "gradle "
+
+[guix_shell]
+disabled = true
+symbol = "guix "
+
+[hg_branch]
+disabled = true
+symbol = "hg "
+
+[java]
+disabled = true
+symbol = "java "
+
+[julia]
+disabled = true
+symbol = "jl "
+
+[kotlin]
+disabled = true
+symbol = "kt "
+
+[lua]
+disabled = true
+symbol = "lua "
+
+[nodejs]
+disabled = true
+symbol = "nodejs "
+
+[memory_usage]
+disabled = true
+symbol = "memory "
+
+[meson]
+disabled = true
+symbol = "meson "
+
+[nats]
+disabled = true
+symbol = "nats "
+
+[nim]
+disabled = true
+symbol = "nim "
+
+[nix_shell]
+disabled = true
+symbol = "nix "
+
+[ocaml]
+disabled = true
+symbol = "ml "
+
+[opa]
+disabled = true
+symbol = "opa "
+
+[os.symbols]
+AIX = "aix "
+Alpaquita = "alq "
+AlmaLinux = "alma "
+Alpine = "alp "
+Amazon = "amz "
+Android = "andr "
+Arch = "rch "
+Artix = "atx "
+CachyOS = "cach "
+CentOS = "cent "
+Debian = "deb "
+DragonFly = "dfbsd "
+Emscripten = "emsc "
+EndeavourOS = "ndev "
+Fedora = "fed "
+FreeBSD = "fbsd "
+Garuda = "garu "
+Gentoo = "gent "
+HardenedBSD = "hbsd "
+Illumos = "lum "
+Kali = "kali "
+Linux = "lnx "
+Mabox = "mbox "
+Macos = "mac "
+Manjaro = "mjo "
+Mariner = "mrn "
+MidnightBSD = "mid "
+Mint = "mint "
+NetBSD = "nbsd "
+NixOS = "nix "
+Nobara = "nbra "
+OpenBSD = "obsd "
+OpenCloudOS = "ocos "
+openEuler = "oeul "
+openSUSE = "osuse "
+OracleLinux = "orac "
+Pop = "pop "
+Raspbian = "rasp "
+Redhat = "rhl "
+RedHatEnterprise = "rhel "
+RockyLinux = "rky "
+Redox = "redox "
+Solus = "sol "
+SUSE = "suse "
+Ubuntu = "ubnt "
+Ultramarine = "ultm "
+Unknown = "unk "
+Uos = "uos "
+Void = "void "
+Windows = "win "
+
+[package]
+disabled = true
+symbol = "pkg "
+
+[perl]
+disabled = true
+symbol = "pl "
+
+[php]
+disabled = true
+symbol = "php "
+
+[pijul_channel]
+disabled = true
+symbol = "pijul "
+
+[pulumi]
+disabled = true
+symbol = "pulumi "
+
+[purescript]
+disabled = true
+symbol = "purs "
+
+[python]
+disabled = true
+symbol = "py "
+
+[quarto]
+disabled = true
+symbol = "quarto "
+
+[raku]
+disabled = true
+symbol = "raku "
+
+[ruby]
+disabled = true
+symbol = "rb "
+
+[rust]
+disabled = true
+symbol = "rs "
+
+[scala]
+disabled = true
+symbol = "scala "
+
+[spack]
+disabled = true
+symbol = "spack "
+
+[solidity]
+disabled = true
+symbol = "solidity "
+
+[status]
+symbol = "[x](bold red) "
+
+[sudo]
+symbol = "sudo "
+
+[swift]
+disabled = true
+symbol = "swift "
+
+[typst]
+disabled = true
+symbol = "typst "
+
+[terraform]
+disabled = true
+symbol = "terraform "
+
+[zig]
+disabled = true
+symbol = "zig "
+
+[env_var.DCV_SHELL_PROMPT_MSG]
+variable = "DCV_SHELL_PROMPT_MSG"
+default = ""
+format = "[$env_value ]($style)"
+style = "red bold"

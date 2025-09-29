@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Description: Manage Sway WM idle management states
+# Dependencies:
+#   bash 4+
+#   swayidle
+#   swaylock
+#   chayang
+# Version: 11
+# Made: 24 Jan 2020
+# Updated: 08 Aug 2024
+
+
+# Variables
+swayidle_common_flags=(
+    --daemonize
+    --indicator-radius 100
+    --indicator-thickness 8
+    --inside-clear-color EB832890
+    --inside-ver-color FFFFFF90
+    --inside-wrong-color FF000070
+    --key-hl-color 444444AA
+    --line-ver-color FFFFFFFF
+    --ring-clear-color EB832833
+    --ring-color 55555555
+    --ring-ver-color FFFFFF33
+    --ring-wrong-color FF000033
+    --line-uses-inside
+    --text-color FFFFFFBB
+    # --color 808080
+    --color 000000
+    --indicator-idle-visible
+)
+
+if [[ $HOSTNAME == gramvoidd ]]
+then
+    swayidle_common_flags+=(
+        --hide-keyboard-layout
+    )
+fi
+
+
+# Activate idle management - secure mode (screen locks and turns off)
+if [[ $1 == secure ]]
+then
+    killall --exact --quiet swayidle
+    swayidle -w \
+        timeout 300 'swaymsg -t command "exec im lock-delay"' \
+        timeout 315 'swaymsg -t command "output * dpms off"' \
+        resume 'swaymsg -t command "output * dpms on"' \
+        before-sleep 'im lock' \
+        > /dev/null 2>&1 &
+
+    echo "Idle management is ENABLED: secure mode."
+
+# Activate idle management - open mode (screen turns off but does not lock)
+# Note: The session will still lock before the system suspends.
+elif [[ $1 == open ]]
+then
+    killall --exact --quiet swayidle
+    swayidle -w \
+        timeout 300 'notify-send -t 5000 \
+        "Screen turning off in 10 seconds if inactivity persists..."' \
+        timeout 310 'swaymsg -t command "output * dpms off"' \
+        resume 'swaymsg -t command "output * dpms on"' \
+        before-sleep 'im lock' \
+        > /dev/null 2>&1 &
+
+    echo "Idle management is ENABLED: open mode."
+
+# Activate idle management - passive mode (no timeout--screen never locks or
+# turns off without some explicit signal being sent to swayidle daemon)
+# Note: The session will still lock before the system suspends.
+elif [[ $1 == passive ]]
+then
+    killall --exact --quiet swayidle
+    swayidle -w before-sleep 'im lock' > /dev/null 2>&1 &
+
+    echo "Idle management is ENABLED: passive mode."
+
+# Turn idle management OFF
+elif [[ $1 == off ]]
+then
+    echo "Use 'im passive'"
+    exit 1
+
+# Lock session
+elif [[ $1 == lock-delay ]]
+then
+    # Lock command
+    # swaylock $swayidle_common_flags --grace 10
+    chayang -d 10 && swaylock "${swayidle_common_flags[@]}"
+
+# Lock session immediately
+elif [[ $1 == lock ]]
+then
+    # Lock command
+    swaylock "${swayidle_common_flags[@]}"
+
+# Print help
+elif [[ $1 == "-h" || $1 == "--help" ]]
+then
+    echo "Options: off, on, open, secure, lock"
+
+# Print idle management state
+else
+    echo "swayidle PIDs:"
+    pgrep swayidle
+fi
+
+
+
+# grim - | corrupter - > /tmp/img.png ; swaylock --image /tmp/img.png

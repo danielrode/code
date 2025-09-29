@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Note Search
+# Type: file management, search
+# Dependencies:
+#   fzf
+#   rg
+#   fd
+# Version: 4
+# Init: 20 Apr 2021
+# Updated: 05 Apr 2024
+
+
+# Description: Provides a list of notes that contain the given key term and
+# allows the user to select one to open.
+
+
+notes_path="$HOME/union/notes"
+cd "$notes_path"
+
+
+function SEARCH_CMDS {
+    # Search file contents for query
+    rg --files-with-matches --ignore-case "$1"
+
+    # Search file names for query
+    fd --ignore-case "$1"
+}
+export -f SEARCH_CMDS
+
+SEARCH_CMDS "$1" | fzf \
+    --sort \
+    --preview="[ ! -z {} ] && rg --ignore-case --pretty --context 5 {q} {}" \
+    --disabled \
+    --query="$1" \
+    --bind "change:reload:SEARCH_CMDS {q}" \
+    --preview-window="70%:wrap" \
+| while read path
+do
+    o "$path"
+done

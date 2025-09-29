@@ -1,0 +1,32 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Remove Empty Files
+# Type: file management
+# Dependencies:
+#   fd (fd-find)
+#   xxd
+# Init: 11 Aug 2023
+# Updated: 16 May 2024
+
+
+# Description: Delete all empty files in the given directory. If no directory
+# is specified, the current directory is processed.
+
+
+fd --exact-depth 1 --type file . "$1" |
+  while read path
+  do
+    # Only consider file if is 0 or 1 bytes in length (size)
+    file_size="$(wc --bytes "$path" | cut -d ' ' -f 1)"
+    if [ "$file_size" = 0 -o "$file_size" = 1 ]
+    then
+      # Delete file if it only contains one newline (and no other characters)
+      # or contains nothing
+      file_contents_hex="$(head --bytes 1 "$path" | xxd -p)"
+      if [ "$file_contents_hex" = "0a" -o "$file_contents_hex" = "" ]
+      then
+        echo "Deleting $path"
+        rm "$path"
+      fi
+    fi
+  done

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Init: 04 Mar 2021
+# Updated: 11 Dec 2023
+
+
+qrencode --type SVG --output - "$@" | imv - &
+

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 29 Dec 2021
+# Updated: 18 Feb 2025
+
+
+model_cold_path="$HOME/working/nerd-dictation/model"
+model_hot_path=/tmp/nerd-up-nerd-dictation-model-hot-path
+if ! test -d "$model_hot_path"
+then
+	echo "Loading model into RAM..."
+	rsync -r "$model_cold_path"/ "$model_hot_path"
+	echo "done"
+fi
+
+function clear_notification {
+	args=(
+		--session
+		--dest org.freedesktop.Notifications
+		--object-path /org/freedesktop/Notifications
+		--method org.freedesktop.Notifications.CloseNotification
+		"$1"
+	)
+	gdbus call "${args[@]}"
+}
+
+if pgrep -a python3 | grep 'nerd-dictation begin '
+then
+	"$HOME/working/nerd-dictation/nerd-dictation" end
+	clear_notification "$(cat "$model_hot_path-notif-id.txt")"
+else
+	# busctl --user call i3.status.rs /NerdDictationIndicator i3.status.rs SetStatus sss 'Listening...' microphone_full Info
+	notify-send --print-id "Dictation: ON" > "$model_hot_path-notif-id.txt"
+	"$HOME/working/nerd-dictation/nerd-dictation" begin --vosk-model-dir="$model_hot_path"
+	# "$HOME/working/nerd-dictation/nerd-dictation" begin --vosk-model-dir="$HOME/working/nerd-dictation/model" --timeout 8 --full-sentence
+	# busctl --user call i3.status.rs /NerdDictationIndicator i3.status.rs SetStatus sss '' microphone_full Idle
+fi
+
+
+# save this to my bin and add shortcut to launch script menu (the launch shortcut should be an on/off toggle)
+
+# if this script is run while nerd dictation is already running, it should send the end signal to nerd dictation
+
+# save model under cache directory (check for model upon startup and exit if it gone)
+# actually, upon startup, copy model to /tmp directory so it will be in memory and load faster
+
+
+# term[inate] dictation
+# comma -> ,

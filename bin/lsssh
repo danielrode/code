@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 20 Jan 2025
+
+
+gateway="$(ip route show 0.0.0.0/0 | awk '{print $3}')"
+nmap -p 22 --open -sV "${gateway}/24"

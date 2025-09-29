@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Dependencies:
+#   freerdp
+# Created: 15 Jul 2025
+# Updated: 21 Jul 2025
+
+
+# Description: Alias/shortcuts for starting RDP (remote desktop) sessions.
+
+
+import sys
+import json
+import socket
+import subprocess as sp
+from pathlib import Path
+
+
+# Constants
+HOSTNAME = socket.gethostname()
+HOME = Path.home()
+
+FREERDP_ARGS = (
+    '/clipboard',
+    # '/scale:180',
+    # '/scale-desktop:200',
+    '/w:1920',
+    '/h:1000',
+)
+
+with open(HOME / '.crypt/private_code_vars.json') as f:
+    VARS = json.load(f)
+VARS |= json.loads(sp.run(
+    [
+        'bash', '-c', '''
+            source ~/.crypt/private_code_vars.sh
+            python3 -c "import os, json; print(json.dumps(dict(os.environ)))"
+        ''',
+    ],
+    check=True, capture_output=True, text=True,
+).stdout)
+
+
+# Main
+try:
+    endpoint = sys.argv[1]
+except IndexError:
+    print("Provide host alias")
+    sys.exit(1)
+
+match endpoint:
+    case 'a':
+        domain = VARS["WORK3_DOMAIN"]
+        user = VARS["WORK3_USER"]
+        ip = VARS["WORK3_IP"]
+    case 'w':
+        domain = VARS["WORK4_DOMAIN"]
+        user = VARS["WORK4_USER"]
+        ip = VARS["WORK4_IP_PART1"] + sys.argv[2] + VARS["WORK4_IP_PART2"]
+    case _:
+        print("error: Unknown host alias")
+        sys.exit(1)
+
+cmd = ['wlfreerdp', *FREERDP_ARGS, f"/d:{domain}", f"/u:{user}", f"/v:{ip}"]
+sp.run(cmd)

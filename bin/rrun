@@ -1,0 +1,21 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Run R Script
+# Tags: programming, alias
+# Dependencies:
+#   conda (with R installed within it)
+# Version: 1
+# Init: 20 Apr 2023
+# Updated: -
+
+
+# Description:
+# Run R within a Miniconda environment
+
+
+# Use seperate user library path (not the one system installed R uses)
+export R_LIBS_USER="$HOME/.local/lib/R_conda"
+
+
+conda run --name base Rscript "$1"
+

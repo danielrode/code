@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Org Agenda
+# Tags: calendar, time management, org parser
+# Dependencies: Python3.7+, orgparse (via pip)
+# Version: 1
+# Init: 03 Oct 2022
+# Updated: -
+
+
+# Description:
+# Parse my cal.org calendar file and dispaly it in agenda view (similar to the
+# way my Android org widget does on my phone).
+
+
+import orgparse
+import pathlib as pl
+
+
+# Variables
+calorg_path = pl.Path.home() / 'union/notes/org/cal.org'
+
+
+# Main
+org_root = orgparse.load(calorg_path)
+
+# Sort events by date
+event_date_str_pairs = list()
+for i in org_root:
+    try:
+        a = str(i.scheduled)[1:11]
+    except AttributeError:
+        # event_date_str_pairs.append(('', i))
+        continue
+    b = str(i.scheduled)[15:-1]
+    event_date_str_pairs.append((a+b, i))
+
+event_date_str_pairs.sort(key=lambda x: x[0])
+
+# Print events
+for date_str, event in event_date_str_pairs:
+    print(event)
+
+
+
+"""
+TODO
+- If date does not include what day of week it is, calculate and insert it.
+- Verify whether or not date sorting accounts for dates with/without week day.
+"""

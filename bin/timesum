@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Time Crunch
+# Tags: date, time, time management, math, calculator
+# Dependencies: Python3.6+
+# Version: 3
+# Init: 28 May 2021
+# Updated: 05 Aug 2022
+
+
+# Description:
+# Takes a series of time entries and prints their sum.
+# Inputting "11:28 -09:27 10:45 -13:25" will subtract 9 hours and 27 minutes
+# from 11 hours and 28 minutes and will then add 10 hours and 45 minutes to
+# the sum and then subtract 13 hours and 25 minutes from it. Note that entries
+# can be space or newline delimited.
+
+
+import sys
+
+
+# Import data
+entries = sys.argv[1:]
+if not entries:
+    # Read from stdin
+    entries = sys.stdin.read().strip().replace('\n', ' ').split()
+
+
+# Sum duration from data
+minutes_sum = 0
+for i in entries:
+    try:
+        h, m = i.split(':')
+    except ValueError:
+        h, m = i.split(',')
+    h = int(h)
+    m = int(m)
+    if h < 0:
+        m = m * (-1)
+    minutes_sum += h * 60
+    minutes_sum += m
+
+hours_sum = 0
+minutes_delta = int(minutes_sum)
+while True:
+    if minutes_delta < 60:
+        break
+    minutes_delta -= 60
+    hours_sum += 1
+
+
+# Display results
+print(hours_sum, "hours and", minutes_delta, "minutes")
+
+
+
+"""
+TODO
+- support seconds
+"""

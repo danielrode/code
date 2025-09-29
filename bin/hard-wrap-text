@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Created: 12 Dec 2024
+# Updated: -
+
+
+import re
+import sys
+
+
+WIDTH = 75
+
+
+text = sys.stdin.read().rstrip()
+try:
+    comment_token, _ = re.match(r"(\s*(.)\2* )", text).groups()
+except AttributeError:
+    comment_token = ""
+
+# Remove comment token(s)
+text = re.sub(
+    f"^{re.escape(comment_token)}", "", text, flags=re.MULTILINE
+)
+
+# Remove newlines
+text = re.sub(r"\s*\n+\s*", " ", text)
+
+# Output wrapped text
+print(comment_token, end="")
+count = len(comment_token)
+for word in text.split(" "):
+    if (count + len(word) + 1) > WIDTH:
+        print()
+        count = 0
+        segment = f"{comment_token}{word}"
+    elif count == len(comment_token):
+        segment = word
+    else:
+        segment = f" {word}"
+    count += len(segment)
+    print(segment, end="")

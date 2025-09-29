@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Start Interactive R Session
+# Tags: alias, programming
+# Dependencies:
+#   conda (with R installed within it)
+# Version: 1
+# Init: 20 Apr 2023
+# Updated: -
+
+
+# Description:
+# Start an interactive R session within the Miniconda environment
+
+
+# Use seperate user library path (not the one system installed R uses)
+export R_LIBS_USER="$HOME/.local/lib/R_conda"
+
+
+eval "$(conda shell.bash activate)"
+R --vanilla
+

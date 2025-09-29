@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: File History
+# Tags: file management, backup, history
+# Dependencies:
+#   restic
+#   lf
+#   ~/code/bin/rs
+# Version: 6
+# Created: 27 Jan 2022
+# Updated: 13 Feb 2024
+
+
+# Description:
+#
+# Given some file path, this script will iterate over whatever restic
+# repository is mounted at /mnt/restic finding all snapshots of the given
+# file path. It will create links to each snapshot under some temp directory
+# (the path of which is printed as the output of this script). Snapshots of
+# the given path are only linked to if they are unique, thus, if a given
+# restic snapshot does not contain the given file path or if it contains
+# a duplicate (unmodified) copy (a version that matches an older snapshot),
+# that snapshot is skipped.
+#
+# This script is useful in conjunction with my `rs` script.
+
+
+REPO_PATH=/mnt/restic
+LINK_BUCKET="$(mktemp -d)"
+TARGET_ROOT_PATH="$REPO_PATH/hosts/$HOSTNAME"
+TARGET_BASENAME="$(basename "$1")"
+
+INPUT_PATH="$(realpath --quiet "$1")"
+if [ "$?" != 0 ]
+then
+	echo "error: Invalid path"
+	exit 1
+fi
+
+# If restic repo not mounted...
+if [ ! -d "$REPO_PATH/snapshots" ]
+then
+    # Mount restic repo
+    echo "Mounting restic repository..."
+    rs --mount "$REPO_PATH"
+    while true
+    do
+        sleep 0.2
+        if [ -d "$REPO_PATH/snapshots" ]
+        then
+            break
+        fi
+    done
+fi
+
+
+echo "$LINK_BUCKET"
+
+
+echo "Generating snapshot links..."
+prev_last_modified=none
+for i in "$TARGET_ROOT_PATH"/*
+do
+	echo "Loading snapshot metadata: $i"
+	target="$i$INPUT_PATH"
+	if [ -e "$target" ]
+	then
+		last_modified="$(stat --dereference --format '%Y' "$target")"
+		if [ "$prev_last_modified" = "$last_modified" ]
+		then
+			continue
+		fi
+		prev_last_modified="$last_modified"
+		link_name="$LINK_BUCKET/$(basename "$i") - $TARGET_BASENAME"
+		ln -s "$target" "$link_name"
+	fi
+done
+
+
+lf "$LINK_BUCKET"
+
+
+echo "Unmounting restic repo..."
+umount "$REPO_PATH"
+echo "Unmounted"
+
+
+
+# TODO
+# - take repo path and file path as input (like `file-hist REPO_PATH PATH` where PATH is the path whose version history is desired), but if repo path is not provided, inform the user that the default `/mnt/restic` will be used
+# - create USAGE help message

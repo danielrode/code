@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+# Author: Daniel Rode
+# Created: 23 Feb 2025
+# Updated: -
+
+
+import sys
+import subprocess as sp
+from sys import exit
+from pathlib import Path
+
+
+EXE_NAME = sys.argv[0].split('/')[-1]  # This script's filename
+HELP_TEXT = f"Usage: {EXE_NAME}  COMMIT  PATH"
+
+
+def print2(*args, **kwargs) -> None:
+    """Print message to stderr."""
+    print(*args, **kwargs, file=sys.stderr)
+
+
+args = sys.argv[1:]
+try:
+	commit = args[0]
+	pth = Path(args[1])
+except IndexError:
+	print2(HELP_TEXT)
+	exit(1)
+
+str_pth = str(pth)
+if not str_pth.startswith('/'):
+	str_pth = "./" + str(pth)
+
+# Cat file from specific git commit
+cmd = ('git', 'show', f"{commit}:{str_pth}")
+sp.run(cmd, check=True)

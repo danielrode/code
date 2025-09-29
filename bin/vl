@@ -1,0 +1,71 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Volume Control
+# Type: settings modifier
+# Description: Changes system volume level and selected volume sink.
+# Dependencies: mpv
+# Version: 1.0.2
+# Init: 17 Aug 2020
+# Updated: 13 Sep 2021
+
+
+# This script was made from code that used to be in my Fish Shell
+# configuration file.
+
+
+# To see list of sinks: pactl list short sinks
+# To change default sink: pacmd set-default-sink {NUMBER}
+
+
+# !! This block no longer works
+# # Switch volume output destination (which speaker system sound is played to)
+# if [ "$1" = 'out' ]
+# then
+
+#     # Choose new default audio sink
+#     set sink $(pactl list short sinks | cut -d\t -f 2 | fzf)  # prompt user
+#     if test ! "$sink"
+#         echo "No selection made"
+#         return
+#     fi
+
+#     pacmd set-default-sink "$sink"
+
+#     # Move all existing audio streams (if any) to new default audio sink
+#     # NOTE: requires that line:
+#     #       load-module module-stream-restore restore_device=false
+#     #       be set in '/etc/pulse/default.pa'
+#     for i in $(pacmd list-sink-inputs | grep index | awk '{print $2}')
+#     do
+#         pacmd move-sink-input "$i" "$sink" ^ /dev/null
+#     done
+
+# fi
+
+
+# Change volume level
+
+# '2' is the audio sink ID
+# Audio sinks and their IDs can be listed with command:
+# pactl list short sinks
+# Default sink can be changed with: pacmd set-default-sink SINK_ID
+pactl set-sink-volume @DEFAULT_SINK@ "$1"%
+
+
+# Play sound to indicate new volume level
+# Only play sound on whitelisted hosts (some lower-level hosts are better off
+# not expending CPU time on playing notification sounds).
+# if [ ! "$HOSTNAME" = "daspirecu" ]
+# then
+# 	mpv --no-terminal /usr/share/sounds/freedesktop/stereo/message.oga &
+# fi
+
+
+
+# TODO
+# - add ability to change audio input source
+# - incorporate ability to switch output to HDMI and back
+# switch to: pactl set-card-profile 0 output:hdmi-stereo
+# switch back: pactl set-card-profile 0 output:analog-stereo
+# these profiles (after "output:") listed with command: pacmd list-cards
+# - This script needs to be checked that it is compatible with pipewire (that it uses best practices).

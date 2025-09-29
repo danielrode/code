@@ -1,0 +1,22 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Tags: annotation, overlay, desktop, windows
+# Dependencies:
+#   pqiv
+#   swaywm
+# Version: 1
+# Created: 18 Sep 2023
+# Updated: 07 Sep 2025
+
+
+# Requires code in sway main.conf:
+# for_window [title="floating_redx"] floating enable; border none
+
+
+img_png_base64="
+iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
+WXMAAC4jAAAuIwF4pT92AAAAPUlEQVRIx+3VwQkAIAwEwdX+u0mBsYcTUWH3H4a8DsIaqqHS+8ml
+hIWFhYXfh8fOwnz5cZx7LCwsLCx8rAVS/giyl+WdhAAAAABJRU5ErkJggg=="
+
+echo "$img_png_base64" | base64 --decode |
+	pqiv --transparent-background --window-title=floating_redx -

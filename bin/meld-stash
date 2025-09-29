@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Updated 13 May 2025
+
+
+set -e
+
+
+# git stash list --date=local
+STASH_ID="stash"
+# STASH_ID="stash@{Fri Dec 13 10:05:28 2024}"
+
+
+function get_stash {
+    git show "${STASH_ID}:${1}"
+}
+
+
+git diff --name-only "$STASH_ID" HEAD |
+while read line
+do
+    meld "$line" <(get_stash "$line")
+done

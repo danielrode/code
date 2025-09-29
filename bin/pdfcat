@@ -1,0 +1,15 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Dependencies: pdfunite
+# Version: 1
+# Init: 18 Nov 2022
+# Updated: -
+
+
+if [ -e "out.pdf" ]
+then
+	echo "error: 'out.pdf' already exists, will not overwrite"
+	exit 1
+fi
+
+pdfunite "$@" "out.pdf"

@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+## Author: Daniel Rode
+## Name: Bob The Timer
+## Type: Timer
+## Description: Timer
+## Version: 2
+## Made: Feb 13 2013
+## Last updated: Jun 08 2017
+
+
+# Import
+import time, re, sys, random
+# import threading, subprocess as sp
+from sys import exit
+from signal import *
+
+import gi.repository
+gi.require_version('Notify', '0.7')
+from gi.repository import Notify
+
+
+# Variables
+help_text = "Examples: 1h9m | 1h40m | 40m70s | 30m500h2s8s"
+
+
+# Functions
+def exitEarly(*args):
+    print("\rStopped timer early")
+    exit()
+
+def notify():
+    Notify.init("Btimer")
+    Notify.Notification.new ("Btimer", "Done!", "dingdialog-information").show()
+
+# Ding ding class
+# class DingDing(threading.Thread):
+#     def __init__(self):
+#         threading.Thread.__init__(self)
+#     def start(self):
+#         super(DingDing, self).start()
+#     def run(self):
+#         while True:
+#             sp.Popen(['play', '-q', '/usr/share/sounds/freedesktop/stereo/complete.oga'], stdout=sp.PIPE, stderr=sp.PIPE)
+#             time.sleep(0.8)
+#     def stop(self):
+#         self.join()
+
+
+# Parse Input
+lenargv = len(sys.argv)
+if (lenargv == 1 or lenargv > 3) or (lenargv == 2 and sys.argv[1] == '?'):
+    print(help_text)
+    exit(1)
+
+t = sys.argv[1]
+
+if (not re.match(r'(\d+[hms]+)+$', t)):
+    print("Wrong format")
+    print(help_text)
+    exit(1)
+
+## Special Options
+formatTime = False
+silentMode = False
+addRandomTime = False
+if lenargv == 3:
+    specialOptions = sys.argv[2]
+    if 's' in specialOptions:
+        silentMode = True
+    if 'r' in specialOptions:
+        addRandomTime = True
+    if 'f' in specialOptions:
+        formatTime = True
+
+
+# Setup Timer Variables
+hours = sum(map(int, re.findall(r'(\d+)h', t)))
+mins = sum(map(int, re.findall(r'(\d+)m', t)))
+secs = sum(map(int, re.findall(r'(\d+)s', t)))
+totalwait = secs + (mins * 60) + (hours * 60 * 60)
+if totalwait < 1:
+    exit()
+if addRandomTime:
+    totalwait = totalwait + random.randrange(0, ((totalwait / 3) + 1))
+if totalwait > 999999999:
+    print("Longest countdown can be: 999999999")
+    exit(1)
+
+startTime = int(time.time())
+endTime = totalwait + startTime
+nowTime = int(time.time())
+
+# Trap Signals
+for sig in (SIGABRT, SIGINT, SIGTERM):
+    signal(sig, exitEarly)
+
+# Start Timer
+if silentMode:
+    print("Timer is running... ",)
+    sys.stdout.flush()
+while nowTime < endTime:
+    ## Print Progress
+    if not silentMode:
+        if formatTime:
+            waitank = endTime - nowTime
+            hour = waitank / 3600
+            waitank = waitank - (3600 * hour)
+            minu = waitank / 60
+            seco = waitank - (60 * minu)
+            sys.stdout.write('\r %s:%s:%s \b' %(hour, minu, seco))
+            sys.stdout.flush()
+        else:
+            sys.stdout.write('\r  %s \b\b\b\b' %(str(endTime - nowTime)))
+            sys.stdout.flush()
+    time.sleep(0.5)
+    nowTime = int(time.time())
+
+# Done
+notify()
+
+# ding_thread = DingDing()
+# ding_thread.daemon = True # makes thread a daemon thread
+# ding_thread.start()
+
+print("\rDONE!", end=None)
+# input()
+exit()

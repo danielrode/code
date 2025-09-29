@@ -1,0 +1,14 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Contact Menu
+# Tags: list, selection, menu
+# Dependencies:
+#   lscontact
+#   fzf
+# Version: 1
+# Init: 11 Feb 2023 
+# Updated: -
+
+
+lscontact | sort | uniq | fzf
+

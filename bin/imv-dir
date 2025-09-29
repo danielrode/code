@@ -1,0 +1,12 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Description: Launch imv in a way that allows it to browse other images in
+# 			   same directory as the image provided to it.
+# Init: 29 Dec 2019
+# Updated: 11 Aug 2020
+
+
+{
+	echo "$1"
+	rotate-ls-output "$1"
+} | imv

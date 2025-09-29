@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Created: 23 Apr 2025
+# Updated: -
+
+
+# Description: Sort a list of file paths (from stdin) by modification time.
+
+
+xargs -I '{}' stat --format '%y %n' '{}' | sort #| cut -d ' ' -f 4-

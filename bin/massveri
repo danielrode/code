@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Daniel Rode
+# Name: Mass Verify Files
+# Type: file management, data integrity
+# Description: Recursively compares files in two different directories byte by
+#              byte and indicates progress
+# Version: 2.0 BETA
+# Made: Dec 26 2016
+# Last updated: May 26 2018
+
+
+# Import
+import os
+import sys
+import colorama
+import subprocess as sp
+import pathlib as pl
+
+
+# Variables
+exit = sys.exit
+args = sys.argv[1:]
+try:
+    src_path_left = args[0].rstrip("/")
+    src_path_right = args[1].rstrip("/")
+except IndexError:
+    print("Usage: massveri LEFT_SOURCE_PATH RIGHT_SOURCE_PATH")
+    exit(1)
+
+
+# Functions
+def compare(file_path_left, file_path_right):
+    rc = sp.call(
+        ['cmp', file_path_left, file_path_right],
+        stdout=sp.PIPE, stderr=sp.PIPE)
+    if rc == 0:
+        print(success_text)
+        return True
+    elif rc == 1:
+        print(failure_differ_text)
+        return False
+    else:
+        print("Something went wrong with the 'cmp' command")
+        exit(2)
+
+def list_files(path):
+    glob_list = pl.Path(path).glob('**/*')
+    file_list = list()
+    for file_path in glob_list:
+        if file_path.is_file():
+            file_list.append(file_path.relative_to(path))
+    file_list = sorted(file_list)
+
+    return file_list
+
+
+# Main
+
+# If file trees differ, "trip" this variable (set it to True)
+trees_differ_trip = False
+
+# Setup colorama
+colorama.init()
+success_text = (
+    colorama.Fore.GREEN + colorama.Style.BRIGHT + "match" +
+    colorama.Style.RESET_ALL)
+failure_differ_text = (
+    colorama.Fore.RED + colorama.Style.BRIGHT + "differ" +
+    colorama.Style.RESET_ALL)
+
+print("Generating file list...")
+src_files_left = list_files(src_path_left)
+src_files_right = list_files(src_path_right)
+
+# Find files pairs (files that reside in both source trees) and
+# Check for orphan files (files that reside in only one source tree)
+file_pairs = list()
+orphan_files_left = list()
+orphan_files_right = list()
+for i in src_files_right:
+    if i in src_files_left:
+        file_pairs.append(i)
+    else:
+        orphan_files_right.append(i)
+for i in src_files_left:
+    if i not in src_files_right:
+        orphan_files_left.append(i)
+
+# Notify if source file trees differ
+if len(orphan_files_left) or len(orphan_files_right):
+    print(
+        colorama.Fore.YELLOW +
+        "Source trees differ" +
+        colorama.Style.RESET_ALL)
+    for i in orphan_files_left:
+        print(
+            i,
+            colorama.Fore.YELLOW + "left only" +
+            colorama.Style.RESET_ALL)
+    for i in orphan_files_right:
+        print(
+            i,
+            colorama.Fore.YELLOW + "right only" +
+            colorama.Style.RESET_ALL)
+    trees_differ_trip = True
+
+
+# Compare files
+counter = 0
+for file_path in file_pairs:
+    counter += 1
+    print(
+        (f"Comparing file pair {counter} of {len(file_pairs)} "
+        f"('{file_path}')... "),
+        end='')
+    file_path_left = src_path_left / file_path
+    file_path_right = src_path_right / file_path
+    files_match = compare(file_path_left, file_path_right)
+    if not files_match:
+        trees_differ_trip = True
+
+if trees_differ_trip:
+    print(
+        colorama.Fore.RED + colorama.Style.BRIGHT +
+        "Source trees differ" +
+        colorama.Style.RESET_ALL)
+    exit(1)
+else:
+    print(
+        colorama.Fore.GREEN + colorama.Style.BRIGHT +
+        "Source trees match and all file pairs are identical" +
+        colorama.Style.RESET_ALL)
+    exit(0)
+
+
+# TODO
+# - support processing multiple source trees
+# - consider multithreading multiple instances of the 'cmp' command (if that
+#   indeed will make it run faster - use the unix 'time' command to get
+#   performance results for the single threaded vs multithreaded version of
+#   this script). Remember that the kernel caches data, so this may skew test
+#   results.
+# - use pathlib

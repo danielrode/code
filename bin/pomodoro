@@ -1,0 +1,39 @@
+#!/usr/bin/env dash
+# Author: Daniel Rode
+# Name: Pomodoro
+# Tags: productivity, timer, health, reminder, notifier
+# Init: 04 Jun 2023
+# Updated: 20 Jun 2023
+
+
+# Description:
+# Run a 20 minute timer, then show notification to user prompting them to rest
+# their eyes.
+
+
+pomodoro_cmd="dash $DCV_CODE_PATH/bin/pomodoro"
+if [ "$1" = '--force' ]
+then
+  pkill --exact --older 1 --full -- "$pomodoro_cmd"
+  pkill --exact --older 1 --full -- "$pomodoro_cmd --force"
+else
+  if ps aux | grep -v grep | grep -v "$$" | grep "$pomodoro_cmd"
+  then
+    notify-send --expire-time 4000 "Pomodoro timer" "Already running"
+    exit
+  fi
+fi
+
+
+while true
+do
+  sleep 1200
+  notify-send --wait "Rest eyes"
+done
+
+
+
+# TODO
+# - if already running, show brief notification saying how much time is left
+# on timer
+# - add script to list of startup commands for sway

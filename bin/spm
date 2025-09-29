@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+## Author: Daniel Rode
+## Name: Search Python Modules (spm)
+## Description: Search Python modules
+## Version: 2.1
+## Made: June 02 2013
+## Last updated: July 27 2013
+
+
+# Import
+import sys, imp, re
+from sys import exit
+
+# Variables
+help_usage = "Usage: spm IMPORT.MOD.TO.DIR [SEARCH_TERM]"
+
+# Parse Input
+args = sys.argv[1:]
+if len(args) == 0:
+    print("You didn't enter anything")
+    exit(1)
+elif len(args) < 1:
+    print(help_usage)
+    exit(1)
+
+if not re.sub(r'[_.]', '', args[0]).isalpha():
+    print("Bad input")
+    exit(1)
+
+# Import (not main)
+inString = args[0]
+inString = inString.split('.')
+toIMPORT = inString[0]
+if len(inString) == 1:
+    toDIR = ""
+else:
+    toDIR = '.'.join(inString[1:])
+if len(args) == 2:
+    toSEARCH = args[1].lower()
+else:
+    toSEARCH = None
+
+try:
+    mod = __import__(toIMPORT)
+except Exception:
+    print("No mod '{}' exists".format(toIMPORT))
+    exit(1)
+if toDIR == "":
+    mContents = dir(mod)
+else:
+    try:
+        exec("mContents = dir(mod.{})".format(toDIR))
+    except AttributeError:
+        mods = [toIMPORT]
+        mods.extend(toDIR.split('.'))
+        modsStarter = []
+        for i in range(1, len(mods)):
+            modsStarter.append('.'.join(mods[:i]))
+        modsEnder = []
+        for i in range(2, len(mods)):
+            modsEnder.append("." + '.'.join(mods[i:]))
+        modsEnder.append("")
+        for i, j, k in zip(modsStarter, mods[1:], modsEnder):
+            try:
+                exec("from {} import {} as mod".format(i, j))
+                exec("mContents = dir(mod{})".format(k))
+                break
+            except Exception:
+                continue
+        else:
+            print("Nooooooo!0o......................")
+            exit(1)
+
+# Main
+if toSEARCH == None:
+    for i in mContents:
+        if not i.startswith("_"):
+            print(i)
+else:
+    for i in mContents:
+        if (not i.startswith("_")) and (toSEARCH in i.lower()):
+            print(i)
