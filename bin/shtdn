@@ -6,7 +6,7 @@
 #   syncthing
 #   ~/code/bin/bs
 #   ~/code/bin/getcred
-# Updated: 26 Sep 2025
+# Updated: 28 Sep 2025
 
 
 set -e  # Exit on error
@@ -66,12 +66,12 @@ fi
 
 # Sync git repositories
 echo "Syncing Code repository..."
-git -C ~/code checkout cursory
+git -C ~/code checkout master
 git -C ~/code add .
-git -C ~/code commit --message "shtdn $HOSTNAME auto-commit" || true
+git -C ~/code commit --message "shtdn auto-commit" || true
 git -C ~/code fetch
 git -C ~/code merge --ff-only
-git -C ~/code push origin cursory
+git -C ~/code push origin master
 
 
 # Backup
