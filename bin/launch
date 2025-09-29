@@ -5,6 +5,7 @@
 # Dependencies:
 #   dash
 #   ~/code/bin/verbrun
+# Updated: 29 Sep 2025
 
 
 # NOTE: I use a .txt file to pull the list of commands from (rather than

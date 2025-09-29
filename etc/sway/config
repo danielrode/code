@@ -972,7 +972,7 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
     exec foot --server --config ~/code/etc/foot.ini
 
     # Pomodoro timer
-    exec ~/code/bin/pomodoro --force
+    # exec ~/code/bin/pomodoro --force
 
     # Workspace/output manager
     exec kanshi

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Author: Daniel Rode
 # Created: 20 Oct 2023
+# Updated: 29 Sep 2025
 
 
 # Grant QGIS Flatpak access to more paths

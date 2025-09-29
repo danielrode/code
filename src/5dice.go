@@ -1,5 +1,6 @@
 // Author: Daniel Rode
 // Created: 10 Dec 2021
+// Updated: 22 Nov 2022
 
 // Rewrite of my 5dice Python script in Go. I wanted to compare doing parallel
 // processing in Go to what it was like in Python.

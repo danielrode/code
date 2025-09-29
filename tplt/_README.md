@@ -1,6 +1,6 @@
 ---
-Author: Daniel Rode (daniel.rode@colostate.edu)
-Date: XX Mth 2025
+author: Daniel Rode (daniel.rode@colostate.edu)
+date: 20 Aug 2025
 ---
 
 

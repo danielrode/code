@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # Author: Daniel Rode
-# Dependencies:
-#   helix-editor
 # Created: 23 Feb 2025
-# Updated: 02 Aug 2025
+# Updated: 29 Sep 2025
 
 
 hx "$(which "$1" | head -1)"

@@ -3,6 +3,7 @@
 # Author: Daniel Rode
 # Dependencies: wl-clipboard
 # Created: 08 Dec 2021
+# Updated: -
 
 
 import subprocess as sp

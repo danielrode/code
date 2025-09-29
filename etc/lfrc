@@ -1,8 +1,8 @@
 
 # Dependencies:
 #   fish
-#   can (my script)
-#   o (my program)
+#   ~/code/bin/can
+#   ~/code/bin/o
 #   7zip
 #   ov
 #   wl-clipboard
@@ -64,7 +64,7 @@ set sixel true
 
 
 # Commands
-cmd trash &can $fx
+cmd trash &~/code/bin/can $fx
 cmd new_file ${{
     echo -n '> '
 	read new_path
@@ -79,7 +79,7 @@ cmd new_dir %{{
 	read new_path
 	mkdir -p "$new_path"
 }}
-cmd open &o $fx  # '&' runs 'o' in lf background
+cmd open &~/code/bin/o $fx  # '&' runs 'o' in lf background
 cmd bulk_rename ${{
     old="$(mktemp)"
     new="$(mktemp)"
@@ -159,6 +159,7 @@ map . set hidden!
 map c :clear; unselect
 # map C clear  # u is unselect/deselect
 map <f-5> reload
+map zz set info
 map ss :{{ set sortby natural; set info; }}
 map su :{{ set sortby size; set info size; }}
 map R bulk_rename

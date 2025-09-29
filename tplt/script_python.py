@@ -33,6 +33,12 @@ import dbus
 PROGRAM_NAME = "[Unique Name of Program]"
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME} [OPTION]... ARG"
+DST = Path(
+    "dir",
+    "dir",
+    "dir",
+    "file",
+)
 
 # Variables: XDG Base Directory (user data paths)
 if 'XDG_CONFIG_HOME' in os.environ:

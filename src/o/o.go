@@ -6,6 +6,7 @@
 //   fd
 // Version: *see 'version' variable below*
 // Created: 02 Oct 2019
+// Updated: 29 Sep 2025
 
 // Description:
 // Opens things. Files are opened with a specified list of programs based on
@@ -41,7 +42,7 @@ import (
 var print = fmt.Println
 
 // Variables
-const version = "36"
+const version = "37"
 
 // Golang time format spec: https://go.dev/src/time/format.go
 const lauoutMthDayHrMinS = "Jan 02 15:04:05"

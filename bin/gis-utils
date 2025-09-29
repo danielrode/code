@@ -3,6 +3,7 @@
 # Dependencies:
 #   podman
 # Created: 21 Jul 2025
+# Updated: 11 Sep 2025
 
 
 CON_IMG=ghcr.io/danielrode/gis-utils:dev

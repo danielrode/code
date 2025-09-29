@@ -75,3 +75,4 @@ cheese  # Webcam
 zeal  # Offline Documentation Viewer
 foot htop  # System Monitor
 ~/code/bin/sway-startup-windows  # Workspace
+ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
