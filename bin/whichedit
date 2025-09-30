@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Author: Daniel Rode
+# Dependencies:
+#   helix
 # Created: 23 Feb 2025
 # Updated: 29 Sep 2025
 
