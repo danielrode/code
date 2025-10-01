@@ -1,31 +1,93 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # Author: Daniel Rode
 # Name: Directory Difference
 # Tags: file management, compare
-# Dependencies:
-#   tree
-#   diff
-#   helix
-# Version: 1
-# Init: 14 Feb 2024
-# Updated: -
+# Created: 14 Feb 2024
+# Updated: 23 Sep 2025
 
 
-# Description:
-# Save a text file recursively listing all files under a given directory, their
-# size, and modification date. Save another text file for the other directory
-# path given that the user wants to compare with. Then diff these two text
-# files to find the differences between the two directories.
+# Description: Compare the contents of two directories using file size and
+# modification time.
 
 
-function tree_flags {
-  tree -a -f -h -D -F -i -n --timefmt "%Y%b%d %H:%M" "$1"
-}
+import os
+import sys
+from pathlib import Path
+from datetime import datetime
 
-tmp_dir="$(mktemp -d)"
-echo "Parsing directory trees..."
-tree_flags "$1" > "$tmp_dir/left.txt"
-tree_flags "$2" > "$tmp_dir/right.txt"
-diff "$tmp_dir/left.txt" "$tmp_dir/right.txt" | hx
 
-rm -r "$tmp_dir"
+EXE_NAME = Path(sys.argv[0]).name  # This script's filename
+HELP_TEXT = f"Usage: {EXE_NAME} DIR_A DIR_B | column -t"
+
+
+# Functions
+def fmt_file_time(filepath: Path) -> str:
+    timestamp = os.path.getmtime(filepath)
+    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d_%H:%M")
+
+
+def fmt_file_size(filepath: Path):
+    size = os.path.getsize(filepath)
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"):
+        if abs(size) < 1024.0:
+            return f"{size:3.1f}{unit}B"
+        size /= 1024.0
+
+
+def dir_childs_attrs_map(dirpath: Path) -> dict:
+    return {
+        i.relative_to(dirpath): (fmt_file_time(i), fmt_file_size(i))
+        for i in dirpath.glob('**')
+        if not (i.is_dir() or not i.exists())
+    }
+
+
+# Process command line arguments
+try:
+    dir_a = Path(sys.argv[1])
+    dir_b = Path(sys.argv[2])
+except IndexError:
+    print(HELP_TEXT)
+    sys.exit(1)
+
+# Get modified time and size for children of dir a and dir b
+dir_a_items = dir_childs_attrs_map(dir_a)
+dir_b_items = dir_childs_attrs_map(dir_b)
+
+# Compare directories and print differences
+print("A_TIME\tA_SIZE\tB_TIME\tB_SIZE\tPATH")
+for k in dir_a_items:
+    a_time, a_size = dir_a_items[k]
+    try:
+        b_time, b_size = dir_b_items[k]
+    except KeyError:
+        print('\t'.join((
+            str(a_time),
+            str(a_size),
+            "NONE",
+            "NONE",
+            str(k),
+        )))
+    else:
+        if (a_time != b_time) or (a_size != b_size):
+            print('\t'.join((
+                str(a_time),
+                str(a_size),
+                str(b_time),
+                str(b_size),
+                str(k),
+            )))
+for k in dir_b_items:
+    b_time, b_size = dir_b_items[k]
+    if k not in dir_a_items:
+        print('\t'.join((
+            "NONE",
+            "NONE",
+            str(b_time),
+            str(b_size),
+            str(k),
+        )))
+
+
+# todo
+# - add --dirs flag to not skip comparing directories themselves
