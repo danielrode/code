@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Author: Daniel Rode
 # Created: 19 Jul 2025
-# Updated: 29 Sep 2025
+# Updated: 30 Sep 2025
 
 
 # TODO this script is WIP
@@ -86,6 +86,10 @@ fi
 
 # Set 'focus-follows-mouse' in Gnome Shell
 gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
+
+# Set wallpaper
+# https://github.com/DenverCoder1/minimalistic-wallpaper-collection
+wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 
 
 
