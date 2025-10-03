@@ -11,7 +11,7 @@
 #   htop
 #   fish
 # Created: 26 Dec 2022
-# Updated: 01 Sep 2025
+# Updated: 02 Oct 2025
 
 
 # Description: Start list of defined programs under Sway session and then
@@ -31,9 +31,12 @@ def arrange_startup_windows(i3, e) -> None:
     global INIT_CONS
     INIT_CONS[e.container.app_id] = e.container
 
-    if set(INIT_CONS) == {
-        'foot', 'foot_helix', 'foot_htop', 'Firefox'
-    }:
+    if all((
+        'foot' in INIT_CONS,
+        'foot_helix' in INIT_CONS,
+        'foot_htop' in INIT_CONS,
+        'Firefox' in INIT_CONS or 'org.mozilla.firefox' in INIT_CONS,
+    )):
         # Arrange startup program windows for workspace 1
         INIT_CONS['foot'].command("move workspace 1")
         INIT_CONS['foot'].command("floating disable")
