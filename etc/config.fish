@@ -123,6 +123,7 @@ abbr --add rsynca rsync \
     --progress \
     --backup
 abbr --add xargs xargs -d '\n'
+abbr --add pkill pkill -e
 
 # One-liners
 abbr --add lspath bash -c '"compgen -c"'

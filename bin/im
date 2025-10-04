@@ -6,9 +6,9 @@
 #   swayidle
 #   swaylock
 #   chayang
-# Version: 11
-# Made: 24 Jan 2020
-# Updated: 08 Aug 2024
+#   elogind
+# Created: 24 Jan 2020
+# Updated: 03 Oct 2025
 
 
 # Variables
@@ -96,6 +96,19 @@ elif [[ $1 == lock ]]
 then
     # Lock command
     swaylock "${swayidle_common_flags[@]}"
+
+# Prevent system from sleeping when lid closes
+elif [[ $1 == awake ]]
+then
+    echo "Inhibiting sleep"
+    echo "Press CTRL+C to exit"
+    elogind-inhibit --what=handle-lid-switch -- sleep infinity
+    # elogind-inhibit --what=handle-lid-switch -- \
+    #     zenity --info \
+    #     --title='Sleep Inhibitor' \
+    #     --text='You can close the lid and your system will remain awake' \
+    #     --ok-label='Allow Sleep Again' \
+    # ;
 
 # Print help
 elif [[ $1 == "-h" || $1 == "--help" ]]
