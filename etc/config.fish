@@ -93,6 +93,7 @@ abbr --add m micro
 abbr --add rp realpath
 abbr --add py python3
 abbr --add ipy ipython
+abbr --add zj zellij
 
 # Mnemonics
 abbr --add log svlogtail
