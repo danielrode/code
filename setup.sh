@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Author: Daniel Rode
 # Created: 19 Jul 2025
-# Updated: 30 Sep 2025
+# Updated: 10 Oct 2025
 
 
 # TODO this script is WIP
@@ -70,18 +70,6 @@ then
     # Syncthing
     systemctl --user enable syncthing
     systemctl --user start syncthing
-
-    # Open WebUI
-    systemctl --user enable open-webui
-    systemctl --user start open-webui
-
-    # Immich
-    systemctl --user enable immich
-    systemctl --user start immich
-
-    # IRC client
-    systemctl --user enable thelounge-irc
-    systemctl --user start thelounge-irc
 fi
 
 # Set 'focus-follows-mouse' in Gnome Shell
