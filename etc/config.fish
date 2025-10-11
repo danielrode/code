@@ -110,7 +110,7 @@ abbr --add progress progress --monitor \
     --additional-command pdal \
     --additional-command R
 abbr --add diff diff -u --color
-abbr --add df df -h
+abbr --add df df -h --output=source,fstype,size,used,avail,pcent,target
 abbr --add du du -h
 abbr --add lsblk lsblk -o NAME,SIZE,FSSIZE,FSAVAIL,FSUSE%,MOUNTPOINTS,FSTYPE,\
 LABEL,PARTLABEL,MODEL,ROTA,TRAN
