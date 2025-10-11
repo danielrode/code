@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Author: Daniel Rode
+# Name: Cleanup Drive Space
+# Dependencies:
+#   ~/code/rmtrash
+# Created: 10 Oct 2025
+# Updated: -
+
+
+# Description: Remove various caches and old unneeded files to clear up disk
+# space.
+
+
+# Purge trash files that are 99 dasy old and older
+~/code/bin/rmtrash 99
+
+# Remove unneeded flatpaks
+flatpak uninstall --unused
+
+# Remove old kernel versions
+if command -v vkpurge &>/dev/null
+then
+    sudo vkpurge rm all
+fi
+
+# Remove package manage cache and orphaned packages
+if command -v vpm &>/dev/null
+then
+    sudo vpm cleanup
+    sudo vpm autoremove
+fi
