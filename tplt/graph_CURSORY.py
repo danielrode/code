@@ -58,7 +58,7 @@ y = data['Incidence (per 100,000 people) ']
 
 
 # Boxplot: Plot
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(layout="compressed")
 ax.plot(x, y, label="Data Label")  # Create plot
 ax.legend(loc="upper left")
 # ax.scatter(x, y, s=MARKER_SIZE)  # Create scatter plot

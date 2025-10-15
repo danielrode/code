@@ -64,7 +64,7 @@ def grow_gdf(gdf, buff):
 
     
 def graph_chm_poi(chm_box, dst_path):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout="compressed")
 
     with rio.open(CHM_PATH, 'r') as f:
         shapes = chm_box.to_crs(f.crs.wkt)["geometry"]
