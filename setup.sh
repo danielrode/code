@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Author: Daniel Rode
 # Created: 19 Jul 2025
-# Updated: 10 Oct 2025
+# Updated: 20 Oct 2025
 
 
 # TODO this script is WIP
@@ -26,6 +26,7 @@ then
         meld \
         openssh \
         pavucontrol \
+        pspg \
         python3-pykeepass \
         syncthing \
         zathura \
@@ -34,6 +35,7 @@ elif command -v xbps-install >/dev/null 2>&1
 then
     sudo xbps-install -y \
         chayang \
+        pspg \
         swaylock \
     ;
 fi

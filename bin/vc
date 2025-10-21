@@ -6,12 +6,15 @@
 #   xsv
 #   ov
 # Created: 21 Mar 2024
-# Updated: 05 Sep 2025
+# Updated: 20 Oct 2025
 
 
-in="$1"
-[ -z "$in" ] && in=-
-xsv table "$in" \
-    | ov --header 1 --wrap=false --exit-write \
-        --line-number \
-;
+# in="$1"
+# [ -z "$in" ] && in=-
+# xsv table "$in" \
+#     | ov --header 1 --wrap=false --exit-write \
+#         --line-number \
+# ;
+
+echo 'Use `pspg`'
+exit 1
