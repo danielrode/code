@@ -133,6 +133,7 @@ abbr --add lsfont fc-list : family
 abbr --add fwatch inotifywait --monitor --event modify
 abbr --add page ps -p $fish_pid
 abbr --add protectf xargs chattr +i
+abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set style fill solid; plot '-' using 1 smooth frequency with boxes notitle"
 
 # Launch new session with history
 abbr --add hoff fish --private
