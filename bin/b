@@ -3,13 +3,16 @@
 # Name: BTRFS Snapshot
 # Author: Daniel Rode
 # Created: 10 Oct 2025
-# Updated: 23 Oct 2025
+# Updated: 25 Oct 2025
 
 
 # Create BTRFS snapshots
 
 # NOTE:
 # btrfs subvolume create ~/.snapshots  # Create sub-vol for snapshots
+#
+# NOTE: Exclude ~/downloads and ~/.cache from ~/ snapshots (by making them
+# their own subvolumes)
 
 
 import json
