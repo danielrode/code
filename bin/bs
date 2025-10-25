@@ -9,11 +9,10 @@
 #    restic
 #    ~/code/bin/getcred
 # Created: 23 Nov 2022
-# Updated: 21 Oct 2025
+# Updated: 25 Oct 2025
 
 
-# Description: Create backup of my data online using restic and locally using
-# BTRFS snapshot (if available).
+# Description: Create backup of my data online using restic.
 
 # NOTE: This script loads all needed credentials except for the SSH key.
 # Accessing repos on rsync.net requires SSH access. Public/private key
@@ -38,7 +37,6 @@
 
 import os
 import sys
-import json
 import subprocess as sp
 from pathlib import Path
 from getpass import getuser
@@ -251,25 +249,7 @@ def ncduX(exclude_patterns):
 
 def log_system_state(host):
     pass
-    #TODO (see todo list at bottom)
-
-
-# def ls_btrfs(exclusions=['/', '/home']) -> list[Path]:
-#     cmd = (
-#         'findmnt',
-#         '--list',
-#         '--noheadings',
-#         '--types', 'btrfs',
-#         '--output', 'TARGET',
-#         '--json',
-#     )
-#     p = sp.run(cmd, check=True, text=True, capture_output=True)
-
-#     return [
-#         Path(i['target'])
-#         for i in json.loads(p.stdout)['filesystems']
-#         if i['target'] not in exclusions
-#     ]
+    # TODO (see todo list at bottom)
 
 
 # Determine host
@@ -299,21 +279,6 @@ for i in args:
             print("error: Unsupported argument")
             sys.exit(1)
 
-
-# # BTRFS snapshot TODO
-# # # sudo btrfs subvolume create /home/.snapshots  # Create sub-vol for snapshots
-# for btrfs_subvol in ls_btrfs():
-#     if not btrfs_subvol.owner() == USER:
-#         continue
-#     cmd = (
-#         'btrfs',
-#         'subvolume',
-#         'snapshot',
-#         '-r',  # Make snapshot read-only
-#         str(btrfs_subvol),
-#         str(Path(btrfs_subvol, '.snapshots', f"@snapshot-{timestamp()}"),
-#     )
-#     sp.run(cmd, check=True)
 
 # Collect credentials for restic
 print("Loading credentials...")
@@ -378,7 +343,7 @@ if DRY_RUN_MODE:
 
 # Backup
 print("Current time:", datetime.now())
-#TODO
+# TODO
 #print("Saving system state to log files for backup...")
 #log_system_state(host)
 print("Performing backup...")
