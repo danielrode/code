@@ -126,6 +126,7 @@ abbr --add rsynca rsync \
 abbr --add xargs xargs -d '\n'
 abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b
+abbr --add pstree pstree -aps
 
 # One-liners
 abbr --add lspath bash -c '"compgen -c"'
