@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# author: Daniel Rode
+# created: 04 Nov 2025
+# updated: -
+
+
+git clone https://github.com/danielrode/foot
+cd foot
+
+git tag --sort=-creatordate | head -1
+git checkout "$(git tag --sort=-creatordate | head -1)"
+git cherry-pick 92b00022f8171592e547785940d1a9aecadc1e14
+git cherry-pick 87d32aaaf368fb513478e793ae0f57d3a6f505a0
+
+mkdir -p bld/release && cd bld/release
+meson --buildtype=release --prefix=/usr/local -Db_lto=true ../..
+ninja
+ninja test
+sudo ninja install
