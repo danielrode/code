@@ -26,6 +26,7 @@ bluetoothctl power off  # Turn off Bluetooth
 pactl set-sink-mute '@DEFAULT_SINK@' toggle  # Toggle mute/unmute
 qrgen "$(wl-paste | ~/code/bin/strip-newline)"  # Display clipboard contents as qrcode
 kmonad ~/code/etc/kmonad/colemak2qwerty.kbd  # Keyboard Layout: Qwerty (qwfpgj)
+pkill kmonad  # Keyboard Layout: Colemak (c;ukman)
 foot ~/code/bin/sway-rename-workspace  # Sway: Rename Workspace
 launch-obs  # Screen Recorder/Streamer
 font-manager
