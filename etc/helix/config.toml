@@ -46,7 +46,7 @@ C-q = ":quit-all"  # save file
 "$" = "goto_line_end"
 "C-7" = "toggle_comments"  # C-7 maps to C-/ in some terminals
 "C-/" = "toggle_comments"
-F3 = ":insert-output date '+%Y-%m-%d %R'"
+F3 = ":insert-output date '+%%Y-%%m-%%d %%R'"
 # F9 = ["select_all", ":pipe sort", "collapse_selection", "goto_file_start"]
 F9 = ":pipe sort"
 C-right = "move_next_word_start"
@@ -76,7 +76,7 @@ P = "paste_after"
 
 [keys.insert]
 C-d = ":quit-all"  # save file
-F3 = [":insert-output date '+%Y-%m-%d %R'", "ensure_selections_forward"]
+F3 = [":insert-output date '+%%Y-%%m-%%d %%R'", "ensure_selections_forward"]
 C-s = ["normal_mode", "commit_undo_checkpoint", ":update"]  # save file
 # del = "delete_selection_noyank"
 C-right = "move_next_word_start"
@@ -95,7 +95,7 @@ A-up = ["normal_mode", "extend_to_line_bounds", "delete_selection", "move_visual
 C-d = ":quit-all"  # save file
 y = ["yank", ":clipboard-yank-join"]
 C-q = ":quit-all"  # save file
-F3 = ["delete_selection", ":insert-output date '+%Y-%m-%d %R'"]
+F3 = ["delete_selection", ":insert-output date '+%%Y-%%m-%%d %%R'"]
 C-s = ":update"  # save file
 "C-7" = "toggle_comments"  # C-7 maps to C-/ in some terminals
 "C-/" = "toggle_comments"
