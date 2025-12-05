@@ -160,16 +160,28 @@ def main() -> None:
     worker = go(sum, [1,2,3,4])  # non-blocking
     result = worker.result()  # blocking
 
-    # Use parallel concurrency to run several tasks in the background
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+    # Use concurrency to run several tasks in parallel in the background
+    import os
+    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import as_completed
+    from collections.abc import Iterator
+    from collections.abc import Callable
+    from typing import Any
 
-    def dispatch(job_list, worker):
-        with ProcessPoolExecutor() as executor:
-            worker_list = { executor.submit(worker, j): j for j in job_list }
-            for future in as_completed(worker_list):
-                job = worker_list[future]
-                result = future.result()
-                yield job, result
+    def dispatch(
+        jobs: iter, worker: Callable, max_workers=os.cpu_count(),
+    ) -> Iterator[(Any, Any)]:
+        """Run jobs in parallel.
+
+        Parallel apply dispatching function: Run a list of jobs with a given
+        worker function, in parallel. Yield worker results in order they
+        finish.
+        """
+
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures_jobs = {executor.submit(worker, j): j for j in jobs}
+            for f in as_completed(futures_jobs):
+                yield (futures_jobs[f], f.result())
 
     def worker(job):
         return job**3
