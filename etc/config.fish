@@ -104,6 +104,7 @@ abbr --add gtop nvtop
 abbr --add cl cal -3
 abbr --add r R --vanilla
 abbr --add progress progress --monitor \
+    --additional-command cksum \
     --additional-command syncthing \
     --additional-command lf \
     --additional-command nu \
