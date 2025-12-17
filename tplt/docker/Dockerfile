@@ -30,3 +30,9 @@ COPY --from=ghcr.io/danielrode/CONTAINER:main \
     /usr/local/bin /usr/local/bin
 
 ENV PATH="/usr/local/bin:$PATH"
+
+# Install Python libraries using requirements.txt in cwd
+RUN --mount=type=bind,source=requirements.txt,target=/tmp/deps.txt <<EOF
+    # NOTE: The bind mount only persists for this step
+    python3 -m pip install -r /tmp/deps.txt
+EOF
