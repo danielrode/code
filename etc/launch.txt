@@ -4,7 +4,7 @@ firefox  # Web Browser
 ~/code/bin/ms-edge  # Microsoft Edge Web Browser
 foot ~/code/bin/nn  # New Note
 thunderbird  # Email
-chromium  # Web Browser
+flatpak run org.chromium.Chromium  # Google Web Browser
 xournalpp  # PDF Editor
 gimp  # Image Editor
 inkscape  # Vector Graphic Editor
@@ -70,10 +70,10 @@ flatpak run com.usebottles.bottles  # Run Windows programs with configed and pat
 flatpak run io.gpt4all.gpt4all  # LLM Chat
 speedcrunch  # Calculator
 darktable  # Virtual lighttable and darkroom for photos
-chromium  # Google Chrome browser
 doublecmd  # File Manager
 cheese  # Webcam
 zeal  # Offline Documentation Viewer
 foot htop  # System Monitor
 ~/code/bin/sway-startup-windows  # Workspace
 ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
+flatpak run com.github.tchx84.Flatseal  # App Permissions Manager
