@@ -4,12 +4,12 @@
 # Dependencies:
 #   ~/code/rmtrash
 # Created: 10 Oct 2025
-# Updated: -
+# Updated: 23 Dec 2025
 
 
 # Description: Remove various caches and old unneeded files to clear up disk
 # space.
-
+# 
 # Tags: makespace, cache, rm
 
 
@@ -25,11 +25,18 @@ then
     sudo vkpurge rm all
 fi
 
-# Remove package manage cache and orphaned packages
+# Remove package manager cache and orphaned packages
 if command -v vpm &>/dev/null
 then
     sudo vpm cleanup
     sudo vpm autoremove
+fi
+
+# Remove package manager cache and orphaned packages
+if command -v vpm &>/dev/null
+then
+    sudo dnf clean all
+    sudo dnf autoremove
 fi
 
 # Remove orphaned Podman volumes, networks, and images
@@ -37,3 +44,8 @@ podman volume prune
 podman network prune
 podman builder prune
 podman image prune
+
+# TODO Deduplicate data
+# fclones group --hidden --no-ignore --cache --min 16384 --output ./dupes.txt "$HOME"
+# # Add `--threads 1` flag if dir to dedup ($HOME, in example above) is stored on spinning HDD.
+# # fclones can use btrfs reflink feature, but if you want block-based (rather than file-based) dedup, use the `bees` utility
