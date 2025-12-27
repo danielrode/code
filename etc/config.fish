@@ -17,7 +17,7 @@
 zoxide init --cmd d fish | source
 
 # Load starship (prompt setter)
-set -x STARSHIP_LOG error # Disable Starship warning messages
+set -gx STARSHIP_LOG error # Disable Starship warning messages
 starship init fish | source
 
 # CONFIG ######################################################################
@@ -27,37 +27,37 @@ set fish_greeting ""
 
 # PROFILE #####################################################################
 
-set VISUAL hx
-set EDITOR $VISUAL
-set PAGER less
-set LESS "--RAW-CONTROL-CHARS --ignore-case --jump-target=.3 --mouse -XF"
-set LESSEDIT "%E < %f"
-set DEFAULT_TERM foot
-set LS_COLORS $LS_COLORS":ow=01;33" # Color 777 orange
-set HOSTNAME (hostname)
+set -gx VISUAL hx
+set -gx EDITOR $VISUAL
+set -gx PAGER less
+set -gx LESS "--RAW-CONTROL-CHARS --ignore-case --jump-target=.3 --mouse -XF"
+set -gx LESSEDIT "%E < %f"
+set -gx DEFAULT_TERM foot
+set -gx LS_COLORS $LS_COLORS":ow=01;33" # Color 777 orange
+set -gx HOSTNAME (hostname)
 
 # Daniel's Constant Variables
-set DCV_CODE_PATH $HOME"/code"
-set DCV_HOME_OPT $HOME"/.local/opt"
+set -gx DCV_CODE_PATH $HOME"/code"
+set -gx DCV_HOME_OPT $HOME"/.local/opt"
 
 # XDG
-set XDG_CONFIG_HOME $HOME"/.config"
-set XDG_CACHE_HOME $HOME"/.cache"
-set XDG_DATA_HOME $HOME"/.local/share"
-set XDG_DESKTOP_DIR $HOME"/working"
-set XDG_DOCUMENTS_DIR $HOME"/progeny"
-set XDG_DOWNLOAD_DIR $HOME"/downloads"
-set XDG_MUSIC_DIR $HOME"/store/music"
-set XDG_PICTURES_DIR $HOME"/record"
-set XDG_VIDEOS_DIR $HOME"/record"
-set XDG_TEMPLATES_DIR $HOME"/code/tplt"
-set XDG_PUBLICSHARE_DIR $HOME"/union/public"
-set XDG_SCREENSHOTS_DIR $XDG_PICTURES_DIR"/screencaptures/current"
+set -gx XDG_CONFIG_HOME $HOME"/.config"
+set -gx XDG_CACHE_HOME $HOME"/.cache"
+set -gx XDG_DATA_HOME $HOME"/.local/share"
+set -gx XDG_DESKTOP_DIR $HOME"/working"
+set -gx XDG_DOCUMENTS_DIR $HOME"/progeny"
+set -gx XDG_DOWNLOAD_DIR $HOME"/downloads"
+set -gx XDG_MUSIC_DIR $HOME"/store/music"
+set -gx XDG_PICTURES_DIR $HOME"/record"
+set -gx XDG_VIDEOS_DIR $HOME"/record"
+set -gx XDG_TEMPLATES_DIR $HOME"/code/tplt"
+set -gx XDG_PUBLICSHARE_DIR $HOME"/union/public"
+set -gx XDG_SCREENSHOTS_DIR $XDG_PICTURES_DIR"/screencaptures/current"
 
 # Program Config
-set BAT_PAGER $PAGER
-set GOPATH $HOME"/progeny/go"
-set R_LIBS_USER $HOME"/.local/lib/R"
+set -gx BAT_PAGER $PAGER
+set -gx GOPATH $HOME"/progeny/go"
+set -gx R_LIBS_USER $HOME"/.local/lib/R"
 
 # Path
 fish_add_path /opt/bin

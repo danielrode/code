@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# author: Daniel Rode
+# created: 23 Dec 2025
+
+
+# Windows 11 running in Docker
+
+
+args=(
+	--replace --name win11
+	--interactive --tty
+	--publish 3389:3389  # RDP
+	--publish 8006:8006  # Web GUI
+	--device=/dev/kvm
+	--device=/dev/net/tun
+	# --device=/dev/sdf:/disk2  # USB Drive (change sdf to desired drive)
+	--cap-add NET_ADMIN
+	--volume dockurr_windows:/storage
+	--volume ~/union/docker_windows:/shared
+	--stop-timeout 120
+	ghcr.io/dockur/windows:latest
+)
+podman run "${args[@]}"

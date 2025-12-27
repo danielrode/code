@@ -7,7 +7,7 @@
 #   git
 #   lf
 # Created: 25 Mar 2025
-# Updated: 01 Apr 2025
+# Updated: 05 Dec 2025
 
 
 # Description: Given some file path, assuming the file is part of a git
@@ -33,6 +33,7 @@ HELP_TEXT = f"Usage: {EXE_NAME}  GIT_FILE_PATH"
 def print2(*args, **kwargs) -> None:
     print(*args, **kwargs, file=sys.stderr)
 
+
 def run_iter(cmd: list[str]) -> Iterable:
     """
     Run a system executable and yield its output line-by-line, as output
@@ -57,19 +58,20 @@ def run_iter(cmd: list[str]) -> Iterable:
         print2(process.stderr.read(), end='')
         raise sp.CalledProcessError(return_code, cmd)
 
-def lines2blocks(lines: Iterable) -> Iterable:
+
+def lines2blocks(line_list: Iterable) -> Iterable:
     """
     Iterate over a set of lines, adding each one to a queue, and each time an
     empty line is encountered, yield the queue as a list.
     """
     block = []
-    for l in lines:
-        l = l.rstrip()
-        if not l:
+    for line in line_list:
+        line = line.rstrip()
+        if not line:
             yield block
             block = []
         else:
-            block += [l]
+            block += [line]
 
 
 # Process command line arguments
@@ -78,10 +80,6 @@ try:
 except IndexError:
     print2(HELP_TEXT)
     sys.exit(1)
-
-if not fpath.is_file():
-    print2("error: File not found:", fpath)
-    exit(1)
 
 # Process stdout lines as they are generated
 git_hist = run_iter((
@@ -99,8 +97,17 @@ with TemporaryDirectory() as tmpdir:
         commit, date = line1.split(' ')
         fpath = line2
         cmd = ('git', 'show', f"{commit}:{fpath}")
-        p = sp.run(cmd, text=True, check=True, capture_output=True)
-        tmpf = Path(tmpdir, date)
+        try:
+            p = sp.run(cmd, text=True, check=True, capture_output=True)
+        except sp.CalledProcessError as e:
+            benign_err = (
+                f"fatal: path '{fpath}' does not exist in '{commit}'"
+            )
+            if e.stderr.strip() == benign_err:
+                continue
+            else:
+                raise e
+        tmpf = Path(tmpdir, date + ' - ' + fpath)
         with tmpf.open('w') as f:
             f.write(p.stdout)
 

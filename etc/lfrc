@@ -60,7 +60,6 @@ set mouse true
 set ratios '1:3:3'
 set wrapscroll true
 # set period 5
-set sixel true
 
 
 # Commands

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Author: Daniel Rode
 # Created: 19 Jul 2025
-# Updated: 20 Oct 2025
+# Updated: 03 Dec 2025
 
 
 # TODO this script is WIP
@@ -16,6 +16,7 @@ then
     sudo dnf group install sway-desktop-environment -y
     sudo dnf install -y \
         btrfs-progs \
+        git-delta \
         gocryptfs \
         golang \
         grimshot \
@@ -72,6 +73,18 @@ then
     # Syncthing
     systemctl --user enable syncthing
     systemctl --user start syncthing
+
+    # Open WebUI
+    systemctl --user enable open-webui
+    systemctl --user start open-webui
+
+    # Immich
+    # systemctl --user enable immich
+    # systemctl --user start immich
+
+    # IRC client
+    # systemctl --user enable thelounge-irc
+    # systemctl --user start thelounge-irc
 fi
 
 # Set 'focus-follows-mouse' in Gnome Shell
@@ -90,3 +103,12 @@ wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 # todo firewall
 
 # If the destination exists, see if it is a link, and if it is, replace it with the new link, but if it is not a link, rename it to its name with .bak affixed and then make the new link. Be verbose and note each action before you take it (like "overwriting link X that points to Y")
+
+
+
+
+# Also see
+# - sudo crontab -e
+# - crontab -e
+# - /etc/fstab
+

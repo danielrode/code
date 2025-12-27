@@ -3,26 +3,31 @@
 # Name: List Current Process Tree
 # Tags: system, processes
 # Created: 10 May 2024
-# Updated: -
+# Updated: 01 Nov 2025
 
 
 # Description:
 # This script should probably be named "List Current Process Parents" or
 # "List Current Process Ancestory" to be more accurate, but I kept the LSCPT
-# acronym because it sticks in my memory better.
+# acronym because it sticks in my memory better. This script also shows child
+# precesses.
+
+
+echo 'NOTICE: If available, use `pstree -aps PID` instead'
+echo
 
 
 pid="$1"
 if [ -z "$1" ]
 then
-  pid="$PPID"
+    pid="$PPID"
 fi
 
 while true
 do
-  echo -n "$pid "
-  cat /proc/$pid/cmdline
-  echo
-  [ "$pid" = "1" ] && break
-  pid="$(cut -d ' ' -f 4 /proc/$pid/stat)"
+    echo -n "$pid "
+    cat /proc/$pid/cmdline
+    echo
+    [ "$pid" = "1" ] && break
+    pid="$(cut -d ' ' -f 4 /proc/$pid/stat)"
 done

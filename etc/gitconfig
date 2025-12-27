@@ -2,6 +2,7 @@
     name = Daniel Rode
     email = d.rode@protonmail.com
     signingkey = d.rode@protonmail.com
+
 [alias]
     l = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'
     lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
@@ -15,10 +16,26 @@
     l8 = log -8
     l9 = log -9
     wd = diff --word-diff=color --word-diff-regex='\\w+|.'
+    wdiff = wd
+
+[core]
+	pager = delta
+
 [credential]
 	helper = cache
+
 [init]
 	defaultBranch = master
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
+
+[merge]
+    conflictStyle = zdiff3
 
 # I believe it is required that the SSH instance on a machine
 # recognize codeberg.org as a known host before git will interface with

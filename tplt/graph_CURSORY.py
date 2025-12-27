@@ -71,6 +71,7 @@ ax.set(
     xlim=X_TICK_RANGE,  # Set max and min x-ticks
     ylim=Y_TICK_RANGE,  # Set max and min y-ticks
 )
+ax.set_ylim(bottom=0)   # Make y-axis start at 0
 
 
 # Boxplot: Save plot

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Name:
-# Tags:
-# Dependencies:
+# author: Daniel Rode
+# name:
+# tags:
+# dependencies:
 #   python 3.10+
 #   dep2
 #   dep3
 #   ...
-# Version: 1
-# Created:
-# Updated: -
+# version: 1
+# created:
+# updated: -
 
 
 """Brief description of what script does.

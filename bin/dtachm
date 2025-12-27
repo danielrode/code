@@ -10,7 +10,7 @@
 #   pgrep
 # Version: 1
 # Created: 12 Apr 2025
-# Updated: -
+# Updated: 19 Dec 2025
 
 
 # Description: List active dtach sessions in a menu and then connect to the
@@ -19,6 +19,7 @@
 
 import shlex
 import subprocess as sp
+from pathlib import Path
 
 
 # Functions
@@ -36,7 +37,7 @@ dtach_socks = dict()
 for proc in pgrep('dtach'):
     args = shlex.split(proc)
     sock_flags = ('-a', '-A', '-c', '-n', '-N', '-p')
-    if args[2] in sock_flags:
+    if (args[2] in sock_flags) and Path(args[3]).exists():
         dtach_socks[args[3]] = proc
 
 # Display menu of active dtach sessions

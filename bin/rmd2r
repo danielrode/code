@@ -1,0 +1,28 @@
+#!/usr/bin/env Rscript
+# author: Daniel Rode
+# created: 09 Dec 2025
+# updated: -
+
+
+# Convert .Rmd files to plain .R scripts
+
+
+# install.packages("knitr", repos="http://cran.us.r-project.org")
+
+
+library(knitr)
+
+
+f_in = file("stdin", blocking=TRUE)
+
+# f_out = file("/dev/stdout")
+# open(f_out)
+tmp_path = tempfile(pattern="file", tmpdir=tempdir(), fileext="")
+
+knitr::purl(
+    input=f_in,
+    output=file(tmp_path),
+    quiet=TRUE
+) |> invisible()
+readLines(tmp_path) |> cat(sep='\n')
+file.remove(tmp_path) |> invisible()

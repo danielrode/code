@@ -42,7 +42,7 @@ import (
 var print = fmt.Println
 
 // Variables
-const version = "37"
+const version = "38"
 
 // Golang time format spec: https://go.dev/src/time/format.go
 const lauoutMthDayHrMinS = "Jan 02 15:04:05"
@@ -91,7 +91,7 @@ func getProgramByFiletype(path string) []string {
 	case ".html":
 		return []string{"firefox"}
 	case ".qgz", ".qgs", ".gpkg", ".shp", ".las", ".laz", ".geojson",
-		".vrt", ".copc.laz", ".tif", ".tiff", ".fgb", ".vpc", ".kml":
+		".vrt", ".copc.laz", ".tif", ".tiff", ".fgb", ".vpc", ".kml", ".gdb":
 		// return []string{"flatpak", "run", "org.qgis.qgis"}
 		return []string{os.Getenv("HOME") + "/code/bin/qgis"}
 	default:
