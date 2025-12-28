@@ -9,12 +9,22 @@ plugins {
     strider location="zellij:strider"
     compact-bar location="zellij:compact-bar"
     session-manager location="zellij:session-manager"
+
+    about location="zellij:about"
+    configuration location="zellij:configuration"
+    plugin-manager location="zellij:plugin-manager"
+
     welcome-screen location="zellij:session-manager" {
         welcome_screen false
     }
     filepicker location="zellij:strider" {
         cwd "/"
     }
+}
+load_plugins {
+}
+web_client {
+    font "monospace"
 }
 
 on_force_close "detach"
@@ -27,3 +37,4 @@ default_mode "locked"
 mouse_mode false
 scroll_buffer_size 100000
 copy_on_select false
+show_startup_tips false
