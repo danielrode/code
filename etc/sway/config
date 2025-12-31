@@ -980,7 +980,7 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
     # Pipewire
     exec --no-startup-id /usr/bin/pipewire
     # `wireplumber` must be started after pipewire. This is configured under
-    # /etc/. For instructions on how to implement this, see 
+    # /etc/. For instructions on how to implement this, see
     # https://docs.voidlinux.org/config/media/pipewire.html#session-management
     exec --no-startup-id /usr/bin/pipewire-pulse
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
-# Author: Daniel Rode
-# Created: 19 Jul 2025
-# Updated: 27 Dec 2025
+# author: Daniel Rode
+# created: 19 Jul 2025
+# updated: 30 Dec 2025
 
 
 # TODO this script is WIP
@@ -25,6 +25,8 @@ then
         liberation-fonts-all \
         mako \
         meld \
+        mpv \
+        opendoas \
         openssh \
         pavucontrol \
         pspg \
@@ -101,6 +103,7 @@ wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 
 
 # todo firewall
+# ufw
 
 # If the destination exists, see if it is a link, and if it is, replace it with the new link, but if it is not a link, rename it to its name with .bak affixed and then make the new link. Be verbose and note each action before you take it (like "overwriting link X that points to Y")
 
@@ -111,4 +114,3 @@ wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 # - sudo crontab -e
 # - crontab -e
 # - /etc/fstab
-

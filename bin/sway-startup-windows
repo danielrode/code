@@ -11,7 +11,7 @@
 #   htop
 #   fish
 # Created: 26 Dec 2022
-# Updated: 02 Oct 2025
+# Updated: 30 Dec 2025
 
 
 # Description: Start list of defined programs under Sway session and then
@@ -35,7 +35,7 @@ def arrange_startup_windows(i3, e) -> None:
         'foot' in INIT_CONS,
         'foot_helix' in INIT_CONS,
         'foot_htop' in INIT_CONS,
-        'Firefox' in INIT_CONS or 'org.mozilla.firefox' in INIT_CONS,
+        ('Firefox' in INIT_CONS) or ('org.mozilla.firefox' in INIT_CONS),
     )):
         # Arrange startup program windows for workspace 1
         INIT_CONS['foot'].command("move workspace 1")
@@ -51,8 +51,12 @@ def arrange_startup_windows(i3, e) -> None:
         INIT_CONS['foot_htop'].command("move left")
 
         # Arrange startup program windows for workspace 2
-        INIT_CONS['Firefox'].command("move workspace 2")
-        INIT_CONS['Firefox'].command("floating disable")
+        try:
+            INIT_CONS['Firefox'].command("move workspace 2")
+            INIT_CONS['Firefox'].command("floating disable")
+        except KeyError:
+            INIT_CONS['org.mozilla.firefox'].command("move workspace 2")
+            INIT_CONS['org.mozilla.firefox'].command("floating disable")
 
         # Now that initial windows are arranged, switch to monitor mode
         i3.off(arrange_startup_windows)
