@@ -24,6 +24,17 @@ apk add --no-cache \
     udunits \
 ;
 EOF
+# OR
+# Install Ubuntu Linux packages
+RUN ash <<EOF
+set -e  # Exit on error
+apt-get -y update
+apt-get install -y --no-install-recommends \
+    python3 \
+;
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+EOF
 
 # Install binary dependencies other containers
 COPY --from=ghcr.io/danielrode/CONTAINER:main \
@@ -34,5 +45,5 @@ ENV PATH="/usr/local/bin:$PATH"
 # Install Python libraries using requirements.txt in cwd
 RUN --mount=type=bind,source=requirements.txt,target=/tmp/deps.txt <<EOF
     # NOTE: The bind mount only persists for this step
-    python3 -m pip install -r /tmp/deps.txt
+    python3 -m pip install --no-cache-dir -r /tmp/deps.txt
 EOF

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Author: Daniel Rode
 # Created: 19 Jul 2025
-# Updated: 03 Dec 2025
+# Updated: 27 Dec 2025
 
 
 # TODO this script is WIP
@@ -75,8 +75,8 @@ then
     systemctl --user start syncthing
 
     # Open WebUI
-    systemctl --user enable open-webui
-    systemctl --user start open-webui
+    # systemctl --user enable open-webui
+    # systemctl --user start open-webui
 
     # Immich
     # systemctl --user enable immich
