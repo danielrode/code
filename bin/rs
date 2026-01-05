@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Name: Restic Shell
-# Type: macro, wrapper
-# Dependencies:
+# author: Daniel Rode
+# name: Restic Shell
+# type: macro, wrapper
+# dependencies:
 #   restic
 #   starship
 #   fish
 #   ~/code/bin/getcred
-# Created: 17 May 2020
-# Updated: 28 Sep 2025
+# created: 17 May 2020
+# updated: 03 Jan 2026
 
 
 # Description:
@@ -53,7 +53,7 @@ echo2 "Loading credentials..."
 if test "$profile" = 'backblazeB2'
 then
 	# Load credentials into environment variables
-	cred_path='programs/restic/Backblaze B2'
+	cred_path='programs/restic/BackblazeB2'
 	export RESTIC_REPOSITORY="$(getcred "$cred_path" username)"
 	export B2_ACCOUNT_ID="$(getcred "$cred_path" 'Key ID')"
 	export B2_ACCOUNT_KEY="$(getcred "$cred_path" 'Application Key')"
