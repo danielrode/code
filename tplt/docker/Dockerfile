@@ -1,4 +1,4 @@
-# Author: Daniel Rode
+# author: Daniel Rode
 
 
 # https://docs.docker.com/reference/dockerfile/
