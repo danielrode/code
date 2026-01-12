@@ -50,7 +50,7 @@ set -gx XDG_DOWNLOAD_DIR $HOME"/downloads"
 set -gx XDG_MUSIC_DIR $HOME"/store/music"
 set -gx XDG_PICTURES_DIR $HOME"/record"
 set -gx XDG_VIDEOS_DIR $HOME"/record"
-set -gx XDG_TEMPLATES_DIR $HOME"/code/tplt"
+set -gx XDG_TEMPLATES_DIR $HOME"/code/tem"
 set -gx XDG_PUBLICSHARE_DIR $HOME"/union/public"
 set -gx XDG_SCREENSHOTS_DIR $XDG_PICTURES_DIR"/screencaptures/current"
 

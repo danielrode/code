@@ -40,7 +40,7 @@ set E:XDG_DOWNLOAD_DIR    = $E:HOME"/downloads"
 set E:XDG_MUSIC_DIR       = $E:HOME"/store/music"
 set E:XDG_PICTURES_DIR    = $E:HOME"/record"
 set E:XDG_VIDEOS_DIR      = $E:HOME"/record"
-set E:XDG_TEMPLATES_DIR   = $E:HOME"/code/tplt"
+set E:XDG_TEMPLATES_DIR   = $E:HOME"/code/tem"
 set E:XDG_PUBLICSHARE_DIR = $E:HOME"/union/public"
 set E:XDG_SCREENSHOTS_DIR = $E:XDG_PICTURES_DIR"/screencaptures/current"
 

@@ -32,7 +32,7 @@ export XDG_DOWNLOAD_DIR="$HOME/downloads"
 export XDG_MUSIC_DIR="$HOME/store/music"
 export XDG_PICTURES_DIR="$HOME/record"
 export XDG_VIDEOS_DIR="$HOME/record"
-export XDG_TEMPLATES_DIR="$HOME/code/tplt"
+export XDG_TEMPLATES_DIR="$HOME/code/tem"
 export XDG_PUBLICSHARE_DIR="$HOME/union/public"
 export XDG_SCREENSHOTS_DIR="$XDG_PICTURES_DIR/screencaptures/current"
 
