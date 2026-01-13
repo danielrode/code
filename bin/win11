@@ -1,23 +1,50 @@
 #!/usr/bin/env bash
-# author: Daniel Rode
-# created: 23 Dec 2025
+# author: daniel rode
+# created: 23 dec 2025
+# updated: 13 jan 2026
 
 
 # Windows 11 running in Docker
+#
+#
+# Run from client computer:
+# ssh -NL 3389:localhost:3389 USER@DOCKER_HOST
+# wlfreerdp /clipboard /w:1920 /h:1000 /u:Docker /p:admin /v:127.0.0.1:3389
 
 
 args=(
 	--replace --name win11
 	--interactive --tty
 	--publish 3389:3389  # RDP
-	--publish 8006:8006  # Web GUI
+	# --publish 8006:8006  # Web GUI
 	--device=/dev/kvm
 	--device=/dev/net/tun
-	# --device=/dev/sdf:/disk2  # USB Drive (change sdf to desired drive)
 	--cap-add NET_ADMIN
-	--volume dockurr_windows:/storage
-	--volume ~/union/docker_windows:/shared
+	--volume win11:/storage
+	--volume ~/union/win11:/shared
+	--env REGION=en-US
 	--stop-timeout 120
 	ghcr.io/dockur/windows:latest
 )
+
+# Setup USB Drive access, if requested
+if [[ -b $1 ]]
+then
+	if [[ ! -w $1 ]]
+	then
+		# TODO test if I need to specify my user group as well
+		echo "Must run first: chown '$(whoami)' '$1'"
+		exit 1
+	fi
+	args=(
+		"${args[@]}"
+		--device="$1":/disk2
+	)
+fi
+
 podman run "${args[@]}"
+
+
+
+# TODO
+# - wrong windows system time after boot

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Dependencies:
+# author: Daniel Rode
+# dependencies:
 #   sshfs
-# Created: 23 Feb 2025
-# Updated: 14 Jul 2025
+#   screen
+# created: 23 Feb 2025
+# updated: 07 Jan 2026
 
 
 # Description: Alias/shortcuts for starting SSH sessions.
@@ -22,16 +23,9 @@ SSH_ARGS=(
     -o ServerAliveInterval=11
 )
 SSH_CMD=(
-    # By using dtach, the user can simply close the terminal and it will
+    # By using screen, the user can simply close the terminal and it will
     # leave any program in the remote SSH shell running without killing it.
-    bash --login -c ':
-        tmpdir="$(mktemp -d)"
-        function cleanup { rm -fr -- "$tmpdir"; }
-        trap cleanup EXIT
-        '"[[ -d $PWD ]] && cd '$PWD'"'
-        dtach -c "$tmpdir/dtach.sock" fish
-        exit
-    '
+    bash --login -c 'exec screen fish'
 )
 
 

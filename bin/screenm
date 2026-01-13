@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# author: Daniel Rode
+# name: Screen Menu
+# tags: processes, menu
+# dependencies:
+#   python 3.10+
+#   screen
+#   fzf
+#   pgrep
+# created: 07 Jan 2026
+# updated: -
+
+
+# Description: List active screen sessions in a menu and then connect to the
+# selected one.
+
+
+import sys
+import subprocess as sp
+
+
+# Main
+
+# Find active screen sessions
+p = sp.run(['screen', '-ls'], capture_output=True, text=True)
+screens = [i.split('\t')[1] for i in p.stdout.splitlines()[1:-1]]
+
+# Display menu of active screen sessions
+cmd = (
+    'fzf',
+    '--delimiter=\\.',
+    '--preview=pstree -aps {1}',
+    '--preview-window=up,80%',
+)
+p = sp.run(cmd, text=True, input='\n'.join(screens), stdout=sp.PIPE)
+if p.returncode == 130:
+    sys.exit(0)
+elif p.returncode != 0:
+    raise Exception(f"fzf failed with error {p.returncode}")
+sel = p.stdout.strip()
+
+# Connect to selected screen session
+sp.run(['screen', '-x', sel])

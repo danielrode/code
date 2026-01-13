@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 09 jan 2026
+# updated: 13 jan 2026
+
+
+args=(
+	--dir-cache-time 300s
+	--poll-interval 33s
+	--vfs-refresh
+	--vfs-cache-mode full
+	--vfs-write-back 5s
+	--vfs-cache-max-age 9999w
+	--file-perms 600
+	work_onedrive_0:union/work0
+	~/union/work0
+)
+rclone mount "${args[@]}"
