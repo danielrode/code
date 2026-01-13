@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 12 jan 2026
+# updated: -
+
+
+# Install system config files
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+# Parse command line arugments
+try:
+    src = Path(sys.argv[1])
+except IndexError:
+    print("error: Must provide path to installation files dir; typically:")
+    print("install-root-etc ~/code/ins/root_etc/")
+    sys.exit(1)
+if not src.exists():
+    print("error: Does not exist:", src)
+
+# Install config files
+rsync_cmd = (
+    'sudo',
+    'rsync',
+
+    # '--dry-run',
+
+    # Configure rsync information verbosity and format
+    '--verbose',
+    # '--stats',
+    # '--progress',
+    '--human-readable',
+    '--itemize-changes',
+
+    # Configure rsync data transfer method
+    '--recursive',  # Copy source recursively
+    '--perms', '--chmod=D755,F644',  # Set permissions
+    # '--links',  # Copy symlinks as symlinks
+    # '--executability',  # Preserve executability
+    '--backup',  # Keep backup of existing dest file
+    '--mkpath',  # Create destination is it does not exist
+    '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
+
+    # Set source dest
+    str(src) + '/',
+    '/etc/',
+)
+sp.run(rsync_cmd, check=True)

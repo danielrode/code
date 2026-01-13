@@ -1,124 +1,67 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: -
+# updated: 12 jan 2026
 
 
-# TODO
-# rm ~/code/bin/setup-links
-#
-# 
+# Install links to home dotfiles
 
-exit
 
-args=(
+import subprocess as sp
+from pathlib import Path
+
+
+HOME = Path.home()
+
+EXEMPTIONS = (
+    'i3status-rs.toml',  # Path gets passed to program
+    'launch.txt',        # Path gets passed to program
+    'kmonad',            # Path gets passed to program
+    'mako.conf',         # Path gets passed to program
+    # todo
+    'udev',              # Copy contents to under /etc/udev/
+    'byobu',             # Abandoned (no longer use)
+    'emacs-init.el',     # Abandoned (no longer use)
+    'goneovim.toml',     # Abandoned (no longer use)
+)
+
+
+# Install dotfile symlinks
+rsync_cmd = (
+    'rsync',
+
     # Configure rsync information verbosity and format
-    --verbose
-    --stats
-    --human-readable
-    --progress
-    --itemize-changes
+    '--verbose',
+    # '--stats',
+    # '--progress',
+    '--human-readable',
+    '--itemize-changes',
 
     # Configure rsync data transfer method
-    --recursive  # Copy source recursively
-    --links  # Preserve symbolic links
-    --perms  # Preserve permissions   #--chmod=?
-    --executability  # Preserve executability
-    --backup  # Keep backup of existing dest file
-    --mkpath  # Create destination is it does not exist
-    --ignore-times  # Copy file again even if size and times match dest
+    '--recursive',  # Copy source recursively
+    '--perms', '--chmod=D700,F600',  # Set permissions
+    '--links',  # Copy symlinks as symlinks
+    '--executability',  # Preserve executability
+    '--backup',  # Keep backup of existing dest file
+    '--mkpath',  # Create destination is it does not exist
+    '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
+
+    # Set source dest
+    str(Path(HOME, "code/ins/home_config/")) + '/',
+    str(HOME) + '/',
 )
-rsync "${args[@]}" ~/code/ins/home-config/ ~/
+sp.run(rsync_cmd, check=True)
 
-exit
-
-
-
-HOSTNAME="$(hostname)"
-XDG_CONFIG_HOME="$HOME/.config"
-DCV_CODE_PATH="$HOME/code"
-
-
-cd "$DCV_CODE_PATH/etc" || exit 1
-
-
-function ln_ {
-    ln --backup=simple --symbolic --force --verbose "$(realpath "$1")" "$2"
-}
-function mkdir_ {
-    mkdir --parents "$1"
-}
-
-
-# Make directories
-mkdir_ "$HOME/.ipython/profile_default/startup/"
-mkdir_ "$XDG_CONFIG_HOME/elvish/"
-mkdir_ "$XDG_CONFIG_HOME/fish/"
-mkdir_ "$XDG_CONFIG_HOME/foot/"
-mkdir_ "$XDG_CONFIG_HOME/goneovim/"
-mkdir_ "$XDG_CONFIG_HOME/imv/"
-mkdir_ "$XDG_CONFIG_HOME/kanshi/"
-mkdir_ "$XDG_CONFIG_HOME/lf/"
-mkdir_ "$XDG_CONFIG_HOME/mpv/"
-mkdir_ "$XDG_CONFIG_HOME/ov/"
-mkdir_ "$XDG_CONFIG_HOME/tiny/"
-mkdir_ "$XDG_CONFIG_HOME/wezterm/"
-mkdir_ "$XDG_CONFIG_HOME/zathura/"
-mkdir_ "$XDG_CONFIG_HOME/zellij/"
-mkdir_ "$XDG_CONFIG_HOME/zsh/"
-mkdir_ "$XDG_CONFIG_HOME/systemd/user/"
-mkdir_ "$XDG_CONFIG_HOME/environment.d/"
-
-
-# LINKS
-# i3status-rs.toml       none: Path passed to program
-# launch.txt             none: Passed to program
-# kmonad                 none: Paths passed to program
-# mako.conf              none: Paths passed to program
-# udev                   none: Copy contents to under /etc/udev/
-# ln_ git-repo-blob_text_journal "$HOME/record/blob/t/.git/config"
-# ln_ byobu                ???
-# ln_ emacs-init.el        ???
-# ln_ goneovim.toml        "$XDG_CONFIG_HOME/goneovim/settings.toml"
-# ln_ qutebrowser          ???
-ln_ alacritty            "$XDG_CONFIG_HOME/"
-ln_ foot.ini             "$XDG_CONFIG_HOME/foot/foot.ini"
-ln_ gitconfig            "$HOME/.gitconfig"
-ln_ helix                "$XDG_CONFIG_HOME/"
-ln_ imv.conf             "$XDG_CONFIG_HOME/imv/config"
-ln_ ipython-init.py \
-    "$HOME/.ipython/profile_default/startup/10-user-init.py"
-ln_ kanshi               "$XDG_CONFIG_HOME/kanshi/config"
-ln_ lfrc                 "$XDG_CONFIG_HOME/lf/lfrc"
-ln_ lintr                "$HOME/.lintr"
-ln_ mpv-input.conf       "$XDG_CONFIG_HOME/mpv/input.conf"
-ln_ profile              "$HOME/.profile"
-ln_ rc.elv               "$XDG_CONFIG_HOME/elvish/rc.elv"
-ln_ starship.toml        "$XDG_CONFIG_HOME/starship.toml"
-ln_ sway                 "$XDG_CONFIG_HOME/"
-ln_ tiny.yml             "$XDG_CONFIG_HOME/tiny/config.yml"
-ln_ waybar               "$XDG_CONFIG_HOME/"
-ln_ wezterm.lua          "$XDG_CONFIG_HOME/wezterm/wezterm.lua"
-ln_ zathura.conf         "$XDG_CONFIG_HOME/zathura/zathurarc"
-ln_ zellij.kdl           "$XDG_CONFIG_HOME/zellij/config.kdl"
-ln_ zshrc                "$XDG_CONFIG_HOME/zsh/.zshrc"
-ln_ user-dirs.dirs       "$XDG_CONFIG_HOME/"
-ln_ ov.yaml              "$XDG_CONFIG_HOME/ov/config.yaml"
-ln_ config.fish          "$XDG_CONFIG_HOME/fish/config.fish"
-ln_ systemd/open-webui.service \
-    "$XDG_CONFIG_HOME/systemd/user/"
-ln_ systemd/thelounge-irc.service \
-    "$XDG_CONFIG_HOME/systemd/user/"
-ln_ systemd/immich.service \
-    "$XDG_CONFIG_HOME/systemd/user/"
-ln_ profile-environmentd.conf \
-    "$XDG_CONFIG_HOME/environment.d/profile.conf"
-
-# Check if any of my config files are not handled above and notify
-for p in *
-do
-    if ! grep --silent "$p" "$0"
-    then
-        echo "warning: Unhandled config file: $(realpath "$p")"
-    fi
-done
+# Check if there are any config files that are missing links
+link_target_names = [
+    i.readlink().name
+    for i in Path(HOME, 'code/ins/home_config/').glob('**')
+    if i.is_symlink()
+]
+etc_filenames = [
+    i.name
+    for i in Path(HOME, 'code/etc/').glob('*')
+]
+for conf in etc_filenames:
+    if (conf not in link_target_names) and (conf not in EXEMPTIONS):
+        print("Unhandled config file:", conf)

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
-# author: Daniel Rode
-# created: 19 Jul 2025
-# updated: 30 Dec 2025
+# author: daniel rode
+# created: 19 jul 2025
+# updated: 12 jan 2026
 
 
 # TODO this script is WIP
@@ -47,6 +47,7 @@ fi
 sudo loginctl enable-linger "$USER"
 
 # Enable systemd system services
+# TODO install unit files first
 if command -v systemctl >/dev/null 2>&1
 then
     # Make sure SSH server is running
@@ -60,7 +61,7 @@ git -C ~/code config commit.gpgSign true
 
 # Install config files
 echo "Linking configs..."
-~/code/bin/setup-links
+~/code/bin/install-home-config
 command -v systemctl >/dev/null 2>&1 && systemctl --user daemon-reload
 
 # Compile binaries
