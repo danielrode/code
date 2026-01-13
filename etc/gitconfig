@@ -33,7 +33,7 @@
 [delta]
     navigate = true  # use n and N to move between diff sections
     dark = true      # or light = true, or omit for auto-detection
-	pager = ov -XF
+	# pager = ov -XF  # Disabled because it breaks `checkout --patch`
 
 [merge]
     conflictStyle = zdiff3
