@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Name: Cleanup Drive Space
-# Dependencies:
+# author: daniel rode
+# name: cleanup drive space
+# dependencies:
 #   ~/code/rmtrash
-# Created: 10 Oct 2025
-# Updated: 23 Dec 2025
+# created: 10 oct 2025
+# updated: 13 jan 2026
 
 
-# Description: Remove various caches and old unneeded files to clear up disk
-# space.
+# Remove various caches and old unneeded files to clear up disk space.
 #
-# Tags: makespace, cache, rm
+# tags: makespace, cache, rm
 
 
 # Purge trash files that are 99 dasy old and older
