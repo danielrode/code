@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount Work Main OneDrive
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=33
+ExecStart=%h/code/bin/mount-work0
+ExecStop=/usr/bin/umount %h/union/work0
+
+[Install]
+WantedBy=default.target

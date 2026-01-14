@@ -1,0 +1,12 @@
+[Unit]
+Description=Globus
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStart=/opt/globus/globusconnectpersonal -start
+ExecStop=/opt/globus/globusconnectpersonal -stop
+
+[Install]
+WantedBy=default.target

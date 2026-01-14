@@ -12,7 +12,7 @@ args=(
 	--vfs-write-back 5s
 	--vfs-cache-max-age 9999w
 	--file-perms 600
-	work_onedrive_0:union/work0
+	work0_onedrive:union/work0
 	~/union/work0
 )
 rclone mount "${args[@]}"

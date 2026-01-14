@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 11 jan 2026
+# updated: 13 jan 2026
+
+
+# Install links to home dotfiles
+
+
+import subprocess as sp
+from pathlib import Path
+
+
+HOME = Path.home()
+
+EXEMPTIONS = (
+    'i3status-rs.toml',  # Path gets passed to program
+    'launch.txt',        # Path gets passed to program
+    'kmonad',            # Path gets passed to program
+    'mako.conf',         # Path gets passed to program
+    # todo
+    'udev',              # Copy contents to under /etc/udev/
+    'byobu',             # Abandoned (no longer use)
+    'emacs-init.el',     # Abandoned (no longer use)
+    'goneovim.toml',     # Abandoned (no longer use)
+)
+
+
+# Install dotfile symlinks
+rsync_cmd = (
+    'rsync',
+
+    # Configure rsync information verbosity and format
+    '--verbose',
+    # '--stats',
+    # '--progress',
+    '--human-readable',
+    '--itemize-changes',
+
+    # Configure rsync data transfer method
+    '--recursive',  # Copy source recursively
+    '--perms', '--chmod=D700,F600',  # Set permissions
+    '--links',  # Copy symlinks as symlinks
+    '--executability',  # Preserve executability
+    '--backup',  # Keep backup of existing dest file
+    '--mkpath',  # Create destination is it does not exist
+    '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
+
+    # Set source dest
+    str(Path(HOME, "code/ins/home_config/")) + '/',
+    str(HOME) + '/',
+)
+sp.run(rsync_cmd, check=True)
+
+# Check if there are any config files that are missing links
+link_target_names = [
+    i.readlink().name
+    for i in Path(HOME, 'code/ins/home_config/').glob('**')
+    if i.is_symlink()
+]
+etc_filenames = [
+    i.name
+    for i in Path(HOME, 'code/etc/').glob('*')
+]
+for conf in etc_filenames:
+    if (conf not in link_target_names) and (conf not in EXEMPTIONS):
+        print("WARNING Unhandled config file:", conf)
