@@ -7,6 +7,13 @@
 #   swaywm
 
 
+# Set default file and dir permissions
+umask 027
+
+# Disable "searching for cmd" on command typos
+unset -f command_not_found_handle
+
+# Misc variables
 export VISUAL=hx
 export EDITOR="$VISUAL"
 export PAGER=less
@@ -15,7 +22,7 @@ export LESSEDIT="%E < %f"
 export DEFAULT_TERM=foot
 export STARSHIP_LOG=error  # Disable Starship warning messages
 export LS_COLORS="$LS_COLORS"':ow=01;33'  # Color 777 orange
-export DFLT_NET_IFACE="$(route | grep '^default ' | grep -o '[^ ]*$')"
+export DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
 export HOSTNAME=`hostname`
 
 # Daniel's Constant Variables
@@ -39,7 +46,6 @@ export XDG_SCREENSHOTS_DIR="$XDG_PICTURES_DIR/screencaptures/current"
 # Program Config
 export BAT_PAGER="$PAGER"
 export GOPATH="$HOME/progeny/go"
-# export LESSKEY="$DCV_CODE_PATH/etc/less-bindings"
 export R_LIBS_USER="$HOME/.local/lib/R"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 

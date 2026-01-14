@@ -25,6 +25,9 @@ starship init fish | source
 # Disable fish greeting
 set fish_greeting ""
 
+# Default file/dir permissions
+umask 027
+
 # PROFILE #####################################################################
 
 set -gx VISUAL hx
@@ -116,7 +119,7 @@ abbr --add du du -h
 abbr --add lsblk lsblk -o NAME,SIZE,FSSIZE,FSAVAIL,FSUSE%,MOUNTPOINTS,FSTYPE,\
 LABEL,PARTLABEL,MODEL,ROTA,TRAN
 abbr --add pg pgrep -fa
-abbr --add rg rg --no-ignore
+abbr --add rg rg -u
 abbr --add zyp sudo zypper
 abbr --add rsynca rsync \
     --archive \
