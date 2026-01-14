@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: 12 jan 2026
+# updated: 13 jan 2026
 
 
 # Install links to home dotfiles
@@ -64,4 +64,4 @@ etc_filenames = [
 ]
 for conf in etc_filenames:
     if (conf not in link_target_names) and (conf not in EXEMPTIONS):
-        print("Unhandled config file:", conf)
+        print("WARNING Unhandled config file:", conf)
