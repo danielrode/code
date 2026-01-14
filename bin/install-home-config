@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 HOME = Path.home()
+INS_PATH = HOME / "code/ins/home_config/"
 
 EXEMPTIONS = (
     'i3status-rs.toml',  # Path gets passed to program
@@ -47,7 +48,7 @@ rsync_cmd = (
     '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
 
     # Set source dest
-    str(Path(HOME, "code/ins/home_config/")) + '/',
+    str(INS_PATH) + '/',
     str(HOME) + '/',
 )
 sp.run(rsync_cmd, check=True)
@@ -55,7 +56,7 @@ sp.run(rsync_cmd, check=True)
 # Check if there are any config files that are missing links
 link_target_names = [
     i.readlink().name
-    for i in Path(HOME, 'code/ins/home_config/').glob('**')
+    for i in INS_PATH.glob('**')
     if i.is_symlink()
 ]
 etc_filenames = [

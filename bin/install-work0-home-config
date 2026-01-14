@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# created: 11 jan 2026
-# updated: 13 jan 2026
+# created: 13 jan 2026
+# updated: -
 
 
-# Install links to home dotfiles
+# Install work0 dotfiles
 
 
 import subprocess as sp
@@ -12,21 +12,10 @@ from pathlib import Path
 
 
 HOME = Path.home()
-
-EXEMPTIONS = (
-    'i3status-rs.toml',  # Path gets passed to program
-    'launch.txt',        # Path gets passed to program
-    'kmonad',            # Path gets passed to program
-    'mako.conf',         # Path gets passed to program
-    # todo
-    'udev',              # Copy contents to under /etc/udev/
-    'byobu',             # Abandoned (no longer use)
-    'emacs-init.el',     # Abandoned (no longer use)
-    'goneovim.toml',     # Abandoned (no longer use)
-)
+INS_PATH = HOME / "code/ins/work0_home_config/"
 
 
-# Install dotfile symlinks
+# Install dotfile
 rsync_cmd = (
     'rsync',
 
@@ -47,21 +36,7 @@ rsync_cmd = (
     '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
 
     # Set source dest
-    str(Path(HOME, "code/ins/home_config/")) + '/',
+    str(INS_PATH) + '/',
     str(HOME) + '/',
 )
 sp.run(rsync_cmd, check=True)
-
-# Check if there are any config files that are missing links
-link_target_names = [
-    i.readlink().name
-    for i in Path(HOME, 'code/ins/home_config/').glob('**')
-    if i.is_symlink()
-]
-etc_filenames = [
-    i.name
-    for i in Path(HOME, 'code/etc/').glob('*')
-]
-for conf in etc_filenames:
-    if (conf not in link_target_names) and (conf not in EXEMPTIONS):
-        print("WARNING Unhandled config file:", conf)
