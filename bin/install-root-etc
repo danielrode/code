@@ -1,30 +1,35 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: -
+# updated: 14 jan 2026
 
 
 # Install system config files
 
 
+import os
 import sys
 import subprocess as sp
 from pathlib import Path
 
+
+# Ensure script is run as root
+if os.geteuid() != 0:
+    print("This script must be run as root")
+    exit(1)
 
 # Parse command line arugments
 try:
     src = Path(sys.argv[1])
 except IndexError:
     print("error: Must provide path to installation files dir; typically:")
-    print("install-root-etc ~/code/ins/root_etc/")
+    print("sudo install-root-etc ~/code/ins/root_etc/")
     sys.exit(1)
 if not src.exists():
     print("error: Does not exist:", src)
 
 # Install config files
 rsync_cmd = (
-    'sudo',
     'rsync',
 
     # '--dry-run',

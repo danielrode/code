@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 12 jan 2026
+# updated: 14 jan 2026
 
 
 # TODO this script is WIP
@@ -13,7 +13,9 @@ set -e
 # Install packages
 if command -v dnf >/dev/null 2>&1
 then
-    sudo dnf group install sway-desktop-environment -y
+    sudo dnf group install -y \
+        sway-desktop-environment \
+    ;
     sudo dnf install -y \
         btrfs-progs \
         git-delta \
@@ -118,3 +120,4 @@ sudo dnf remove PackageKit-command-not-found
 # - sudo crontab -e
 # - crontab -e
 # - /etc/fstab
+# - ~/.ssh/config

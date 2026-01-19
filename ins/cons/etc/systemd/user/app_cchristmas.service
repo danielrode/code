@@ -1,0 +1,15 @@
+[Unit]
+Description=Christmas Wishlists
+Requires=dbus.socket
+After=dbus.socket
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/bin/podman-compose --file /usr/local/share/app_cchristmas/compose.yaml up
+ExecStop=/usr/bin/podman-compose --file /usr/local/share/app_cchristmas/compose.yaml down
+
+[Install]
+WantedBy=default.target

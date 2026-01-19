@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 14 jan 2026
+# updated: 16 jan 2026
+
+
+# TODO test this script and finish placing files under ins/
+exit
+
+
+# Install system files for services/apps setup as Podman containers.
+
+
+# Ensure script is run as root
+if [[ $(id -u) != 0 ]]
+then
+    echo "This script must be run as root"
+    exit 1
+fi
+
+# Parse command line arugments
+if [[ ! -d $1 ]]
+then
+    echo "error: Must provide path to installation files dir; typically:"
+    echo "sudo install-cons ~/code/ins/cons/"
+    exit 1
+fi
+
+# Install config files
+rsync_args=(
+    # --dry-run
+
+    # Configure rsync information verbosity and format
+    --verbose
+    --human-readable
+    --itemize-changes
+
+    # Configure rsync data transfer method
+    --recursive  # Copy source recursively
+    --perms --chmod=D755,F644  # Set permissions
+    --backup  # Keep backup of existing dest file
+    --mkpath  # Create destination is it does not exist
+    --ignore-times  # Copy file again even if size and times match dest  # TODO does not seem to work
+
+    # Set source dest
+    str(src) +/
+    /etc/
+)
+rsync "${rsync_args[@]}"
+
+# Inform user that they must setup rathole config/credential files for services
+# that depend on that
+cat <<EOF
+Setup rathole config; example:
+
+tee /home/app_SERVICE_NAME/rathole.toml <<FILE
+[client]
+remote_addr = "PUBLIC_IP:RATHOLE_LISTENING_PORT"
+
+[client.services.SERVICE_NAME]
+type = "tcp"
+token = "SERVICE_RATHOLE_PASSWORD"
+local_addr = "SERVICE_NAME:SERVICE_PORT"
+FILE
+
+chown app_SERVICE_NAME:app_SERVICE_NAME /home/app_SERVICE_NAME/rathole.toml
+chmod 660 /home/app_SERVICE_NAME/rathole.toml
+EOF

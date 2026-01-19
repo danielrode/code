@@ -1,0 +1,72 @@
+# author: Daniel Rode
+# created: 21 Nov 2025
+# updated: 03 Jan 2026
+
+
+# https://github.com/Wingysam/Christmas-Community
+
+
+version: '3'
+services:
+  cchristmas:
+    cap_drop:
+      - ALL
+    cap_add:
+      # https://docs.docker.com/engine/containers/run
+      # /#runtime-privilege-and-linux-capabilities
+      #
+      # Bind a socket to internet domain privileged ports (port numbers
+      # less than 1024).
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,mode=1700
+    restart: always
+    deploy:
+      resources:
+        limits:
+          mem_limit: 256m          # Limit memory to 256MB
+          cpus: 0.5                # Limit CPU usage to 50% of a single core
+    image: docker.io/wingysam/christmas-community
+    volumes:
+      - ~/wyngysam-christmas-community:/data:z
+    environment:
+      # Table mode, set to 'false' to revert to box mode
+      - TABLE=true
+      # Single list mode
+      # (for weddings, birthdays, etc. only the admin account's list is
+      # accessible)
+      - SINGLE_LIST=false
+      # Some websites (like walmart) send headers that are larger than
+      # 8MB in length. If issues are encountered, set the node.js limit
+      # to a higher number than 8192
+      - NODE_OPTIONS=--max-http-header-size=3276
+    depends_on:
+      - rathole
+  rathole:
+    cap_drop:
+      - ALL
+    cap_add:
+      # https://docs.docker.com/engine/containers/run
+      # /#runtime-privilege-and-linux-capabilities
+      #
+      # Bind a socket to internet domain privileged ports (port numbers
+      # less than 1024).
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,mode=1700
+    restart: always
+    deploy:
+      resources:
+        limits:
+          mem_limit: 256m          # Limit memory to 256MB
+          cpus: 0.5                # Limit CPU usage to 50% of a single core
+    image: docker.io/rapiz1/rathole:latest
+    volumes:
+      - ~/rathole.toml:/rh.toml:ro,U,Z
+    command: "/rh.toml"
