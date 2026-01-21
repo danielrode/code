@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Name: File History Git
-# Tags: file management, backup, history
-# Dependencies:
+# author: daniel rode
+# name: file history git
+# tags: file management, backup, history
+# dependencies:
 #   git
 #   lf
-# Created: 25 Mar 2025
-# Updated: 05 Dec 2025
+# created: 25 mar 2025
+# updated: 20 jan 2026
 
 
 # Description: Given some file path, assuming the file is part of a git
@@ -67,16 +67,19 @@ def lines2blocks(line_list: Iterable) -> Iterable:
     block = []
     for line in line_list:
         line = line.rstrip()
-        if not line:
+        if line == '':
             yield block
             block = []
         else:
             block += [line]
 
+    if block:
+        yield block
+
 
 # Process command line arguments
 try:
-    fpath = Path(sys.argv[1])
+    fpath = sys.argv[1]
 except IndexError:
     print2(HELP_TEXT)
     sys.exit(1)
@@ -107,7 +110,7 @@ with TemporaryDirectory() as tmpdir:
                 continue
             else:
                 raise e
-        tmpf = Path(tmpdir, date + ' - ' + fpath)
+        tmpf = Path(tmpdir, date + ' - ' + Path(fpath).name)
         with tmpf.open('w') as f:
             f.write(p.stdout)
 
