@@ -77,3 +77,4 @@ foot htop  # System Monitor
 ~/code/bin/sway-startup-windows  # Workspace
 ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
 flatpak run com.github.tchx84.Flatseal  # App Permissions Manager
+wl-paste | pandoc -f markdown -t dokuwiki |wl-copy  # Md to DokuWiki

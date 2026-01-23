@@ -1,4 +1,10 @@
 
+# Kanshi Config
+
+# A profile will be automatically activated if *all* specified outputs in the
+# profile configuration are currently connected.
+
+
 profile Default {
     output "LG Display 0x0645 Unknown" enable
 
@@ -7,7 +13,7 @@ profile Default {
 }
 
 profile HomeDesk {
-    # Ensure laptop display is on
+    # Ensure laptop display is on and is left of other display
     # output "LG Display 0x0645 Unknown" enable position 0,0
 
     # Turn laptop display off
@@ -21,4 +27,14 @@ profile HomeDesk {
 
     # Restart waybar (it glitches out when external display is attached)
     exec pkill waybar; sleep 1; swaymsg exec waybar
+}
+
+profile TV {
+    output "LG Display 0x0645 Unknown" enable
+
+    # Lower TV display resolution
+    output "XXX 2CH4K30 0x00000001" mode 1920x1080@30.000Hz
+
+    # Set laptop display brightness very low
+    exec bl 5
 }

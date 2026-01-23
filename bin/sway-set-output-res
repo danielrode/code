@@ -1,0 +1,27 @@
+#!/usr/bin/env dash
+# author: daniel rode
+# dependencies:
+#   sway
+#   jq
+# created: 22 jan 2026
+# updated: -
+
+
+# Example usage:
+# sway-set-output-res 1920x1080@30.0Hz
+# sway-set-output-res 1920x1080
+# sway-set-output-res 1920x1080 HDMI-A-1
+
+
+if [ -n "$2" ]
+then
+  outputID="$2"
+else
+  # If user does not provide outputID, use ID of currently focused output
+  jq_cmd='.[] | select(.focused==true) | .name'
+  focused_output="$(swaymsg -t get_outputs | jq "$jq_cmd")"
+  outputID="$focused_output"
+fi
+
+echo "$outputID"
+swaymsg output "$outputID" mode "$1"
