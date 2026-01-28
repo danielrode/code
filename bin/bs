@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# author: Daniel Rode
-# name: Backup Sync
+# author: daniel rode
+# name: backup sync
 # tags: backup, file management, data management
 # dependencies:
 #    python 3.7+
 #    ncdu
 #    restic
 #    ~/code/bin/getcred
-# created: 23 Nov 2022
-# updated: 03 Jan 2026
+# created: 23 nov 2022
+# updated: 28 jan 2026
 
 
 # Description: Create backup of my data online using restic.
@@ -113,6 +113,7 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     '.local/share/tracker/',
     '.local/share/waydroid/',
     '.local/state/wireplumber/',
+    '.local/share/Zeal/Zeal/docsets/',
     '.lyx/cache/',
     '.minecraft/assets/',
     '.minecraft/libraries/',
