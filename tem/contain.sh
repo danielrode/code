@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Dependencies:
+# author: daniel rode
+# dependencies:
 #   bash 4+
-# Created: 01 Oct 2025
-# Updated: -
+# created: 01 jan 2026
+# updated: -
 
 
 # -----------------------------------------------------------------------------
@@ -26,12 +27,13 @@ set -o pipefail  # Prevent tee from swallowing upstream exit codes
 NICENESS=15
 
 # Configure container
-CON_IMG=CONTAINER_NAME
+CON_IMG=CONTAINER_IMAGE_NAME
 CON_SETTINGS=(
     --rm
     --interactive --tty
-    --volume "/mnt:/mnt:ro"
-    --volume "/home:/home:ro"
+    --volume /etc/localtime:/etc/localtime:ro
+    --volume /mnt:/mnt:ro
+    --volume /home:/home:ro
     --volume "$PWD:$PWD"
     --workdir "$PWD"
     "$CON_IMG"
@@ -47,10 +49,10 @@ CON_SETTINGS=(
 # Set working directory to where this script is
 cd "$(dirname "$0")"
 
-function main {
-    # Run workflow
-    echo "Starting $(date)"
-    nice --adjustment "$NICENESS" podman run "${CON_SETTINGS[@]}" "$@"
-    echo "Finished $(date)"
-}
-main "$@" &> ./main.log
+# Ensure directory for logs exists
+mkdir -p ./logs
+
+# Run workflow
+nice --adjustment "$NICENESS" \
+    podman run "${CON_SETTINGS[@]}" "$@" \
+|& tee "./logs/$(basename "$1").log"
