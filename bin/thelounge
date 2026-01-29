@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 10 may 2025
-# updated: 28 jan 2026
+# updated: 29 jan 2026
 
 
 # sudo loginctl enable-linger $(whoami)
 
 
+DATA_DIR="$HOME/.appdata/thelounge"
+
+
+mkdir -p "$DATA_DIR"
 podman run \
     --name thelounge --replace \
     --publish 9000:9000 \
-    --volume ~/.appdata/thelounge:/var/opt/thelounge:z \
+    --volume "$DATA_DIR":/var/opt/thelounge:z \
     --restart always \
     ghcr.io/thelounge/thelounge:latest \
 ;
-podman start --attach thelounge
 # podman exec --user node -it thelounge thelounge add MrLiDAR

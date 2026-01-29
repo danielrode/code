@@ -103,6 +103,14 @@ wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 # Prevent DNF from checking for packages that provide commands
 sudo dnf remove PackageKit-command-not-found
 
+# Setup disk health monitoring
+sudo dnf install smartmontools
+sudo bash -c 'echo "DEVICESCAN -H -m daniel -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q" > /etc/smartmontools/smartd.conf'
+sudo systemctl enable smartd
+sudo systemctl start smartd
+# TODO verify this works (actually detects drive failuers)
+# TODO monitor /var/spool/mail/daniel and notify d.rode@mailbox.org
+
 
 
 # If the destination exists, see if it is a link, and if it is, replace it with the new link, but if it is not a link, rename it to its name with .bak affixed and then make the new link. Be verbose and note each action before you take it (like "overwriting link X that points to Y").

@@ -143,3 +143,5 @@ abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set sty
 
 # Launch new session with history
 abbr --add hoff fish --private
+
+abbr --add reboot doas /usr/bin/reboot
