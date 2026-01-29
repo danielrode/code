@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# author: Daniel Rode
+# author: daniel rode
 
 
 podman run \

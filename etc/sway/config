@@ -7,7 +7,6 @@
 #     grim
 #     slurp
 #     notify-send
-#     shotman
 #   lxsession (for `lxpolkit`)
 #   Nerd Fonts
 #   waybar
@@ -17,11 +16,11 @@
 #   kanshi
 #   fish
 #   speedcrunch
-#   shotman
 #   ~/code/bin/bl
 #   ~/code/bin/sway-pick-color
 #   ~/code/bin/vl
 #   ~/code/bin/sway-scale-output
+#   ~/code/bin/capture-screen
 #   possibly others?
 
 
@@ -638,13 +637,13 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
     # Print Screen / Screenshot mode
     mode "screenshot: w=window, m=monitor, r=select" {
         # Capture and save currently active output (monitor)
-        bindsym m exec shotman --capture output; mode "default"
+        bindsym m exec ~/code/bin/capture-screen screen; mode "default"
 
         # Capture and save specific region
-        bindsym r exec shotman --capture region; mode "default"
+        bindsym r exec ~/code/bin/capture-screen manual; mode "default"
 
         # Capture and save currently focused window
-        bindsym w exec shotman --capture window; mode "default"
+        bindsym w exec ~/code/bin/capture-screen window; mode "default"
     
         # Return to default mode
         bindsym Escape mode "default"

@@ -18,6 +18,7 @@ then
     ;
     sudo dnf install -y \
         btrfs-progs \
+        cargo \
         git-delta \
         gocryptfs \
         golang \

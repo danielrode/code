@@ -1,0 +1,16 @@
+version: "3.2"
+services:
+  koboldcpp:
+    container_name: koboldcpp
+    image: docker.io/koboldai/koboldcpp:latest
+    volumes:
+      - /dev/dri:/dev/dri
+      - ~/.appdata/kcpp:/workspace:z
+      - ~/llms/gguf:/gguf:ro,z
+    environment:
+      - KCPP_DONT_UPDATE=flase
+      - KCPP_DONT_TUNNEL=true
+      - KCPP_ARGS=--model /gguf/${GGUF_MODEL} --gpulayers 99 --multiuser 20 --admin --admindir . --adminpassword ${ADMIN_PW} --contextsize ${CONTEXT_SIZE} 
+    ports:
+      - 127.0.0.1:50001:5001
+    restart: unless-stopped
