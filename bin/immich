@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Created: 08 Apr 2025
-# Updated: 01 Sep 2025
+# author: daniel rode
+# created: 08 apr 2025
+# updated: 28 Jan 2026
 
 
 # DEBUGGING:
@@ -40,7 +40,7 @@
 
 export GETCRED_FORCE_CLI=true
 CRED_PATH=programs/immich_postgres_container
-IMG_REPO="$HOME/record/immich"
+IMG_REPO="$HOME/media/immich"
 IMMICH_VER=release
 
 

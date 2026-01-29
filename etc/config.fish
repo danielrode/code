@@ -51,15 +51,15 @@ set -gx XDG_DESKTOP_DIR $HOME"/working"
 set -gx XDG_DOCUMENTS_DIR $HOME"/progeny"
 set -gx XDG_DOWNLOAD_DIR $HOME"/downloads"
 set -gx XDG_MUSIC_DIR $HOME"/store/music"
-set -gx XDG_PICTURES_DIR $HOME"/record"
-set -gx XDG_VIDEOS_DIR $HOME"/record"
+set -gx XDG_PICTURES_DIR $HOME"/media"
+set -gx XDG_VIDEOS_DIR $HOME"/media"
 set -gx XDG_TEMPLATES_DIR $HOME"/code/tem"
 set -gx XDG_PUBLICSHARE_DIR $HOME"/union/public"
 set -gx XDG_SCREENSHOTS_DIR $XDG_PICTURES_DIR"/screencaptures/current"
 
 # Program Config
 set -gx BAT_PAGER $PAGER
-set -gx GOPATH $HOME"/progeny/go"
+set -gx GOPATH $HOME"/.appdata/go"
 set -gx R_LIBS_USER $HOME"/.local/lib/R"
 
 # Path

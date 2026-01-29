@@ -1,14 +1,14 @@
 #!/usr/bin/env dash
-# Author: Daniel Rode
-# Description: Captures a screenshot and notifies the user
-# Dependencies: jq, grim, slurp, wl-clipboard
-# Version: 5
-# Init: 17 Mar 2020
-# Updated: 09 Oct 2021
+# author: daniel rode
+# description: captures a screenshot and notifies the user
+# dependencies: jq, grim, slurp, wl-clipboard
+# version: 5
+# created: 17 mar 2020
+# updated: 28 jan 2026
 
 
 # Init environment
-capture_path="$HOME/record/screencaptures/current"
+capture_path="$HOME/media/screencaptures/current"
 tmp_path="$(mktemp --suffix=.png)"
 jq_cmd_str='.. | (.nodes? // empty)[] | select(.focused and .pid) | .rect |'\
 ' "\(.x),\(.y) \(.width)x\(.height)"'

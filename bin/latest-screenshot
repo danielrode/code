@@ -1,10 +1,10 @@
 #!/usr/bin/env dash
-# Author: Daniel Rode
-# Name: Open Most Recent Screenshot
-# Type: macro, file management
-# Init: 23 Jan 2021
-# Updated: -
+# author: daniel rode
+# name: open most recent screenshot
+# type: macro, file management
+# created: 23 jan 2021
+# updated: 28 jan 2028
 
 
-path="$HOME/record/screencaptures/current/"
+path="$HOME/media/screencaptures/current/"
 imv-dir "$path/""$(ls --sort=time "$path" | head -1)"

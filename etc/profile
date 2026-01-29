@@ -37,15 +37,15 @@ export XDG_DESKTOP_DIR="$HOME/working"
 export XDG_DOCUMENTS_DIR="$HOME/progeny"
 export XDG_DOWNLOAD_DIR="$HOME/downloads"
 export XDG_MUSIC_DIR="$HOME/store/music"
-export XDG_PICTURES_DIR="$HOME/record"
-export XDG_VIDEOS_DIR="$HOME/record"
+export XDG_PICTURES_DIR="$HOME/media"
+export XDG_VIDEOS_DIR="$HOME/media"
 export XDG_TEMPLATES_DIR="$HOME/code/tem"
 export XDG_PUBLICSHARE_DIR="$HOME/union/public"
 export XDG_SCREENSHOTS_DIR="$XDG_PICTURES_DIR/screencaptures/current"
 
 # Program Config
 export BAT_PAGER="$PAGER"
-export GOPATH="$HOME/progeny/go"
+export GOPATH="$HOME/.appdata/go"
 export R_LIBS_USER="$HOME/.local/lib/R"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 
@@ -73,7 +73,7 @@ then
 	# Mount encrypted vault
 	while ! mountpoint --quiet ~/.crypt
 	do
-	    gocryptfs ~/progeny/gocryptfs/dotcrypt/ ~/.crypt/
+	    gocryptfs ~/union/gocryptfs/dotcrypt/ ~/.crypt/
 	done
 
 	# Start Sway

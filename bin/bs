@@ -46,6 +46,9 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
 
     # Directories
     '.AndroidStudio3.0/',
+    '.appdata/android-studio/sdk/',
+    '.appdata/go/',
+    '.appdata/virt-manager/',
     '.cache/',
     '.cargo/',
     '.claws-mail/imapcache/',
@@ -139,13 +142,13 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     'job/csu/',
     'progeny/android-studio/sdk/',
     'progeny/go/',
-    'progeny/gocryptfs/dotcrypt/',
     'progeny/virt-manager/',
-    'record/import_temp/',
+    'media/import_temp/',
     'store/disk images/operating systems/',
     'store/luks-home',
     'union/csu-nrel/',
     'union/github/',
+    'union/gocryptfs/dotcrypt/',
     'union/sch_laptop/',
     'warehouse/disk images/operating systems/',
 
@@ -193,6 +196,8 @@ HOST_ANDTERMUXDVOID = {
     ],
     'exclude patterns': [
         # Directories
+        '/data/data/com.termux/files/home/.appdata/go',
+        '/data/data/com.termux/files/home/.appdata/virt-manager',
         '/data/data/com.termux/files/home/.cache',
         '/data/data/com.termux/files/home/.cargo',
         '/data/data/com.termux/files/home/.emacs.d',
@@ -209,7 +214,7 @@ HOST_ANDTERMUXDVOID = {
         '/data/data/com.termux/files/home/downloads',
         '/data/data/com.termux/files/home/progeny/go',
         '/data/data/com.termux/files/home/progeny/virt-manager',
-        '/data/data/com.termux/files/home/record/import_temp',
+        '/data/data/com.termux/files/home/media/import_temp',
         '/sdcard/abode/dropbox',
 
         # Files

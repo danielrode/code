@@ -13,7 +13,7 @@ echo "WARNING: this script has not been adequately tested!"
 
 
 # Variables
-pth_library="$HOME/record/camera_library/"
+pth_library="$HOME/media/camera_library/"
 pth_imptmp="$pth_library/import_temp/"
 
 
@@ -83,7 +83,7 @@ then
 		 "your library."
 	echo "- Move any photos that others have taken to another directory to" \
 		 "manually organize them outside of your main library later."
-	echo "- Move any VLogs to ~/record/blob - VLogs/*. (Videos do not show" \
+	echo "- Move any VLogs to ~/media/blob - VLogs/*. (Videos do not show" \
 		  "up in Geeqie, so they will need to be browsed separately.)"
 	echo
 	echo "Once complete, CLOSE Geeqie to proceed"

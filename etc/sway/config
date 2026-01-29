@@ -49,7 +49,7 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
     # Preferred file browser/search/opener
     set $file_prompt $lw_term --window-size-chars=144x32 \
         --app-id=sway_prompt_float ~/code/bin/o --cache-mode \
-            ~/union ~/downloads ~/record/screencaptures/current ~/working \
+            ~/union ~/downloads ~/media/screencaptures/current ~/working \
             ~/code
 
     # Preferred application launcher
