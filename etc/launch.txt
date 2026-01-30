@@ -45,7 +45,7 @@ audacious  # Music Player
 pomodoro  # Eye Timer
 ~/code/bin/qgis  # QGIS
 system-config-printer  # Manage Printers
-~/job/csu/bin/init-workspace.sh  # Job workspace
+~/job/csu/bin/init-workspace.py  # Job workspace
 prismlauncher  # Minecraft (Game)
 ~/code/bin/redx  # Overlay Red Crosshair
 wl-copy 'https://www.amazon.com/dp/'`wl-paste | sed 's,.*/dp/,,' | sed 's,[/\?].*,,'`  # Shorten Amazon clipboard link

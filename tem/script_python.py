@@ -149,15 +149,18 @@ def main() -> None:
 
     # Use concurrency via parallelism to run a task in the background
     from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import Future
+    from collections.abc import Callable
 
-    def go(func, value):
+    def go(fn: Callable, fn_args=[], fn_kwargs={}) -> Future:
         executor = ProcessPoolExecutor(max_workers=1)
-        worker = executor.submit(func, value)
+        worker = executor.submit(fn, *fn_args, **fn_kwargs)
         executor.shutdown(wait=False)
 
         return worker
 
-    worker = go(sum, [1,2,3,4])  # non-blocking
+    amp = go  # Alternative name for this function
+    worker = go(sum, [[1,2,3,4]])  # non-blocking
     result = worker.result()  # blocking
 
     # Use concurrency to run several tasks in parallel in the background
