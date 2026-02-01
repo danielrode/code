@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose
 # created: 01 dec 2025
-# updated: 31 jan 2026
+# updated: 01 feb 2026
 
 
 # Run LLMs (AI chat) locally via Koboldcpp.
@@ -11,6 +11,8 @@
 import secrets
 import subprocess as sp
 from pathlib import Path
+
+import yaml
 
 
 MODEL_URL = (
@@ -27,49 +29,67 @@ MODEL_URL = (
 )
 MODEL_FILENAME = MODEL_URL.split('/')[-1]
 
+MODEL_CONTEXT = 2**17
+
 HOME = Path.home()
-COMPOSE_YAML_PATH = HOME / "code/etc/con/compose/kcpp.yaml"
-ENV_PATH = HOME / "llms/kcpp/vars.env"
-GGUF_MODEL_DIR = HOME / "llms/gguf"
+PW_PATH = HOME / ".appdata/kcpp/creds.txt"
+GGUF_MODEL_DIR = HOME / ".appdata/kcpp/gguf"
 
-# TODO glxinfo | rg -u -i mem
 
-# TODO yaml dump to subprocess
-# COMPOSE_YAML = {
-#     'version': 3.2
-#     'services': {
-#         'koboldcpp': {
-#             'container_name': 'koboldcpp',
-#             'image': 'docker.io/koboldai/koboldcpp:latest',
-#             'devices': [
-#                 '/dev/dri',
-#             ]
-#             'volumes': [
-#                 '~/.appdata/kcpp:/workspace:z',
-#                 '~/llms/gguf:/gguf:ro,z',
-#             ]
-#             'environment': [
-#                 'KCPP_DONT_UPDATE=flase',
-#                 'KCPP_DONT_TUNNEL=true',
-#                 'KCPP_ARGS=--model /gguf/${GGUF_MODEL} --gpulayers 99 --multiuser 20 --admin --admindir . --adminpassword ${ADMIN_PW} --contextsize ${CONTEXT_SIZE}',
-#             'ports': [
-#                 '127.0.0.1:50001:5001',
-#             'restart': 'unless-stopped',
-#         },
-#     },
-# }
+def get_con_yaml(admin_pw):
+    return yaml.dump({
+        'version': 3.2,
+        'services': {
+            'koboldcpp': {
+                'image': 'docker.io/koboldai/koboldcpp:latest',
+                'devices': [
+                    '/dev/dri',
+                ],
+                'volumes': [
+                    '~/.appdata/kcpp/con_vol:/workspace:z',
+                    '~/.appdata/kcpp/gguf:/gguf:ro,z',
+                ],
+                'environment': [
+                    'KCPP_DONT_UPDATE=flase',
+                    'KCPP_DONT_TUNNEL=true',
+                    'KCPP_ARGS=' + ' '.join([
+                        f'--model=/gguf/{MODEL_FILENAME}',
+                        '--usevulkan',
+
+                        # "The more layers you offload to VRAM, the faster
+                        # generation speed will become. Experiment to determine
+                        # number of layers to offload, and reduce by a few if
+                        # you run out of memory."
+                        '--gpulayers=99',
+
+                        '--multiuser=20',
+                        '--admin',
+                        '--admindir=.',
+                        f'--adminpassword={admin_pw}',
+                        f'--contextsize={MODEL_CONTEXT}',
+                    ]),
+                ],
+                'ports': [
+                    '127.0.0.1:5001:5001',
+                ],
+                'restart': 'unless-stopped',
+            },
+        },
+    })
 
 
 # Main
 
 # Write default credentials file for kcpp, if needed
-if not ENV_PATH.exists():
-    print("Koboldcpp credential/settings file not found; writing defaults...")
-    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with ENV_PATH.open('w') as f:
+if not PW_PATH.exists():
+    print("Koboldcpp credential file not found; creating...")
+    PW_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with PW_PATH.open('w') as f:
         f.write(f"ADMIN_PW={secrets.token_urlsafe(32)}\n")
         f.write(f"GGUF_MODEL={MODEL_FILENAME}\n")
         f.write("CONTEXT_SIZE=131072\n")
+
+admin_pw = PW_PATH.read_text().strip()
 
 # Download model, if needed
 MODEL_PATH = GGUF_MODEL_DIR / MODEL_FILENAME
@@ -84,17 +104,16 @@ if not MODEL_PATH.exists():
     sp.run(cmd, check=True)
 
 # Ensure appdata dir exists for kcpp
-Path(HOME, "..appdata/kcpp/").mkdir(parents=True, exist_ok=True)
+Path(HOME, ".appdata/kcpp/").mkdir(parents=True, exist_ok=True)
 
 # Run koboldcpp
-print("Visit http://localhost:50001")
 cmd = (
     'podman-compose',
-    '--file', str(COMPOSE_YAML_PATH),
-    '--env-file', str(ENV_PATH),
+    '--file', '-',
     'up',
 )
-sp.run(cmd)
+sp.run(cmd, input=get_con_yaml(admin_pw), text=True)
 
 
-# TODO when MODEL_URL var is changed, model need changed in ENV file
+
+# TODO glxinfo | rg -u -i mem
