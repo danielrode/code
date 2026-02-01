@@ -9,7 +9,7 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 28 jan 2026
+# updated: 31 jan 2026
 
 
 # Description: Create backup of my data online using restic.
@@ -140,6 +140,7 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     'Dropbox/',
     'downloads/',
     'job/csu/',
+    'llms/gguf',
     'progeny/android-studio/sdk/',
     'progeny/go/',
     'progeny/virt-manager/',
@@ -153,6 +154,7 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     'warehouse/disk images/operating systems/',
 
     # Files
+    '.appdata/kcpp/koboldcpp',
     '.ICEauthority',
     '.config/nnn/.selection',
     '.esd_auth',

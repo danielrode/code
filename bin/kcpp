@@ -1,33 +1,100 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # dependencies: podman, podman-compose
 # created: 01 dec 2025
-# updated: 22 jan 2026
+# updated: 31 jan 2026
 
 
 # Run LLMs (AI chat) locally via Koboldcpp.
 
 
-COMPOSE_YAML_PATH=~/code/etc/con/compose/kcpp.yaml
-ENV_PATH=~/llms/kcpp/vars.env
-GGUF_MODEL_DIR=~/llms/gguf
+import secrets
+import subprocess as sp
+from pathlib import Path
 
 
-function fail {
-    echo -n "error: "
-    echo "$1"
-    exit 1
-}
+MODEL_URL = (
+    # 'https://huggingface.co/tiiuae/Falcon3-3B-Instruct-GGUF/resolve/main/'
+    #     'Falcon3-3B-Instruct-q4_0.gguf'
+    'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/'
+        'gemma-3-1b-it-BF16.gguf'
+    # 'https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/'
+    #     'main/Qwen3-Coder-30B-A3B-Instruct-UD-TQ1_0.gguf'
+    # 'https://huggingface.co/Manojb/Qwen3-4B-toolcalling-gguf-codex/resolve/'
+    #     'main/Qwen3-4B-Function-Calling-Pro.gguf'
+    # 'https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/'
+    #     'GLM-4.7-Flash-UD-Q2_K_XL.gguf'
+)
+MODEL_FILENAME = MODEL_URL.split('/')[-1]
+
+HOME = Path.home()
+COMPOSE_YAML_PATH = HOME / "code/etc/con/compose/kcpp.yaml"
+ENV_PATH = HOME / "llms/kcpp/vars.env"
+GGUF_MODEL_DIR = HOME / "llms/gguf"
+
+# TODO glxinfo | rg -u -i mem
+
+# TODO yaml dump to subprocess
+# COMPOSE_YAML = {
+#     'version': 3.2
+#     'services': {
+#         'koboldcpp': {
+#             'container_name': 'koboldcpp',
+#             'image': 'docker.io/koboldai/koboldcpp:latest',
+#             'devices': [
+#                 '/dev/dri',
+#             ]
+#             'volumes': [
+#                 '~/.appdata/kcpp:/workspace:z',
+#                 '~/llms/gguf:/gguf:ro,z',
+#             ]
+#             'environment': [
+#                 'KCPP_DONT_UPDATE=flase',
+#                 'KCPP_DONT_TUNNEL=true',
+#                 'KCPP_ARGS=--model /gguf/${GGUF_MODEL} --gpulayers 99 --multiuser 20 --admin --admindir . --adminpassword ${ADMIN_PW} --contextsize ${CONTEXT_SIZE}',
+#             'ports': [
+#                 '127.0.0.1:50001:5001',
+#             'restart': 'unless-stopped',
+#         },
+#     },
+# }
 
 
-[[ ! -d "$GGUF_MODEL_DIR" ]] && fail "Model directory does not exist"
-[[ ! -f "$ENV_PATH" ]] && fail "Koboldcpp credential/settings file not found"
+# Main
 
-mkdir -p "$HOME/.appdata/kcpp"
-podman-compose --file "$COMPOSE_YAML_PATH" --env-file "$ENV_PATH" up
+# Write default credentials file for kcpp, if needed
+if not ENV_PATH.exists():
+    print("Koboldcpp credential/settings file not found; writing defaults...")
+    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with ENV_PATH.open('w') as f:
+        f.write(f"ADMIN_PW={secrets.token_urlsafe(32)}\n")
+        f.write(f"GGUF_MODEL={MODEL_FILENAME}\n")
+        f.write("CONTEXT_SIZE=131072\n")
 
-cat <<EOF
-On your remote workstation, run:
-ssh -NL 50001:localhost:50001 SERVER_USER@SERVER_IP
-Then go to http://localhost:50001
-EOF
+# Download model, if needed
+MODEL_PATH = GGUF_MODEL_DIR / MODEL_FILENAME
+if not MODEL_PATH.exists():
+    print("Model file not found; downloading...")
+    GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
+    cmd = (
+        'wget',
+        '--output-document', str(MODEL_PATH),
+        MODEL_URL,
+    )
+    sp.run(cmd, check=True)
+
+# Ensure appdata dir exists for kcpp
+Path(HOME, "..appdata/kcpp/").mkdir(parents=True, exist_ok=True)
+
+# Run koboldcpp
+print("Visit http://localhost:50001")
+cmd = (
+    'podman-compose',
+    '--file', str(COMPOSE_YAML_PATH),
+    '--env-file', str(ENV_PATH),
+    'up',
+)
+sp.run(cmd)
+
+
+# TODO when MODEL_URL var is changed, model need changed in ENV file
