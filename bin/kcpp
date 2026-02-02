@@ -7,7 +7,7 @@
 
 # Run LLMs (AI chat) locally via Koboldcpp.
 #
-# ssh -L 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/kcpp
+# ssh -tL 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/kcpp Qwen2.5-7B-Instruct-Q4_0.gguf
 
 
 import sys
