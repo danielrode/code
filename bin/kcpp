@@ -19,7 +19,7 @@ import yaml
 
 
 DEFAULT_MODEL = 'gemma-3-1b-it-BF16.gguf'
-MODEL_URL_MAP = {i.split('/'):i for i in (
+MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
     # Useful model list: https://huggingface.co/bartowski
     'https://huggingface.co/tiiuae/Falcon3-3B-Instruct-GGUF/resolve/main/Falcon3-3B-Instruct-q4_0.gguf',
     'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-BF16.gguf',
