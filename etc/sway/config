@@ -904,6 +904,9 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
     # Microsoft Edge
     assign [app_id="microsoft-edge"] 2
 
+    # Google Chrome
+    assign [app_id="google-chrome"] 2
+
     # Firefox
     assign [app_id="Firefox"] 2
     for_window [app_id="Firefox"] inhibit_idle fullscreen

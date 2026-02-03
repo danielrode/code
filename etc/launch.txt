@@ -4,6 +4,7 @@ firefox  # Web Browser
 ~/code/bin/ms-edge  # Microsoft Edge Web Browser
 foot ~/code/bin/nn  # New Note
 thunderbird  # Email
+flatpak run com.google.Chrome  # Google Web Browser
 flatpak run org.chromium.Chromium  # Google Web Browser
 xournalpp  # PDF Editor
 gimp  # Image Editor

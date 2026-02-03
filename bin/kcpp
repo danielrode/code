@@ -125,7 +125,3 @@ cmd = (
 )
 con_yaml = get_con_yaml(admin_pw, model_filename)
 sp.run(cmd, input=con_yaml, text=True)
-
-
-
-# TODO glxinfo | rg -u -i mem
