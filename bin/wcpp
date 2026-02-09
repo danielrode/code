@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman, podman-compose, aria2
+# created: 07 feb 2026
+# updated: 08 feb 2026
+
+
+# Transcribe audio locally via whisper.cpp.
+#
+# TODO figure out why not working :(
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+import yaml
+
+
+DEFAULT_MODEL = 'ggml-tiny.en.bin'
+MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
+    # Model list: https://huggingface.co/ggerganov/whisper.cpp/tree/main
+    'https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-tiny.en.bin',
+    'https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-small.en.bin',
+)}
+
+MODEL_CONTEXT = 2**17
+
+MODEL_DIR = Path(Path.home(), ".appdata/wcpp/models")
+
+
+def get_con_yaml(model_filename, audio_path):
+    return yaml.dump({
+        'version': 3.2,
+        'services': {
+            'whispercpp': {
+                'image': 'ghcr.io/ggml-org/whisper.cpp:main',
+                'devices': [
+                    '/dev/dri',
+                ],
+                'volumes': [
+                    str(MODEL_DIR) + ':/models:ro,z',
+                    str(audio_path) + ':/audios/' + audio_path.name + ':ro,z',
+                ],
+                'entrypoint': 'whisper-cli',
+                'command': [
+                    '-m', '/models/' + model_filename,
+                    '-f', '/audios/' + audio_path.name,
+                ],
+            },
+        },
+    })
+
+
+# Main
+
+# Parse command line input
+model_filename = DEFAULT_MODEL
+# TODO add flag processing so you can pass '-m NAME' to change model used
+try:
+    audio_path = sys.argv[1]
+except IndexError:
+    print("error: Provide path to audio file")
+    sys.exit(1)
+
+if model_filename not in MODEL_URL_MAP:
+    print("error: Model not found:", model_filename)
+    sys.exit(1)
+
+# Download model, if needed
+model_path = MODEL_DIR / model_filename
+if not model_path.exists():
+    print("Model file not found; downloading...")
+    MODEL_DIR.mkdir(exist_ok=True, parents=True)
+    cmd = (
+        'aria2c',
+        '--out', str(model_path),
+        MODEL_URL_MAP[model_filename],
+    )
+    sp.run(cmd, check=True)
+
+# Run whisper.cpp
+cmd = (
+    'podman-compose',
+    '--file', '-',
+    'up',
+)
+con_yaml = get_con_yaml(model_filename, audio_path)
+sp.run(cmd, input=con_yaml, text=True)

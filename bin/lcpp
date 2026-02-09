@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose
-# created: 01 dec 2025
-# updated: 06 feb 2026
+# dependencies: podman, podman-compose, aria2
+# created: 07 feb 2026
+# updated: 08 feb 2026
 
 
-# Run LLMs (AI chat) locally via Koboldcpp.
+# Run LLMs (AI chat) locally via llama.cpp.
 #
-# ssh -tL 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/kcpp Qwen2.5-7B-Instruct-Q4_0.gguf
+# ssh -tL 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/lcpp Qwen2.5-7B-Instruct-Q4_0.gguf
 
 
 import sys
-import secrets
 import subprocess as sp
 from pathlib import Path
 
@@ -33,48 +32,44 @@ MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
 MODEL_CONTEXT = 2**17
 
 HOME = Path.home()
-PW_PATH = HOME / ".appdata/kcpp/creds.txt"
 GGUF_MODEL_DIR = HOME / ".appdata/kcpp/gguf"
 
 
-def get_con_yaml(admin_pw, model_filename):
+def get_con_yaml(model_filename, port=5001):
     return yaml.dump({
         'version': 3.2,
         'services': {
-            'koboldcpp': {
-                'image': 'docker.io/koboldai/koboldcpp:latest',
+            'llamacpp': {
+                # 'image': 'ghcr.io/ggml-org/llama.cpp:server',
+                'image': 'ghcr.io/ggml-org/llama.cpp:server-vulkan',
                 'devices': [
                     '/dev/dri',
                 ],
                 'volumes': [
                     '~/.appdata/kcpp/con_vol:/workspace:z',
-                    '~/.appdata/kcpp/gguf:/gguf:ro,z',
+                    str(GGUF_MODEL_DIR) + ':/models:ro,z',
                 ],
                 'environment': [
-                    'KCPP_DONT_UPDATE=true',
-                    'KCPP_DONT_TUNNEL=true',
-                    'KCPP_ARGS=' + ' '.join([
-                        f'--model=/gguf/{model_filename}',
-                        '--usevulkan',
-                        # '--usecpu',  # Do not use any GPU (CPU Only)
-                        # '--multiplayer',  # Hosts a shared multiplayer session that others can join.
+                    # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
 
-                        # "The more layers you offload to VRAM, the faster
-                        # generation speed will become. Experiment to determine
-                        # number of layers to offload, and reduce by a few if
-                        # you run out of memory."
-                        '--gpulayers=99',
+                    'LLAMA_ARG_WEBUI=true',
+                    'LLAMA_ARG_HOST=0.0.0.0',
+                    'LLAMA_ARG_PORT=' + str(port),
+                    'LLAMA_ARG_MODEL=/models/' + str(model_filename),
 
-                        '--skiplauncher',
-                        '--multiuser=20',
-                        '--admin',
-                        '--admindir=.',
-                        f'--adminpassword={admin_pw}',
-                        f'--contextsize={MODEL_CONTEXT}',
-                    ]),
+                    # Number of tokens to predict (-1 = inf)
+                    'LLAMA_ARG_N_PREDICT=-1',
+
+                    # Max number of layers to store in VRAM
+                    # 'LLAMA_ARG_N_GPU_LAYERS=64',
+                    # 'LLAMA_ARG_N_GPU_LAYERS=99',
+                    'LLAMA_ARG_N_GPU_LAYERS=auto',
+
+                    # Size of the prompt context (0 = loaded from model)
+                    '--ctx-size' + str(MODEL_CONTEXT),
                 ],
                 'ports': [
-                    '127.0.0.1:5001:5001',
+                    f'127.0.0.1:{port}:{port}',
                 ],
                 'restart': 'unless-stopped',
             },
@@ -94,37 +89,23 @@ if model_filename not in MODEL_URL_MAP:
     print("error: Model not found:", model_filename)
     sys.exit(1)
 
-# Write default credentials file for kcpp, if needed
-if not PW_PATH.exists():
-    print("Koboldcpp credential file not found; creating...")
-    PW_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with PW_PATH.open('w') as f:
-        f.write(f"ADMIN_PW={secrets.token_urlsafe(32)}\n")
-        f.write(f"GGUF_MODEL={model_filename}\n")
-        f.write("CONTEXT_SIZE=131072\n")
-
-admin_pw = PW_PATH.read_text().strip()
-
 # Download model, if needed
 model_path = GGUF_MODEL_DIR / model_filename
 if not model_path.exists():
     print("Model file not found; downloading...")
     GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
     cmd = (
-        'wget',
-        '--output-document', str(model_path),
+        'aria2c',
+        '--out', str(model_path),
         MODEL_URL_MAP[model_filename],
     )
     sp.run(cmd, check=True)
 
-# Ensure appdata dir exists for kcpp
-Path(HOME, ".appdata/kcpp/").mkdir(parents=True, exist_ok=True)
-
-# Run koboldcpp
+# Run llama.cpp
 cmd = (
     'podman-compose',
     '--file', '-',
     'up',
 )
-con_yaml = get_con_yaml(admin_pw, model_filename)
+con_yaml = get_con_yaml(model_filename)
 sp.run(cmd, input=con_yaml, text=True)

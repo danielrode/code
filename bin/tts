@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman, podman-compose
+# created: 08 feb 2026
+# updated: -
+
+
+# Machine learning text-to-speech.
+
+
+# import os
+import sys
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import yaml
+
+
+DEFAULT_MODEL = 'en_US-lessac-medium'
+
+IMG_NAME = 'ghcr.io/danielrode/piper:latest'
+
+HOME = Path.home()
+MODEL_DIR = HOME / ".appdata/piper/models"
+
+
+def get_con_yaml(model_name, in_txt_path, out_wav_path):
+    if not (
+        str(out_wav_path).startswith('/') or str(out_wav_path).startswith('./')
+    ):
+        out_wav_path = './' + str(out_wav_path)
+
+    return yaml.dump({
+        'version': 3.2,
+        'services': {
+            'piper': {
+                'image': IMG_NAME,
+                'volumes': [
+                    str(MODEL_DIR) + ':/models:ro,z',
+                    str(out_wav_path) + ':/out.wav:z',
+                    str(in_txt_path) + ':/in.txt:ro,z'
+                ],
+                'restart': 'no',
+                'command': [
+                    'python3', '-m', 'piper',
+                    '--data-dir', '/models',
+                    '--model', str(model_name),
+                    '--output-file', '/out.wav',
+                    '--input-file', '/in.txt'
+                ]
+            },
+        },
+    })
+
+
+# Main
+
+# Parse command line input
+model_name = DEFAULT_MODEL  # todo add flag processing so user can change model with "-m" flag
+out_wav_path = Path(sys.argv[1])
+
+# todo add flag to list models available for download: python3 -m piper.download_voices
+
+# Download model, if needed
+model_path = MODEL_DIR / (model_name + ".onnx")
+if not model_path.exists():
+    print("Model file not found; downloading...")
+    MODEL_DIR.mkdir(exist_ok=True, parents=True)
+    cmd = (
+        'podman', 'run', '--rm',
+        '--volume', str(MODEL_DIR) + ':/models:z',
+        '--entrypoint', 'python3',
+        IMG_NAME,
+        '-m', 'piper.download_voices',
+        '--data-dir', '/models',
+        str(model_name),
+    )
+    sp.run(cmd, check=True)
+
+# Ensure destination file exists in some form so Podman can bind it for Piper
+if not out_wav_path.exists():
+    with open(out_wav_path, 'wb'):
+        pass
+
+# Run Piper
+cmd = (
+    'podman-compose',
+    '--file', '-',
+    'up',
+)
+with TemporaryDirectory() as tmpdir:
+    # fifo_path = Path(tmp_dir, 'fifo.pipe')
+    # os.mkfifo(fifo_path)
+
+    in_txt_path = Path(tmpdir, 'tmp.txt')
+    with open(in_txt_path, 'w') as f:
+        f.write(sys.stdin.read())
+
+    con_yaml = get_con_yaml(model_name, in_txt_path, out_wav_path)
+    sp.run(cmd, input=con_yaml, text=True)
