@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, aria2
 # created: 07 feb 2026
-# updated: 08 feb 2026
+# updated: 10 feb 2026
 
 
 # Run LLMs (AI chat) locally via llama.cpp.
@@ -32,7 +32,8 @@ MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
 MODEL_CONTEXT = 2**17
 
 HOME = Path.home()
-GGUF_MODEL_DIR = HOME / ".appdata/kcpp/gguf"
+CACHE_DIR = HOME / ".cache"
+GGUF_MODEL_DIR = CACHE_DIR / "com.github.danielrode/lcpp/gguf"
 
 
 def get_con_yaml(model_filename, port=5001):
@@ -46,7 +47,6 @@ def get_con_yaml(model_filename, port=5001):
                     '/dev/dri',
                 ],
                 'volumes': [
-                    '~/.appdata/kcpp/con_vol:/workspace:z',
                     str(GGUF_MODEL_DIR) + ':/models:ro,z',
                 ],
                 'environment': [
@@ -90,13 +90,13 @@ if model_filename not in MODEL_URL_MAP:
     sys.exit(1)
 
 # Download model, if needed
-model_path = GGUF_MODEL_DIR / model_filename
-if not model_path.exists():
+if not (GGUF_MODEL_DIR / model_filename).exists():
     print("Model file not found; downloading...")
     GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
     cmd = (
         'aria2c',
-        '--out', str(model_path),
+        '--dir', str(GGUF_MODEL_DIR),
+        '--out', str(model_filename),
         MODEL_URL_MAP[model_filename],
     )
     sp.run(cmd, check=True)

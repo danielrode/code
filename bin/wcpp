@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, aria2
 # created: 07 feb 2026
-# updated: 08 feb 2026
+# updated: 10 feb 2026
 
 
 # Transcribe audio locally via whisper.cpp.
@@ -24,9 +24,11 @@ MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
     'https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-small.en.bin',
 )}
 
-MODEL_CONTEXT = 2**17
 
-MODEL_DIR = Path(Path.home(), ".appdata/wcpp/models")
+HOME = Path.home()
+CACHE_DIR = HOME / ".cache"
+
+MODEL_DIR = CACHE_DIR / "com.github.danielrode/wcpp/models"
 
 
 def get_con_yaml(model_filename, audio_path):
