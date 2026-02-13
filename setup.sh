@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 14 jan 2026
+# updated: 12 feb 2026
 
 
 # TODO this script is WIP
@@ -17,6 +17,7 @@ then
         sway-desktop-environment \
     ;
     sudo dnf install -y \
+        aria2 \
         btrfs-progs \
         cargo \
         git-delta \
