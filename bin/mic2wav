@@ -5,6 +5,8 @@
 
 
 # Record microphone and save to audio file.
+#
+# TODO support pressing "space" to pause/resume recording
 
 
 if [[ -z $1 ]]
