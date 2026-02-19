@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Name: dtach Menu
-# Tags: processes, menu
-# Dependencies:
+# author: daniel rode
+# name: dtach menu
+# tags: processes, menu
+# dependencies:
 #   python 3.10+
 #   dtach
 #   fzf
 #   pgrep
-# Version: 1
-# Created: 12 Apr 2025
-# Updated: 19 Dec 2025
+# created: 12 apr 2025
+# updated: 19 dec 2025
 
 
-# Description: List active dtach sessions in a menu and then connect to the
+# List active dtach sessions in a menu and then connect to the
 # selected one.
 
 
@@ -41,8 +40,18 @@ for proc in pgrep('dtach'):
         dtach_socks[args[3]] = proc
 
 # Display menu of active dtach sessions
-in_str = '\n'.join(list(dtach_socks.values()))
-p = sp.run(['fzf'], text=True, input=in_str, stdout=sp.PIPE)
+cmd = (
+    'fzf',
+    '--delimiter= ',
+    '--preview=pstree -aps {1}',
+    '--preview-window=up,80%',
+)
+p = sp.run(
+    cmd,
+    text=True,
+    input='\n'.join(list(dtach_socks.values())),
+    stdout=sp.PIPE,
+)
 sock_path = shlex.split(p.stdout)[3]
 
 # Connect to selected dtach session

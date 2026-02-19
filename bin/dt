@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies:
+#   dtach
+# created: 19 feb 2026
+
+
+# Start a new dtach session.
+
+
+tmpdir="$(mktemp -d)"
+function cleanup { rm -rf -- "$tmpdir"; }
+trap cleanup EXIT
+
+dtach -c "$tmpdir/dtach.sock" -Ez fish
