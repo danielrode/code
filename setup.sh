@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 12 feb 2026
+# updated: 19 feb 2026
 
 
 # TODO this script is WIP
@@ -11,39 +11,47 @@ set -e
 
 
 # Install packages
+pkgs=(
+    # List of packages that have the same names across Fedora and Void repos
+    aria2
+    btrfs-progs
+    cargo
+    chayang
+    dtach
+    gocryptfs
+    grimshot
+    imv
+    kanshi
+    mako
+    meld
+    mpv
+    opendoas
+    openssh
+    pavucontrol
+    pspg
+    python3-pykeepass
+    swaylock
+    syncthing
+    zathura
+)
 if command -v dnf >/dev/null 2>&1
 then
     sudo dnf group install -y \
         sway-desktop-environment \
     ;
     sudo dnf install -y \
-        aria2 \
-        btrfs-progs \
-        cargo \
+        "${pkgs[@]}" \
         git-delta \
-        gocryptfs \
         golang \
-        grimshot \
-        imv \
-        kanshi \
         liberation-fonts-all \
-        mako \
-        meld \
-        mpv \
-        opendoas \
-        openssh \
-        pavucontrol \
-        pspg \
-        python3-pykeepass \
-        syncthing \
-        zathura \
     ;
 elif command -v xbps-install >/dev/null 2>&1
 then
     sudo xbps-install -y \
-        chayang \
-        pspg \
-        swaylock \
+        "${pkgs[@]}" \
+        delta \
+        go \
+        liberation-fonts-ttf \
     ;
 fi
 
