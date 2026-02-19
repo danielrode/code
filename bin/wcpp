@@ -20,6 +20,7 @@ import yaml
 DEFAULT_MODEL = 'ggml-tiny.en.bin'
 MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
     # Model list: https://huggingface.co/ggerganov/whisper.cpp/tree/main
+    # More models?: https://huggingface.co/models?search=whisper%20ggml
     'https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-tiny.en.bin',
     'https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-small.en.bin',
 )}

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# author: Daniel Rode
+# dependencies: ffmpeg
+# created: 18 feb 2026
+
+
+# Record microphone and save to audio file.
+
+
+if [[ -z $1 ]]
+then
+	echo "Specify output path for WAV"
+	exit 1
+fi
+
+ffmpeg -f pulse -i default -f wav - > "$1"
+
+
+# TODO mic2txt transcription script
