@@ -104,7 +104,7 @@ abbr --add ttop watch -d -n 1 sensors
 abbr --add gtop nvtop
 
 # Make commonly used flags/cmd settings default
-abbr --add cl cal -3
+abbr --add cl cal -n 6
 abbr --add r R --vanilla
 abbr --add progress progress --monitor \
     --additional-command cksum \
