@@ -64,6 +64,11 @@ DATA_HOME.mkdir(parents=True, exist_ok=True)
 
 
 # Functions
+def cd0() -> None:
+    """Set working directory to the same location as the running script."""
+
+    os.chdir(Path(__file__).resolve().parent)
+    
 def print2(*args, **kwargs) -> None:
     print(*args, **kwargs, file=sys.stderr)
 
