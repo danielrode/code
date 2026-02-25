@@ -209,7 +209,7 @@ exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
         --app-id=sway_prompt_float ~/code/bin/uc
 
     # Start dictation (Nerd Dictation)
-    bindsym $mod+period exec ~/code/bin/nerd-up
+    # bindsym $mod+period exec ~/code/bin/nerd-up
 
     # Start calculator
     bindsym XF86Calculator exec speedcrunch
