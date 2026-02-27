@@ -9,7 +9,7 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 03 feb 2026
+# updated: 26 feb 2026
 
 
 # Description: Create backup of my data online using restic.
@@ -135,6 +135,7 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     '.var/app/com.usebottles.bottles/',
     '.var/app/com.valvesoftware.Steam',
     '.var/app/io.mrarm.mcpelauncher/',
+    '.var/app/org.chromium.Chromium/',
     '.var/app/org.kde.falkon/cache/',
     '.var/app/org.qgis.qgis/cache/',
     '.zoom/',
