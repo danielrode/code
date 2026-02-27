@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies:
+#   ~/code/bin/o
+# created: 26 feb 2026
+
+
+# Launch IPFS daemon and open its browser interface to interact with it.
+
+
+# sudo vpm install kubo
+
+ipfs daemon &
+sleep 2
+o http://127.0.0.1:5001/webui
