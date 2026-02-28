@@ -33,17 +33,5 @@ lpadmin -p "$PRINTER_NICKNAME" \
 # Show printer connection status and state
 lpstat -p "$PRINTER_NICKNAME"
 
-# Send printer test print job
-{
-    echo "Hello!"
-    echo
-    echo "This is `hostname`."
-    echo
-    echo "It is `date`."
-} | lp -d "$PRINTER_NICKNAME"
-
-
-# sudo xbps-install -S epson-inkjet-printer-escpr || true
-# Used 4200 since 6100 was unavailable
-# ppd_path="$(lpinfo -m | grep XP-4200 | cut -d' ' -f1 | head -1)"
-# lpadmin -p EpsonXP6100 -E -v "ipp://$PRINTER_IP/ipp/print" -m "$ppd_path"
+# Send test print job
+lp -d "$PRINTER_NICKNAME" /usr/share/cups/data/testprint
