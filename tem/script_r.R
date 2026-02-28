@@ -9,9 +9,7 @@
 # updated: -
 
 
-# Description:
-# ...
-# ...
+# DESCRIPTION
 
 
 # Constants

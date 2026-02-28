@@ -1,19 +1,17 @@
 #!/usr/bin/env dash
-# Author: Daniel Rode
-# Name:
-# Tags:
-# Dependencies:
+# author: daniel rode
+# name:
+# tags:
+# dependencies:
 #   dep1
 #   dep2
 #   ...
-# Version: 1
-# Init:
-# Updated: -
+# version: 1
+# created:
+# updated: -
 
 
-# Description:
-# ...
-# ...
+# DESCRIPTION
 
 
 # Variables

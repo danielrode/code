@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Name:
-# Tags:
-# Dependencies:
-#   Bash 4.3+
+# author: daniel rode
+# name:
+# tags:
+# dependencies:
+#   bash 4.3+
 #   pv
 #   ...
-# Version: 1
-# Created:
-# Updated: -
+# version: 1
+# created:
+# updated: -
 
 
-# Description:
-# ...
-# ...
+# DESCRIPTION
 
 
 # Setup temp directory and set it to be removed on exit
