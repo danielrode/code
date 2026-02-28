@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 19 feb 2026
+# updated: 27 feb 2026
 
 
 # TODO this script is WIP
@@ -122,15 +122,8 @@ sudo systemctl start smartd
 
 
 
-# If the destination exists, see if it is a link, and if it is, replace it with the new link, but if it is not a link, rename it to its name with .bak affixed and then make the new link. Be verbose and note each action before you take it (like "overwriting link X that points to Y").
-
-
-
 # todo firewall
 # ufw
-
-# If the destination exists, see if it is a link, and if it is, replace it with the new link, but if it is not a link, rename it to its name with .bak affixed and then make the new link. Be verbose and note each action before you take it (like "overwriting link X that points to Y")
-
 
 
 
