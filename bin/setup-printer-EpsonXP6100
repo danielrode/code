@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 28 feb 2026
+# updated: -
+
+
+# Setup Epson XP-6100 printer over the network.
+
+
+PRINTER_NICKNAME=EpsonXP6100
+
+
+# Exit on error
+set -e
+
+# Parse command line options
+printer_ip_addr="$1"  # Example: 192.168.10.123
+if [[ -z $printer_ip_addr ]]
+then
+    echo "Provide printer IP address"
+    exit 1
+fi
+
+# Add printer
+lpadmin -p "$PRINTER_NICKNAME" \
+    -E -v "ipp://$printer_ip_addr/ipp/print" \
+    -m everywhere \
+;
+
+# Set as default printer
+# lpadmin -d "$PRINTER_NICKNAME"
+
+# Show printer connection status and state
+lpstat -p "$PRINTER_NICKNAME"
+
+# Send printer test print job
+{
+    echo "Hello!"
+    echo
+    echo "This is `hostname`."
+    echo
+    echo "It is `date`."
+} | lp -d "$PRINTER_NICKNAME"
+
+
+# sudo xbps-install -S epson-inkjet-printer-escpr || true
+# Used 4200 since 6100 was unavailable
+# ppd_path="$(lpinfo -m | grep XP-4200 | cut -d' ' -f1 | head -1)"
+# lpadmin -p EpsonXP6100 -E -v "ipp://$PRINTER_IP/ipp/print" -m "$ppd_path"
