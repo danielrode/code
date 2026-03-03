@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# author: Daniel Rode
+# author: daniel rode
 # name:
 # tags:
 # dependencies:
@@ -68,9 +68,11 @@ def cd0() -> None:
     """Set working directory to the same location as the running script."""
 
     os.chdir(Path(__file__).resolve().parent)
-    
+
+
 def print2(*args, **kwargs) -> None:
     print(*args, **kwargs, file=sys.stderr)
+
 
 def run_iter(cmd: list[str]) -> Iterable:
     """Run system executable; yield its output in real time line-by-line."""
@@ -94,6 +96,7 @@ def run_iter(cmd: list[str]) -> Iterable:
         print2(process.stderr.read(), end='')
         raise sp.CalledProcessError(return_code, cmd)
 
+
 def notify_send(title, body='', app_name='', icon='', timeout_ms=0) -> int:
     """Send desktop notification via D-Bus."""
 
@@ -114,6 +117,12 @@ def notify_send(title, body='', app_name='', icon='', timeout_ms=0) -> int:
     )
 
     return notification_id
+
+
+def sha1(text: str) -> str:
+    """Return SHA1 hash of string."""
+
+    return hashlib.sha1(bytes(text, 'utf8')).hexdigest()
 
 
 # Main

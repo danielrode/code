@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# author: daniel rode
+# dependencies:
+#   podman
+#   ~/code/bin/ai
+# created: 04 mar 2026
+# updated: -
+
+
+# Run OpenCode (AI coding assistant) in current directory.
+
+
+import json
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+HOME = Path.home()
+PWD = Path.cwd()
+
+OPENCODE_CONF = {
+    "$schema": "https://opencode.ai/config.json",
+    "model": "llamaswap/gemma-3-1b-it-BF16",
+    "provider": {
+        "llamaswap": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Llama Swap",
+            "options": {
+                "baseURL": "http://llama-swap:5001/v1",
+            },
+            "models": {
+                "gemma-3-1b-it-BF16": {
+                    "name": "gemma3 1b q16",
+                    "inference": "chat",
+                    # "context": TODO, # todo
+                },
+            },
+        },
+    },
+}
+
+
+# Make sure LLM server is running
+try:
+    sp.run(
+        ['pgrep', '-xf', 'python3 /home/drode/code/bin/ai'],
+        capture_output=True,
+        check=True,
+    )
+except sp.CalledProcessError:
+    sp.Popen([str(HOME / 'code/bin/ai')])
+
+# Start OpenCode
+with TemporaryDirectory() as tmpdir:
+    tmpdir = Path(tmpdir)
+
+    oc_conf_path = tmpdir / "oc_conf.json"
+    oc_conf_path.write_text(json.dumps(OPENCODE_CONF))
+
+    con_name = "opencode"
+    podman_args = (
+        '--rm',
+        '--replace',
+        '--name', con_name,
+        '--interactive', '--tty',
+        '--network=ai',
+        '--userns=keep-id',
+        '--env=HOME=/tmp',
+        # '--volume=ochome:/ochome', # todo
+        '--env=OPENCODE_CONFIG=/oc_conf.json',
+        f'--volume={oc_conf_path}:/oc_conf.json',
+        '--volume=' + f'{PWD}:{PWD}',
+        '--workdir=' + str(PWD),
+        '--entrypoint=' + json.dumps([
+            "bash", "--login", "-c",
+            "bash",
+            # "opencode",
+            # "--config", "/tmp/.config/opencode/config.json"
+        ]),
+        'ghcr.io/danielrode/opencode:latest',
+    )
+    sp.run(['podman', 'run', *podman_args])
+
+
+# TODO
+# - try allowing internet access again and see if that fixes it
