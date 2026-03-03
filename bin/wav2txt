@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman, podman-compose, aria2, ffmpeg
+# created: 07 feb 2026
+# updated: 02 mar 2026
+
+
+# Transcribe audio locally via whisper.cpp.
+#
+# USAGE: mic2wav tmp.wav; wav2txt tmp.wav
+#
+# TODO Consider https://github.com/istupakov/onnx-asr as alternative (can use the better Parakeet model with it).
+
+
+# import os
+import sys
+import shutil
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+DEFAULT_MODEL = 'ggml-small.en.bin'
+MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
+    # Model list: https://huggingface.co/ggerganov/whisper.cpp/tree/main
+    # More models?: https://huggingface.co/models?search=whisper%20ggml
+    'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+    'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin',
+)}
+
+
+HOME = Path.home()
+CACHE_DIR = HOME / ".cache"
+
+MODEL_DIR = CACHE_DIR / "com.github.danielrode/wcpp/models"
+
+
+def get_podman_cmd(model_filename, audio_in_path, txt_out_path):
+    return [
+        '--name=whispercpp',
+        '--replace',
+        '--entrypoint=whisper-cli',
+        '--device=/dev/dri:/dev/dri',
+        '--volume=' + str(MODEL_DIR) + ':/models:ro,z',
+        f'--volume={audio_in_path.resolve()}:/audios/{audio_in_path.name}:ro,z',
+        f'--volume={txt_out_path.parent}:{txt_out_path.parent}:z',
+        # 'ghcr.io/ggml-org/whisper.cpp:main',
+        'ghcr.io/ggml-org/whisper.cpp:main-vulkan',
+            # '--help',
+            '--model', '/models/' + model_filename,
+            '--file', '/audios/' + audio_in_path.name,
+            # '--no-prints',
+            # '--no-timestamps',
+            # '--print-colors',
+            '--output-txt', '--output-file', str(txt_out_path),
+    ]
+
+
+# Main
+
+# Parse command line input
+model_filename = DEFAULT_MODEL
+# TODO add flag processing so you can pass '-m NAME' to change model used
+try:
+    audio_path = Path(sys.argv[1])
+except IndexError:
+    print("error: Provide path to audio file")
+    sys.exit(1)
+
+try:
+    dst_path = Path(sys.argv[2])
+except IndexError:
+    dst_path = audio_path.name + '.txt'
+
+if model_filename not in MODEL_URL_MAP:
+    print("error: Model not found:", model_filename)
+    sys.exit(1)
+
+# Download model, if needed
+if not (MODEL_DIR / model_filename).exists():
+    print("Model file not found; downloading...")
+    MODEL_DIR.mkdir(exist_ok=True, parents=True)
+    cmd = (
+        'aria2c',
+        '--dir', str(MODEL_DIR),
+        '--out', model_filename,
+        MODEL_URL_MAP[model_filename],
+    )
+    sp.run(cmd, check=True)
+
+# Run whisper.cpp
+with TemporaryDirectory() as tmpdir:
+    tmpdir = Path(tmpdir)
+    fifo_path = tmpdir / "tmp.wav"
+    # os.mkfifo(fifo_path)
+    tmp_dst = tmpdir / "tmp.txt"
+
+    cmd = (
+        'ffmpeg',
+        '-i', str(audio_path),
+        str(fifo_path),
+    )
+    # sp.Popen(cmd, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    sp.run(cmd, stdout=sys.stderr, check=True)
+
+    cmd = [
+        'podman', 'run',
+        '--quiet',
+        *get_podman_cmd(model_filename, fifo_path, tmp_dst),
+    ]
+    sp.run(cmd)
+    tmp_dst = str(tmp_dst) + ".txt"
+
+    shutil.move(tmp_dst, dst_path)
+
+
+
+# TODO pass command line flags to whisper-cli
+# TODO don't pass file to ffmpeg if already .wav
+# TODO stream audio instead of storing it all in RAM first
+# TODO allow passing multiple input audio files to whisper
+# TODO silence subprocess prints, and use print2() to give updates like ("converting to wav..."), then pipe transcriptions to stdout
+# TODO ffmpeg all files into one stream, then stream to whisper? add second of silence between each clip?
