@@ -1,10 +1,10 @@
-# author: Daniel Rode
+# author: daniel rode
 
 
 # https://docs.docker.com/reference/dockerfile/
 
 
-FROM alpine:edge
+FROM docker.io/alpine:edge
 
 LABEL Author="Daniel Rode"
 
