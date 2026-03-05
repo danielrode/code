@@ -5,7 +5,7 @@
 #   podman
 #   ~/code/bin/ai
 # created: 04 mar 2026
-# updated: -
+# updated: 05 mar 2026
 
 
 # Run OpenCode (AI coding assistant) in current directory.
@@ -22,7 +22,8 @@ PWD = Path.cwd()
 
 OPENCODE_CONF = {
     "$schema": "https://opencode.ai/config.json",
-    "model": "llamaswap/gemma-3-1b-it-BF16",
+    # "model": "llamaswap/Qwen2.5-Coder-14B-Instruct-Q4_0",
+    "model": "llamaswap/Qwen2.5-Coder-3B-Instruct-Q4_0",
     "provider": {
         "llamaswap": {
             "npm": "@ai-sdk/openai-compatible",
@@ -31,9 +32,24 @@ OPENCODE_CONF = {
                 "baseURL": "http://llama-swap:5001/v1",
             },
             "models": {
-                "gemma-3-1b-it-BF16": {
-                    "name": "gemma3 1b q16",
-                    "inference": "chat",
+                # "gemma-3-1b-it-BF16": {
+                #     "name": "gemma3 1b q16",
+                #     "inference": "chat",
+                #     # "context": TODO, # todo
+                # },
+                # "Qwen2.5-Coder-14B-Instruct-Q4_0": {
+                #     "name": "Qwen 2.5 Coder 14B",
+                #     "inference": "chat",
+                #     # "context": TODO, # todo
+                # },
+                # "qwen2.5-coder-7b-instruct-q4_k_m": {
+                #     "name": "Qwen 2.5 Coder 7B",
+                #     "inference": "instruct",
+                #     # "context": TODO, # todo
+                # },
+                "Qwen2.5-Coder-3B-Instruct-Q4_0": {
+                    "name": "Qwen 2.5 Coder 3B",
+                    "inference": "instruct",
                     # "context": TODO, # todo
                 },
             },
@@ -43,14 +59,15 @@ OPENCODE_CONF = {
 
 
 # Make sure LLM server is running
+ai_exe = HOME / 'code/bin/ai'
 try:
     sp.run(
-        ['pgrep', '-xf', 'python3 /home/drode/code/bin/ai'],
+        ['pgrep', '-xf', f'python3 {ai_exe}'],
         capture_output=True,
         check=True,
     )
 except sp.CalledProcessError:
-    sp.Popen([str(HOME / 'code/bin/ai')])
+    sp.Popen([str(ai_exe)])
 
 # Start OpenCode
 with TemporaryDirectory() as tmpdir:
@@ -75,14 +92,9 @@ with TemporaryDirectory() as tmpdir:
         '--workdir=' + str(PWD),
         '--entrypoint=' + json.dumps([
             "bash", "--login", "-c",
-            "bash",
-            # "opencode",
-            # "--config", "/tmp/.config/opencode/config.json"
+            # "bash",
+            "opencode",
         ]),
         'ghcr.io/danielrode/opencode:latest',
     )
     sp.run(['podman', 'run', *podman_args])
-
-
-# TODO
-# - try allowing internet access again and see if that fixes it
