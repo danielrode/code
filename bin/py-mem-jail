@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: crun
+# created: 12 mar 2026
+# updated: -
+
+
+# Run an interactive Python session from within a rootless Podman container
+# jail with RAM (memory) limits.
+
+
+set -e
+
+
+MAX_MEM=1g
+PY_VER=3.14
+# CGROUP_DIR="/sys/fs/cgroup/user-$(id -u)"
+
+
+# # Config system (Void) so that rootless Podman can restrict container memory
+# if [[ ! -d $CGROUP_DIR ]]
+# then
+#     echo "Podman cannot limit RAM"
+#     echo "You must configure your system using the following commands:"
+#     cat <<EOF
+# echo "+memory +pids" | sudo tee /sys/fs/cgroup/cgroup.subtree_control
+# sudo mkdir -p "$CGROUP_DIR"
+# sudo chown -R "$USER:$USER" "$CGROUP_DIR"
+# echo "+memory +pids" > "$CGROUP_DIR"/cgroup.subtree_control
+# EOF
+#     exit 1
+# fi
+# mkdir -p "$CGROUP_DIR"/session
+# echo "" > "$CGROUP_DIR"/session/cgroup.subtree_control
+# echo $$ > "$CGROUP_DIR"/session/cgroup.procs
+
+# Run conainer
+args=(
+    --cgroup-manager=cgroupfs
+    run
+    --rm
+    --tty
+    --interactive
+    --runtime=crun
+    --memory="$MAX_MEM"
+    --volume="$PWD:$PWD"
+    --workdir="$PWD"
+    python:"$PY_VER"
+)
+podman "${args[@]}" "$@"

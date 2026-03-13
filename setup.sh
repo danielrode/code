@@ -1,7 +1,7 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 27 feb 2026
+# updated: 12 mar 2026
 
 
 # TODO this script is WIP
@@ -30,6 +30,7 @@ pkgs=(
     pavucontrol
     pspg
     python3-pykeepass
+    smartmontools
     swaylock
     syncthing
     zathura
@@ -110,15 +111,111 @@ gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
 wget https://minimalistic-wallpaper.demolab.com/?random -O ~/.wallpaper
 
 # Prevent DNF from checking for packages that provide commands
-sudo dnf remove PackageKit-command-not-found
+if command -v dnf >/dev/null 2>&1
+then
+    sudo dnf remove PackageKit-command-not-found
+fi
 
 # Setup disk health monitoring
-sudo dnf install smartmontools
-sudo bash -c 'echo "DEVICESCAN -H -m daniel -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q" > /etc/smartmontools/smartd.conf'
-sudo systemctl enable smartd
-sudo systemctl start smartd
+if command -v systemctl >/dev/null 2>&1
+then
+    line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
+    if ! grep -Fx "$line"
+    then
+        echo "$line" | sudo tee -a /etc/smartmontools/smartd.conf
+    fi
+    sudo systemctl enable --now smartd
+fi
 # TODO verify this works (actually detects drive failuers)
-# TODO monitor /var/spool/mail/daniel and notify d.rode@mailbox.org
+# TODO monitor /var/spool/mail/daniel and notify me via email
+# TODO make this work on void too
+
+# Configure Void startup tasks
+if [[ -e /etc/rc.local ]]
+then
+    # Get rid of Podman warning about root filesystem not being shared
+    line='mount --make-rslave /'
+    if ! grep -Fx "$line" /etc/rc.local
+    then
+        echo | sudo tee -a /etc/rc.local
+        echo "$line" | sudo tee -a /etc/rc.local
+    fi
+
+    # Give user access to create and modify new cgroups
+    sudo tee /usr/local/bin/void-setup-user-cgroups \
+<<'EOF'
+#!/bin/python3
+import os
+import pwd
+from pathlib import Path
+# Move all currently running processes into default cgroup
+Path("/sys/fs/cgroup/default").mkdir(exist_ok=True)
+with open("/sys/fs/cgroup/cgroup.procs", 'r') as f:
+  pid_list = f.read()
+for pid in pid_list.splitlines():
+  try:
+    with open("/sys/fs/cgroup/default/cgroup.procs", 'w') as f2:
+      f2.write(pid)
+  except OSError as e:
+    if str(e) != "[Errno 22] Invalid argument":
+      raise e
+          
+#for i in $(cat /sys/fs/cgroup/cgroup.procs); do
+#  echo "$i" >/sys/fs/cgroup/default/cgroup.procs 2>/dev/null || true
+#done
+# Create cgroups for each user
+# # and move user processes to their respective
+# # cgroup
+for u, g in (
+  (i.pw_uid, i.pw_gid)
+  for i in pwd.getpwall()
+  if int(i.pw_uid) > 999
+):
+  cg_dir = Path(f"/sys/fs/cgroup/user{u}")
+  cg_dir.mkdir(exist_ok=True)
+  os.chown(cg_dir, u, g)
+  os.chown(cg_dir / "cgroup.procs", u, g)
+  os.chown(cg_dir / "cgroup.subtree_control", u, g)
+  os.chown(cg_dir / "cgroup.threads", u, g)
+#for i in $(cat /sys/fs/cgroup/default/cgroup.procs); do
+#  puid="$(grep '^Uid:' "/proc/$i/status" 2>/dev/null | awk '{ print $2 }')"
+#  [ -z "$puid" ] && continue
+#  [ "$puid" = 0 ] && continue
+#  pgid="$(id -g "$puid")"
+#  cg_dir=/sys/fs/cgroup/user"$puid"
+#  if [ ! -d "$cg_dir" ]; then
+#    mkdir "$cg_dir"
+#    chown "$puid:$pgid" "$cg_dir"
+#    chown "$puid:$pgid" "$cg_dir"/cgroup.procs
+#    chown "$puid:$pgid" "$cg_dir"/cgroup.subtree_control
+#    chown "$puid:$pgid" "$cg_dir"/cgroup.threads
+#  fi
+#  echo "$i" > "$cg_dir"/cgroup.procs
+#done
+EOF
+    sudo chmod +x /usr/local/bin/void-setup-user-cgroups
+
+    line='/usr/local/bin/void-setup-user-cgroups'
+    if ! grep -Fx "$line" /etc/rc.local
+    then
+        echo | sudo tee -a /etc/rc.local
+        echo "$line" | sudo tee -a /etc/rc.local
+    fi
+
+    # Create service that assigns user to its own cgroup upon login
+    uid="$(id -u)"
+    sudo mkdir -p /etc/sv/cgroup"$uid"
+    sudo tee /etc/sv/cgroup"$uid"/run \
+<<EOF
+#!/bin/sh
+/usr/bin/pgrep -fx -U "$uid" 'dash $HOME/code/bin/launch-swaywm' \
+> /sys/fs/cgroup/user"$uid"/cgroup.procs \
+&& exec /usr/bin/pause
+EOF
+    sudo chmod +x /etc/sv/cgroup"$uid"/run
+    sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+fi
+
 
 
 
