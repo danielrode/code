@@ -1,12 +1,12 @@
 #!/usr/bin/env dash
-# Author: Daniel Rode
-# Dependencies:
+# author: daniel rode
+# dependencies:
 #   rclone
 #   gpg
 #   syncthing
 #   ~/code/bin/bs
 #   ~/code/bin/getcred
-# Updated: 28 Sep 2025
+# updated: 13 mar 2026
 
 
 set -e  # Exit on error
@@ -83,5 +83,6 @@ if command -v systemctl >/dev/null 2>&1
 then
 	systemctl poweroff
 else
-	loginctl poweroff
+	sudo loginctl poweroff
+	# TODO allow user to do this on Void without root permissions
 fi
