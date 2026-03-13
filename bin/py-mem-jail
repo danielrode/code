@@ -17,6 +17,8 @@ PY_VER=3.14
 # CGROUP_DIR="/sys/fs/cgroup/user-$(id -u)"
 
 
+# podman info --debug |less
+# 
 # # Config system (Void) so that rootless Podman can restrict container memory
 # if [[ ! -d $CGROUP_DIR ]]
 # then

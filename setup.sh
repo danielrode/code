@@ -145,10 +145,9 @@ then
     sudo tee /usr/local/bin/void-setup-user-cgroups \
 <<'EOF'
 #!/bin/python3
-import os
-import pwd
+import os, pwd
 from pathlib import Path
-# Move all currently running processes into default cgroup
+# Move all currently running processes out of top (root) cgroup
 Path("/sys/fs/cgroup/default").mkdir(exist_ok=True)
 with open("/sys/fs/cgroup/cgroup.procs", 'r') as f:
   pid_list = f.read()
@@ -159,13 +158,7 @@ for pid in pid_list.splitlines():
   except OSError as e:
     if str(e) != "[Errno 22] Invalid argument":
       raise e
-          
-#for i in $(cat /sys/fs/cgroup/cgroup.procs); do
-#  echo "$i" >/sys/fs/cgroup/default/cgroup.procs 2>/dev/null || true
-#done
-# Create cgroups for each user
-# # and move user processes to their respective
-# # cgroup
+# Create cgroup for each user
 for u, g in (
   (i.pw_uid, i.pw_gid)
   for i in pwd.getpwall()
@@ -177,21 +170,6 @@ for u, g in (
   os.chown(cg_dir / "cgroup.procs", u, g)
   os.chown(cg_dir / "cgroup.subtree_control", u, g)
   os.chown(cg_dir / "cgroup.threads", u, g)
-#for i in $(cat /sys/fs/cgroup/default/cgroup.procs); do
-#  puid="$(grep '^Uid:' "/proc/$i/status" 2>/dev/null | awk '{ print $2 }')"
-#  [ -z "$puid" ] && continue
-#  [ "$puid" = 0 ] && continue
-#  pgid="$(id -g "$puid")"
-#  cg_dir=/sys/fs/cgroup/user"$puid"
-#  if [ ! -d "$cg_dir" ]; then
-#    mkdir "$cg_dir"
-#    chown "$puid:$pgid" "$cg_dir"
-#    chown "$puid:$pgid" "$cg_dir"/cgroup.procs
-#    chown "$puid:$pgid" "$cg_dir"/cgroup.subtree_control
-#    chown "$puid:$pgid" "$cg_dir"/cgroup.threads
-#  fi
-#  echo "$i" > "$cg_dir"/cgroup.procs
-#done
 EOF
     sudo chmod +x /usr/local/bin/void-setup-user-cgroups
 
