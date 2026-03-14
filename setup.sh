@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 12 mar 2026
+# updated: 13 mar 2026
 
 
 # TODO this script is WIP
@@ -133,43 +133,47 @@ fi
 # Configure Void startup tasks
 if [[ -e /etc/rc.local ]]
 then
-    # Get rid of Podman warning about root filesystem not being shared
-    line='mount --make-rslave /'
-    if ! grep -Fx "$line" /etc/rc.local
-    then
-        echo | sudo tee -a /etc/rc.local
-        echo "$line" | sudo tee -a /etc/rc.local
-    fi
-
-    # Give user access to create and modify new cgroups
+    # Give users access to create and modify new cgroups within their own
+    # hierarchy
     sudo tee /usr/local/bin/void-setup-user-cgroups \
 <<'EOF'
 #!/bin/python3
 import os, pwd
 from pathlib import Path
 # Move all currently running processes out of top (root) cgroup
-Path("/sys/fs/cgroup/default").mkdir(exist_ok=True)
-with open("/sys/fs/cgroup/cgroup.procs", 'r') as f:
-  pid_list = f.read()
-for pid in pid_list.splitlines():
-  try:
-    with open("/sys/fs/cgroup/default/cgroup.procs", 'w') as f2:
-      f2.write(pid)
-  except OSError as e:
-    if str(e) != "[Errno 22] Invalid argument":
-      raise e
+def clear_cg_procs(cg_path):
+    cg_path = Path(cg_path)
+    cg_leaf = Path(cg_path / "default")
+    cg_leaf.mkdir(exist_ok=True)
+    with open(cg_path / "cgroup.procs", 'r') as f:
+        pid_list = f.read().strip().splitlines()
+    for pid in pid_list:
+        try:
+            (cg_leaf / "cgroup.procs").write_text(pid)
+        except OSError as e:
+            if str(e) != "[Errno 22] Invalid argument":
+                raise e
+clear_cg_procs("/sys/fs/cgroup")
+with Path("/sys/fs/cgroup/cgroup.subtree_control").open('w') as f:
+    # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers, or
+    # this will fail
+    f.write("+memory +pids +cpu +io")
 # Create cgroup for each user
 for u, g in (
-  (i.pw_uid, i.pw_gid)
-  for i in pwd.getpwall()
-  if int(i.pw_uid) > 999
+    (i.pw_uid, i.pw_gid)
+    for i in pwd.getpwall()
+    if int(i.pw_uid) > 999
 ):
-  cg_dir = Path(f"/sys/fs/cgroup/user{u}")
-  cg_dir.mkdir(exist_ok=True)
-  os.chown(cg_dir, u, g)
-  os.chown(cg_dir / "cgroup.procs", u, g)
-  os.chown(cg_dir / "cgroup.subtree_control", u, g)
-  os.chown(cg_dir / "cgroup.threads", u, g)
+    cg_dir = Path(f"/sys/fs/cgroup/user{u}")
+    cg_dir.mkdir(exist_ok=True)
+    os.chown(cg_dir, u, g)
+    os.chown(cg_dir / "cgroup.procs", u, g)
+    os.chown(cg_dir / "cgroup.subtree_control", u, g)
+    os.chown(cg_dir / "cgroup.threads", u, g)
+    with Path(cg_dir / "cgroup.subtree_control").open('w') as f:
+        # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers,
+        # or this will fail
+        f.write("+memory +pids +cpu +io")
 EOF
     sudo chmod +x /usr/local/bin/void-setup-user-cgroups
 
@@ -180,18 +184,17 @@ EOF
         echo "$line" | sudo tee -a /etc/rc.local
     fi
 
-    # Create service that assigns user to its own cgroup upon login
-    uid="$(id -u)"
-    sudo mkdir -p /etc/sv/cgroup"$uid"
-    sudo tee /etc/sv/cgroup"$uid"/run \
-<<EOF
+    # Make PAM start new user sessions within their respective cgroup
+    sudo tee /usr/local/bin/pam-assign-login-cgroup <<'EOF'
 #!/bin/sh
-/usr/bin/pgrep -fx -U "$uid" 'dash $HOME/code/bin/launch-swaywm' \
-> /sys/fs/cgroup/user"$uid"/cgroup.procs \
-&& exec /usr/bin/pause
+# PAM provides $PAM_USER, but we need the UID
+uid=$(id -u "$PAM_USER")
+if [ "$PAM_TYPE" = "open_session" ]; then
+    SESSION_GRP="/sys/fs/cgroup/user$uid/session"
+    echo "$PAM_PID" > "$SESSION_GRP/cgroup.procs"
+fi
 EOF
-    sudo chmod +x /etc/sv/cgroup"$uid"/run
-    sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+    sudo chmod +x /usr/local/bin/pam-assign-login-cgroup
 fi
 
 

@@ -14,10 +14,12 @@ set -e
 
 MAX_MEM=1g
 PY_VER=3.14
-# CGROUP_DIR="/sys/fs/cgroup/user-$(id -u)"
+CGROUP_DIR="/sys/fs/cgroup/user$(id -u)"
 
 
-# podman info --debug |less
+echo $$ > "$CGROUP_DIR"/cgroup.procs
+podman info --debug
+exit
 # 
 # # Config system (Void) so that rootless Podman can restrict container memory
 # if [[ ! -d $CGROUP_DIR ]]

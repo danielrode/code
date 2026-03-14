@@ -24,8 +24,8 @@
 #   possibly others?
 
 
-exec dbus-update-activation-environment DISPLAY I3SOCK SWAYSOCK \
-  WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+exec dbus-update-activation-environment --all
+exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
 
 
 # Variables
