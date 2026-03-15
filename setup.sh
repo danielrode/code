@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 13 mar 2026
+# updated: 14 mar 2026
 
 
 # TODO this script is WIP
@@ -135,13 +135,19 @@ if [[ -e /etc/rc.local ]]
 then
     # Give users access to create and modify new cgroups within their own
     # hierarchy
-    sudo tee /usr/local/bin/void-setup-user-cgroups \
+    uid=1000  # TODO make this user agnostic (not hardcoded to 'daniel')
+    sudo mkdir -p /etc/sv/cgroup"$uid"/log
+    sudo tee /etc/sv/cgroup"$uid"/run \
 <<'EOF'
 #!/bin/python3
-import os, pwd
+import os, sys, pwd, signal
+import subprocess as sp
 from pathlib import Path
-# Move all currently running processes out of top (root) cgroup
+sys.stderr = sys.stdout  # Redirect stderr to stdout
+target_uid = 1000  # TODO make this user agnostic (not hardcoded to 'daniel')
+assert pwd.getpwuid(target_uid).pw_name == 'daniel'
 def clear_cg_procs(cg_path):
+    # Move all currently running processes out of root of cgroup
     cg_path = Path(cg_path)
     cg_leaf = Path(cg_path / "default")
     cg_leaf.mkdir(exist_ok=True)
@@ -153,48 +159,117 @@ def clear_cg_procs(cg_path):
         except OSError as e:
             if str(e) != "[Errno 22] Invalid argument":
                 raise e
+def chown_cg(cg_dir, uid, gid):
+    # Give ownership of given cgroup to given uid:gid
+    cg_dir = Path(cg_dir)
+    os.chown(cg_dir, uid, gid)
+    os.chown(cg_dir / "cgroup.procs", uid, gid)
+    os.chown(cg_dir / "cgroup.threads", uid, gid)
+    os.chown(cg_dir / "cgroup.subtree_control", uid, gid)
+def get_pid_ruid_euid(pid):
+    # Return the real UID and the effective UID for the given PID.
+    for i in Path("/proc/", str(pid), "status").read_text().splitlines():
+        if i.startswith("Uid:\t"):
+            _, ruid, euid, _, _ = i.split('\t')
+            return (ruid, euid)
+# Setup cgroups hierarchy
 clear_cg_procs("/sys/fs/cgroup")
-with Path("/sys/fs/cgroup/cgroup.subtree_control").open('w') as f:
-    # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers, or
-    # this will fail
-    f.write("+memory +pids +cpu +io")
-# Create cgroup for each user
-for u, g in (
-    (i.pw_uid, i.pw_gid)
-    for i in pwd.getpwall()
-    if int(i.pw_uid) > 999
+clear_cg_procs("/sys/fs/cgroup/1")
+Path(f"/sys/fs/cgroup/1/user{target_uid}").mkdir(exist_ok=True)
+chown_cg(f"/sys/fs/cgroup/1/user{target_uid}", target_uid, target_uid)
+Path(f"/sys/fs/cgroup/1/user{target_uid}/swaywm").mkdir(exist_ok=True)
+for p in (
+    "/sys/fs/cgroup/cgroup.subtree_control",
+    "/sys/fs/cgroup/1/cgroup.subtree_control",
+    f"/sys/fs/cgroup/1/user{target_uid}/cgroup.subtree_control",
 ):
-    cg_dir = Path(f"/sys/fs/cgroup/user{u}")
-    cg_dir.mkdir(exist_ok=True)
-    os.chown(cg_dir, u, g)
-    os.chown(cg_dir / "cgroup.procs", u, g)
-    os.chown(cg_dir / "cgroup.subtree_control", u, g)
-    os.chown(cg_dir / "cgroup.threads", u, g)
-    with Path(cg_dir / "cgroup.subtree_control").open('w') as f:
+    with open(p, 'w') as f:
         # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers,
         # or this will fail
         f.write("+memory +pids +cpu +io")
+# Watch for Sway init script, then move it to user controlled cgroup
+# TODO check if sway is already in that cgroup (for if service gets restarted)
+cmd = (
+    'pgrep',
+    '-fx',
+    '-U', str(target_uid),
+    'dash /home/daniel/code/bin/launch-swaywm',
+)
+while True:
+    p = sp.run(cmd, text=True, capture_output=True)
+    if (p.returncode == 0) and (p.stdout.strip() != ''):
+        result = p.stdout.strip().splitlines()
+        assert len(result) == 1
+        sway_init_pid = int(result[0])
+        break
+    os.sleep(0.01)
+Path(f"/sys/fs/cgroup/1/user{target_uid}/swaywm/cgroup.procs").write_text(
+    str(sway_init_pid)
+)
+# # Create cgroup for each user
+#for u, g in (
+#    (i.pw_uid, i.pw_gid)
+#    for i in pwd.getpwall()
+#    if int(i.pw_uid) > 999
+#):
+#    cg_dir = Path(f"/sys/fs/cgroup/user{u}")
+#    cg_dir.mkdir(exist_ok=True)
+#    os.chown(cg_dir, u, g)
+#    os.chown(cg_dir / "cgroup.procs", u, g)
+#    os.chown(cg_dir / "cgroup.subtree_control", u, g)
+#    os.chown(cg_dir / "cgroup.threads", u, g)
+#    with Path(cg_dir / "cgroup.subtree_control").open('w') as f:
+#        # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers,
+#        # or this will fail
+#        f.write("+memory +pids +cpu +io")
+# Service's job is done, so pause (so runit sees this service as "alive")
+signal.pause()
+# TODO move sway pid
+# TODO sway
 EOF
-    sudo chmod +x /usr/local/bin/void-setup-user-cgroups
-
-    line='/usr/local/bin/void-setup-user-cgroups'
-    if ! grep -Fx "$line" /etc/rc.local
-    then
-        echo | sudo tee -a /etc/rc.local
-        echo "$line" | sudo tee -a /etc/rc.local
-    fi
-
-    # Make PAM start new user sessions within their respective cgroup
-    sudo tee /usr/local/bin/pam-assign-login-cgroup <<'EOF'
+    sudo tee /etc/sv/cgroup"$uid"/log/run \
+<<EOF
 #!/bin/sh
-# PAM provides $PAM_USER, but we need the UID
-uid=$(id -u "$PAM_USER")
-if [ "$PAM_TYPE" = "open_session" ]; then
-    SESSION_GRP="/sys/fs/cgroup/user$uid/session"
-    echo "$PAM_PID" > "$SESSION_GRP/cgroup.procs"
-fi
+exec vlogger -t cgroup$uid -p daemon
 EOF
-    sudo chmod +x /usr/local/bin/pam-assign-login-cgroup
+    sudo chmod +x /etc/sv/cgroup"$uid"/run
+    sudo chmod +x /etc/sv/cgroup"$uid"/log/run
+    sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+    # sudo chmod +x /usr/local/bin/void-setup-user-cgroups
+
+    # line='/usr/local/bin/void-setup-user-cgroups'
+    # if ! grep -Fx "$line" /etc/rc.local
+    # then
+    #     echo | sudo tee -a /etc/rc.local
+    #     echo "$line" | sudo tee -a /etc/rc.local
+    # fi
+
+    # Create service that assigns user to its own cgroup upon login
+#     uid="$(id -u)"
+#     sudo mkdir -p /etc/sv/cgroup"$uid"
+#     sudo tee /etc/sv/cgroup"$uid"/run \
+# <<EOF
+# #!/bin/sh
+# /usr/bin/pgrep -fx -U "$uid" 'dash $HOME/code/bin/launch-swaywm' \
+# > /sys/fs/cgroup/user"$uid"/cgroup.procs \
+# && exec /usr/bin/pause
+# EOF
+#     sudo chmod +x /etc/sv/cgroup"$uid"/run
+#     sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+
+#     # Make PAM start new user sessions within their respective cgroup
+#     sudo tee /usr/local/bin/pam-assign-login-cgroup <<'EOF'
+# #!/bin/sh
+# # PAM provides $PAM_USER, but we need the UID
+# uid=$(id -u "$PAM_USER")
+# if [ "$PAM_TYPE" = "open_session" ]; then
+#     SESSION_GRP="/sys/fs/cgroup/user$uid/session"
+#     echo "$PAM_PID" > "$SESSION_GRP/cgroup.procs"
+# fi
+# EOF
+#     sudo chmod +x /usr/local/bin/pam-assign-login-cgroup
+
+# socklog-void package and enable the socklog-unix and nanoklogd services. Ensure no other syslog daemon is running.
 fi
 
 

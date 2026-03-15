@@ -4,8 +4,14 @@
 #   syncthing
 #   dbus
 #   ~/code/setup.sh
-# updated: 13 mar 2026
+# updated: 14 mar 2026
 
+
+# Wait for cgroup assignment (see ~/code/setup.sh for details)
+while ! cat /proc/self/cgroup | grep -F "0::/1/user$(id -u)"
+do
+	sleep 0.01
+done
 
 # Syncthing
 if ! pidof syncthing > /dev/null 2>&1

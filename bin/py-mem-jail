@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # author: daniel rode
-# dependencies: crun
+# dependencies: crun, podman, ~/code/setup.sh
 # created: 12 mar 2026
-# updated: -
+# updated: 14 mar 2026
 
 
 # Run an interactive Python session from within a rootless Podman container
@@ -12,14 +12,22 @@
 set -e
 
 
-MAX_MEM=1g
 PY_VER=3.14
-CGROUP_DIR="/sys/fs/cgroup/user$(id -u)"
+MAX_MEM=1g
+MEM_MAX_UGLY=1073741824
+CON_NAME=py_mem_jail
+# CGROUP_DIR="/sys/fs/cgroup/1/user$(id -u)/"
 
 
-echo $$ > "$CGROUP_DIR"/cgroup.procs
-podman info --debug
-exit
+# mkdir -p "$CGROUP_DIR/default"
+# mkdir -p "$CGROUP_DIR/podman"
+# xargs -rn1 \
+#     < "$CGROUP_DIR/cgroup.procs" > "$CGROUP_DIR/default/cgroup.procs" || : 
+# echo $$ > "$CGROUP_DIR/podman/cgroup.procs"
+# # sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \ 
+# #  		> /sys/fs/cgroup/cgroup.subtree_control 
+# podman info --debug
+# exit
 # 
 # # Config system (Void) so that rootless Podman can restrict container memory
 # if [[ ! -d $CGROUP_DIR ]]
@@ -38,17 +46,28 @@ exit
 # echo "" > "$CGROUP_DIR"/session/cgroup.subtree_control
 # echo $$ > "$CGROUP_DIR"/session/cgroup.procs
 
+# Setup exit/cleanup hook
+function cleanup { podman kill -- "$CON_NAME"; podman rm -f -- "$CON_NAME"; }
+trap cleanup EXIT
+
 # Run conainer
 args=(
     --cgroup-manager=cgroupfs
-    run
     --rm
-    --tty
-    --interactive
     --runtime=crun
+    --name="$CON_NAME"
     --memory="$MAX_MEM"
     --volume="$PWD:$PWD"
     --workdir="$PWD"
     python:"$PY_VER"
+    python3 -c "import signal; signal.pause()"
 )
-podman "${args[@]}" "$@"
+podman create "${args[@]}"
+podman start "$CON_NAME"
+con_mem_max="$(podman exec "$CON_NAME" cat /sys/fs/cgroup/memory.max)"
+if [[ $con_mem_max != $MEM_MAX_UGLY ]]
+then
+    echo "error: Podman is not enforcing memory restriction"
+    exit 1
+fi
+podman exec -it "$CON_NAME" python3 "$@"
