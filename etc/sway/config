@@ -52,8 +52,11 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
             ~/code
 
     # Preferred application launcher
-    set $menu $lw_term --window-size-chars=96x32 --app-id=sway_prompt_float \
-        ~/code/bin/launch
+    # set $menu $lw_term --window-size-chars=96x32 --app-id=sway_prompt_float \
+    #     ~/code/bin/launch
+    set $menu fuzzel --width=64 --lines=16 --use-bold --terminal=foot \
+        --show-actions --match-mode=fzf --filter-desktop \
+        --no-exit-on-keyboard-focus-loss --no-sort --counter --no-mouse
 
     # Wallpaper
     set $wallpaper_path "~/.wallpaper"
