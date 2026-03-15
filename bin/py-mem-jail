@@ -16,41 +16,13 @@ PY_VER=3.14
 MAX_MEM=1g
 MEM_MAX_UGLY=1073741824
 CON_NAME=py_mem_jail
-# CGROUP_DIR="/sys/fs/cgroup/1/user$(id -u)/"
 
-
-# mkdir -p "$CGROUP_DIR/default"
-# mkdir -p "$CGROUP_DIR/podman"
-# xargs -rn1 \
-#     < "$CGROUP_DIR/cgroup.procs" > "$CGROUP_DIR/default/cgroup.procs" || : 
-# echo $$ > "$CGROUP_DIR/podman/cgroup.procs"
-# # sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \ 
-# #  		> /sys/fs/cgroup/cgroup.subtree_control 
-# podman info --debug
-# exit
-# 
-# # Config system (Void) so that rootless Podman can restrict container memory
-# if [[ ! -d $CGROUP_DIR ]]
-# then
-#     echo "Podman cannot limit RAM"
-#     echo "You must configure your system using the following commands:"
-#     cat <<EOF
-# echo "+memory +pids" | sudo tee /sys/fs/cgroup/cgroup.subtree_control
-# sudo mkdir -p "$CGROUP_DIR"
-# sudo chown -R "$USER:$USER" "$CGROUP_DIR"
-# echo "+memory +pids" > "$CGROUP_DIR"/cgroup.subtree_control
-# EOF
-#     exit 1
-# fi
-# mkdir -p "$CGROUP_DIR"/session
-# echo "" > "$CGROUP_DIR"/session/cgroup.subtree_control
-# echo $$ > "$CGROUP_DIR"/session/cgroup.procs
 
 # Setup exit/cleanup hook
 function cleanup { podman kill -- "$CON_NAME"; podman rm -f -- "$CON_NAME"; }
 trap cleanup EXIT
 
-# Run conainer
+# Setup conainer
 args=(
     --cgroup-manager=cgroupfs
     --rm
@@ -64,10 +36,14 @@ args=(
 )
 podman create "${args[@]}"
 podman start "$CON_NAME"
+
+# Verify container is enforcing memory restriction
 con_mem_max="$(podman exec "$CON_NAME" cat /sys/fs/cgroup/memory.max)"
 if [[ $con_mem_max != $MEM_MAX_UGLY ]]
 then
     echo "error: Podman is not enforcing memory restriction"
     exit 1
 fi
+
+# Run interactive Python session in container
 podman exec -it "$CON_NAME" python3 "$@"

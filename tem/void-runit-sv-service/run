@@ -1,0 +1,5 @@
+#!/bin/sh
+# https://docs.voidlinux.org/config/services/index.html
+# http://smarden.org/runit/runscripts.html
+exec 2>&1
+exec EXE_ABSOLUTE_PATH

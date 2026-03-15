@@ -1,0 +1,7 @@
+#!/bin/sh
+# https://docs.voidlinux.org/config/services/logging.html
+# "Install the socklog-void package and enable the socklog-unix and nanoklogd
+# services."
+# "The logs are saved in sub-directories of /var/log/socklog/,
+# and svlogtail can be used to access them conveniently."
+exec vlogger -t SERVICE_NAME -p daemon

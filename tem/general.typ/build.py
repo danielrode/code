@@ -48,6 +48,7 @@ print("Spell check...")
 cmd = (
     'podman',
     'run',
+    '--rm',
     '--interactive',
     'docker.io/pandoc/typst:latest',
     '--from=typst',

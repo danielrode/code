@@ -18,6 +18,7 @@ pkgs=(
     cargo
     chayang
     dtach
+    fuzzel  # TODO setup
     gocryptfs
     grimshot
     imv
@@ -53,6 +54,8 @@ then
         delta \
         go \
         liberation-fonts-ttf \
+        socklog-void \
+        turnstile \
     ;
 fi
 
@@ -120,7 +123,7 @@ fi
 if command -v systemctl >/dev/null 2>&1
 then
     line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
-    if ! grep -Fx "$line"
+    if ! grep -qFx "$line"
     then
         echo "$line" | sudo tee -a /etc/smartmontools/smartd.conf
     fi
@@ -130,9 +133,62 @@ fi
 # TODO monitor /var/spool/mail/daniel and notify me via email
 # TODO make this work on void too
 
-# Configure Void startup tasks
+# Enable Void system services
+if [[ -d /var/service/ ]]
+then
+    sudo ln -sf /etc/sv/socklog-unix /var/service/
+    sudo ln -sf /etc/sv/nanoklogd /var/service/
+    sudo ln -sf /etc/sv/turnstiled /var/service/
+fi
+
+# Configure Void system
 if [[ -e /etc/rc.local ]]
 then
+    # Set timezone
+    sudo ln -sf /usr/share/zoneinfo/America/Denver /etc/localtime
+fi
+
+# Configure Void startup
+if [[ -e /etc/rc.local ]]
+then
+    # Configure turnstile service
+    if grep -qFx 'manage_rundir = yes' /etc/turnstile/turnstiled.conf
+    then
+        sudo patch -uNs /etc/turnstile/turnstiled.conf \
+<<EOF
+@@ -78,7 +78,7 @@
+ #
+ # Valid values are 'yes' and 'no'.
+ #
+-manage_rundir = yes
++manage_rundir = no
+ 
+ # Whether to export DBUS_SESSION_BUS_ADDRESS into the
+ # environment. When enabled, this will be exported and
+EOF
+    fi
+
+    # Configure elogind
+    sudo mkdir -p /etc/elogind/logind.conf.d/
+    sudo tee /etc/elogind/logind.conf.d/10-user-live.conf \
+<<EOF
+KillUserProcesses=no
+EOF
+
+    # Configure GRUB
+    if ! grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub \
+        | grep -q \
+        'systemd.unified_cgroup_hierarchy=1 elogind.unified_cgroup_hierarchy'
+    then
+        echo "'systemd.unified_cgroup_hierarchy=1' and"
+        echo "'elogind.unified_cgroup_hierarchy' arguments have not been added"
+        echo "to GRUB's GRUB_CMDLINE_LINUX_DEFAULT variable under"
+        echo "/etc/default/grub"
+        echo 'Please do this, then run `sudo update-grub`, then run this'
+        echo 'setup script again.'
+        exit 1
+    fi
+
     # Give users access to create and modify new cgroups within their own
     # hierarchy
     uid=1000  # TODO make this user agnostic (not hardcoded to 'daniel')
@@ -188,7 +244,7 @@ for p in (
         # or this will fail
         f.write("+memory +pids +cpu +io")
 # Watch for Sway init script, then move it to user controlled cgroup
-# TODO check if sway is already in that cgroup (for if service gets restarted)
+# TODO check if sway has already been placed in its own cgroup (so the service does not error if it gets restarted later)
 cmd = (
     'pgrep',
     '-fx',
@@ -206,26 +262,8 @@ while True:
 Path(f"/sys/fs/cgroup/1/user{target_uid}/swaywm/cgroup.procs").write_text(
     str(sway_init_pid)
 )
-# # Create cgroup for each user
-#for u, g in (
-#    (i.pw_uid, i.pw_gid)
-#    for i in pwd.getpwall()
-#    if int(i.pw_uid) > 999
-#):
-#    cg_dir = Path(f"/sys/fs/cgroup/user{u}")
-#    cg_dir.mkdir(exist_ok=True)
-#    os.chown(cg_dir, u, g)
-#    os.chown(cg_dir / "cgroup.procs", u, g)
-#    os.chown(cg_dir / "cgroup.subtree_control", u, g)
-#    os.chown(cg_dir / "cgroup.threads", u, g)
-#    with Path(cg_dir / "cgroup.subtree_control").open('w') as f:
-#        # NOTE: Each of these must exist in /sys/fs/cgroup/cgroup.controllers,
-#        # or this will fail
-#        f.write("+memory +pids +cpu +io")
 # Service's job is done, so pause (so runit sees this service as "alive")
 signal.pause()
-# TODO move sway pid
-# TODO sway
 EOF
     sudo tee /etc/sv/cgroup"$uid"/log/run \
 <<EOF
@@ -235,43 +273,7 @@ EOF
     sudo chmod +x /etc/sv/cgroup"$uid"/run
     sudo chmod +x /etc/sv/cgroup"$uid"/log/run
     sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
-    # sudo chmod +x /usr/local/bin/void-setup-user-cgroups
-
-    # line='/usr/local/bin/void-setup-user-cgroups'
-    # if ! grep -Fx "$line" /etc/rc.local
-    # then
-    #     echo | sudo tee -a /etc/rc.local
-    #     echo "$line" | sudo tee -a /etc/rc.local
-    # fi
-
-    # Create service that assigns user to its own cgroup upon login
-#     uid="$(id -u)"
-#     sudo mkdir -p /etc/sv/cgroup"$uid"
-#     sudo tee /etc/sv/cgroup"$uid"/run \
-# <<EOF
-# #!/bin/sh
-# /usr/bin/pgrep -fx -U "$uid" 'dash $HOME/code/bin/launch-swaywm' \
-# > /sys/fs/cgroup/user"$uid"/cgroup.procs \
-# && exec /usr/bin/pause
-# EOF
-#     sudo chmod +x /etc/sv/cgroup"$uid"/run
-#     sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
-
-#     # Make PAM start new user sessions within their respective cgroup
-#     sudo tee /usr/local/bin/pam-assign-login-cgroup <<'EOF'
-# #!/bin/sh
-# # PAM provides $PAM_USER, but we need the UID
-# uid=$(id -u "$PAM_USER")
-# if [ "$PAM_TYPE" = "open_session" ]; then
-#     SESSION_GRP="/sys/fs/cgroup/user$uid/session"
-#     echo "$PAM_PID" > "$SESSION_GRP/cgroup.procs"
-# fi
-# EOF
-#     sudo chmod +x /usr/local/bin/pam-assign-login-cgroup
-
-# socklog-void package and enable the socklog-unix and nanoklogd services. Ensure no other syslog daemon is running.
 fi
-
 
 
 
@@ -285,3 +287,4 @@ fi
 # - crontab -e
 # - /etc/fstab
 # - ~/.ssh/config
+# - /etc/rc.local  # for Void installs
