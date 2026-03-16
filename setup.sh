@@ -282,6 +282,14 @@ fi
 
 
 
+# TODO
+# Create a script called change-scenery then take the wallpaper updating code
+# above and put it in there. Add code that changes the color palette of
+# fuzzel and waybar to match the color palette of the newly set wallpaper. Call
+# change`scenery script from (setup.sh).
+
+
+
 # Also see
 # - sudo crontab -e
 # - crontab -e

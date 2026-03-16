@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: fuzzel
+# created: 15 mar 2026
+# updated: -
+
+
+# Run fuzzel program launcher (for Sway)
+
+
+args=(
+    --width=64
+    --lines=16
+    --use-bold
+    --terminal=foot
+    --show-actions
+    --match-mode=fzf
+    --filter-desktop
+    --no-exit-on-keyboard-focus-loss
+    --counter
+    --no-mouse
+)
+fuzzel "${args[@]}"
