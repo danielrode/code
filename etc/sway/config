@@ -2,6 +2,7 @@
 
 # Dependencies:
 #   foot
+#   ghostty
 #   grimshot
 #     jq
 #     grim
@@ -42,7 +43,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
     set $alt Mod1
 
     # Preferred terminal
-    set $term foot -e fish
+    set $term ghostty
 
     # Lightweight terminal
     set $lw_term footclient --override=colors.background=111111
