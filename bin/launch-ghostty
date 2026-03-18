@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# author: daniel rode
+# created: 17 mar 2026
+# updated: -
+
+
+cd ~
+ghostty +new-window "$@" || ghostty "$@"

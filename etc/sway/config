@@ -23,6 +23,7 @@
 #   ~/code/bin/sway-scale-output
 #   ~/code/bin/capture-screen
 #   ~/code/bin/launch-fuzzel
+#   ~/code/bin/launch-ghostty
 #   fuzzel
 #   possibly others?
 
@@ -43,7 +44,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
     set $alt Mod1
 
     # Preferred terminal
-    set $term ghostty
+    set $term ~/code/bin/launch-ghostty
 
     # Lightweight terminal
     set $lw_term footclient --override=colors.background=111111

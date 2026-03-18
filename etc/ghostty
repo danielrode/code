@@ -29,13 +29,48 @@
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 
-async-backend = epoll
+
+command = /usr/bin/fish
+
+# Theme
+font-family = Liberation Mono
+font-size = 11
+foreground = ffffff
+background = 222436
+background-opacity = 0.9
+window-decoration = none
+resize-overlay = never
+
+# Keybindings
+# NOTE: See `ghostty +list-keybinds` binds ones not defined here
 keybind = performable:ctrl+c=copy_to_clipboard:plain
-# keybind = performable:ctrl+c=copy_to_clipboard:html
+keybind = performable:shift+ctrl+c=copy_to_clipboard:html
 keybind = ctrl+v=paste_from_clipboard
 selection-clear-on-copy = true
-font-size = 11
-command = /usr/bin/fish
-linux-cgroup = never
-background-opacity = 0.9
+keybind = ctrl+t=new_window
+# keybind = ctrl+left=csi:8D
+keybind = ctrl+,=unbind
+
+# Behavior
+async-backend = epoll
 bell-features = system,no-audio,no-attention,no-title,no-border
+linux-cgroup = never
+mouse-hide-while-typing = false
+working-directory = home
+window-inherit-working-directory = true
+tab-inherit-working-directory = true
+window-save-state = never
+focus-follows-mouse = true
+clipboard-paste-protection = false
+shell-integration = detect
+shell-integration-features = true
+auto-update = off
+quit-after-last-window-closed = false
+mouse-scroll-multiplier = 4
+# mouse-scroll-multiplier = precision:10,discrete:1
+# mouse_alternate_scroll = true
+confirm-close-surface = false
+scrollbar = never
+# link = 
+link-url = false
+link-previews = false
