@@ -1,68 +1,127 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: 13 jan 2026
+# updated: 19 mar 2026
 
 
-# Install links to home dotfiles
+# Install links to home config dotfiles.
 
 
-import subprocess as sp
 from pathlib import Path
 
 
 HOME = Path.home()
-INS_PATH = HOME / "code/ins/home_config/"
+CODE_ETC = HOME / "code/etc"
+LINK_MAP = {
+    Path(CODE_ETC, cfg):
+    Path(HOME, link) if (link is not None) else None
+    for cfg, link in {
 
-EXEMPTIONS = (
-    'i3status-rs.toml',  # Path gets passed to program
-    'launch.txt',        # Path gets passed to program
-    'kmonad',            # Path gets passed to program
-    'mako.conf',         # Path gets passed to program
-    # todo
-    'udev',              # Copy contents to under /etc/udev/
-    'byobu',             # Abandoned (no longer use)
-    'emacs-init.el',     # Abandoned (no longer use)
-    'goneovim.toml',     # Abandoned (no longer use)
-)
+    'alacritty':
+        '.config/alacritty',
+    'bash_profile':
+        '.bash_profile',
+    'config.fish':
+        '.config/fish/config.fish',
+    'foot.ini':
+        '.config/foot/foot.ini',
+    'ghostty':
+        '.config/ghostty/config',
+    'gitconfig':
+        '.gitconfig',
+    'helix':
+        '.config/helix',
+    'imv.conf':
+        '.config/imv/config',
+    'ipython-init.py':
+        '.ipython/profile_default/startup/10-user-init.py',
+    'kanshi':
+        '.config/kanshi/config',
+    'lfrc':
+        '.config/lf/lfrc',
+    'lintr':
+        '.lintr',
+    'mpv-input.conf':
+        '.config/mpv/input.conf',
+    'ov.yaml':
+        '.config/ov/config.yaml',
+    'profile':
+        '.profile',
+    'profile-environmentd.conf':
+        '.config/environment.d/profile.conf',
+    'rc.elv':
+        '.config/elvish/rc.elv',
+    'starship.toml':
+        '.config/starship.toml',
+    'sway':
+        '.config/sway',
+    'systemd-immich.service':
+        '.config/systemd/user/immich.service',
+    'systemd-open-webui.service':
+        '.config/systemd/user/open-webui.service',
+    'systemd-thelounge-irc.service':
+        '.config/systemd/user/thelounge-irc.service',
+    'tiny.yml':
+        '.config/tiny/config.yml',
+    'user-dirs.dirs':
+        '.config/user-dirs.dirs',
+    'waybar':
+        '.config/waybar',
+    'wezterm.lua':
+        '.config/wezterm/wezterm.lua',
+    'zathura.conf':
+        '.config/zathura/zathurarc',
+    'zellij.kdl':
+        '.config/zellij/config.kdl',
+    'zshrc':
+        '.config/zsh/.zshrc',
+
+    # Exemptions
+    'i3status-rs.toml': None,  # Path gets passed to program
+    'launch.txt': None,        # Path gets passed to program
+    'kmonad': None,            # Path gets passed to program
+    'mako.conf': None,         # Path gets passed to program
+    'byobu': None,             # Abandoned (no longer used)
+    'emacs-init.el': None,     # Abandoned (no longer used)
+    'goneovim.toml': None,     # Abandoned (no longer used)
+}.items()}
+
+
+def install_link(link, target):
+    if link.exists():
+        if link.is_symlink():
+            current_target = link.readlink()
+            if target == current_target:
+                # Link is already correctly set
+                return
+            else:
+                # Current link will be replaced
+                print(
+                    f"WARNING: Replacing existing link '{link}' target "
+                    f"'{current_target}' with '{target}'"
+                )
+        else:
+            # Abort because desired link location is occupied by something else
+            raise Exception(f"File already exists as is not symlink: {link}")
+
+    # Create dir tree for link, if needed
+    link.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+
+    link.unlink(missing_ok=True)
+    link.symlink_to(target)
 
 
 # Install dotfile symlinks
-rsync_cmd = (
-    'rsync',
+for target, link in LINK_MAP.items():
+    # Skip config files that do not need links
+    if link is None:
+        continue
 
-    # Configure rsync information verbosity and format
-    '--verbose',
-    # '--stats',
-    # '--progress',
-    '--human-readable',
-    '--itemize-changes',
+    # Install the symlink
+    print("Installing: ", link)
+    install_link(link, target)
 
-    # Configure rsync data transfer method
-    '--recursive',  # Copy source recursively
-    '--perms', '--chmod=D700,F600',  # Set permissions
-    '--links',  # Copy symlinks as symlinks
-    '--executability',  # Preserve executability
-    '--backup',  # Keep backup of existing dest file
-    '--mkpath',  # Create destination is it does not exist
-    '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
-
-    # Set source dest
-    str(INS_PATH) + '/',
-    str(HOME) + '/',
-)
-sp.run(rsync_cmd, check=True)
-
-# Check if there are any config files that are missing links
-link_target_names = [
-    i.readlink().name
-    for i in INS_PATH.glob('**')
-    if i.is_symlink()
-]
-etc_filenames = [
-    i.name
-    for i in Path(HOME, 'code/etc/').glob('*')
-]
-for conf in etc_filenames:
-    if (conf not in link_target_names) and (conf not in EXEMPTIONS):
-        print("WARNING Unhandled config file:", conf)
+# Check if there are any config files that are missing from the link map
+for i in CODE_ETC.glob('*'):
+    if i not in LINK_MAP:
+        print("WARNING Unhandled config file:", i)

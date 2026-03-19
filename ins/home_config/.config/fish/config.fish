@@ -1,1 +1,0 @@
-../../code/etc/config.fish

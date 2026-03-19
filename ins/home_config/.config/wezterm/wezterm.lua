@@ -1,1 +1,0 @@
-../../code/etc/wezterm.lua
