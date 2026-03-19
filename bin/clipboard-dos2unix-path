@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 19 mar 2026
+
+
+# Take the given Windows path in the clipboard, convert it to an equivalent
+# Linux one, and paste it back to the clipboard.
+
+
+wl-paste --no-newline | tr '\\' '/' | sed 's.^./.' | wl-copy
+notify-send --expire-time=1000 "Clipboard path converted"

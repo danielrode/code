@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=clipboard-dos2unix-path - Fix Windows paths
+Comment=Fix Windows paths in clipboard
+Exec=clipboard-dos2unix-path
+Terminal=false
