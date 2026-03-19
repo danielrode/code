@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: fd
+# created: 17 mar 2026
+# updated: -
+
+
+# Description: Sort results from fd by file size.
+
+
+fd --print0 --no-ignore --follow "$@" \
+| xargs -0 -I @ stat --format '%s %n' @ \
+| sort -n \
+| cut -d ' ' -f 2-

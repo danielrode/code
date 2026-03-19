@@ -37,11 +37,6 @@ OPENCODE_CONF = {
                 #     "inference": "chat",
                 #     # "context": TODO, # todo
                 # },
-                # "Qwen2.5-Coder-14B-Instruct-Q4_0": {
-                #     "name": "Qwen 2.5 Coder 14B",
-                #     "inference": "chat",
-                #     # "context": TODO, # todo
-                # },
                 # "qwen2.5-coder-7b-instruct-q4_k_m": {
                 #     "name": "Qwen 2.5 Coder 7B",
                 #     "inference": "instruct",
@@ -50,6 +45,11 @@ OPENCODE_CONF = {
                 "Qwen2.5-Coder-3B-Instruct-Q4_0": {
                     "name": "Qwen 2.5 Coder 3B",
                     "inference": "instruct",
+                    # "context": TODO, # todo
+                },
+                "Qwen2.5-Coder-14B-Instruct-Q4_0": {
+                    "name": "Qwen 2.5 Coder 14B",
+                    "inference": "chat",
                     # "context": TODO, # todo
                 },
             },

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 18 mar 2026
+
+
+# Run Tpyst via Docker.
+
+
+args=(
+    --rm
+    --tty
+    --interactive
+    --volume /tmp:/tmp
+    --volume /mnt:/mnt
+    --volume /home:/home
+    --volume "$PWD:$PWD"
+    --workdir "$PWD"
+    --user "$(id -u):$(id -g)"
+    --userns keep-id
+    --entrypoint /usr/bin/typst
+    docker.io/pandoc/typst:latest
+)
+podman run "${args[@]}" "$@"

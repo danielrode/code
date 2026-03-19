@@ -57,7 +57,7 @@
   counter(page).update(1)
 
   // Sections
-  outline()  
+  outline()
 
   // Figures
   outline(title: "List of Figures", target: figure.where(kind: image))

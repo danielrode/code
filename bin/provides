@@ -1,38 +1,33 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Name: Provides
-# Tags: wrapper, macro
-# Dependencies:
+# author: daniel rode
+# dependencies:
 #   xtools || apt-file || apk-file || scout || dnf
-# Version: 4
-# Init: 12 Jan 2024
-# Updated: 01 Jul 2024
+# created: 12 jan 2024
+# updated: 18 mar 2026
 
 
-# Description:
 # System agnostic wrapper that uses package manager tools to find which
-# package(s) provide a given file
+# package(s) provide a given file.
 
 
 if command -v apt-file  # Ubuntu
 then
-	apt-file find "$1"
+    apt-file find "$1"
 elif command -v xlocate  # Void Linux
 then
-	# User must run `xlocate -S` periodically to refresh package catalog cache
-	xlocate "$1"
+    # User must run `xlocate -S` periodically to refresh package catalog cache
+    xlocate "$1"
 elif command -v apk-file  # Alpine Linux
 then
-	apk-file "$1"
+    apk-file "$1"
 elif command -v scout  # OpenSUSE
 then
-  echo "Your search may only return matches for binary files. See 'scout'"
-  echo "help text and my 'provides' script source code for more info"
-  scout bin "$1"
+    echo "Your search may only return matches for binary files. See 'scout'"
+    echo "help text and my 'provides' script source code for more info"
+    scout bin "$1"
 elif command -v dnf  # Fedora
 then
-  dnf provides "$1"
+    sudo dnf provides "$1"
 else
-	echo "No suitable 'provides' search command found"
+    echo "No suitable 'provides' search command found"
 fi
-

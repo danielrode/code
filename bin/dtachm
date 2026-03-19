@@ -9,13 +9,14 @@
 #   fzf
 #   pgrep
 # created: 12 apr 2025
-# updated: 19 dec 2025
+# updated: 03 mar 2026
 
 
 # List active dtach sessions in a menu and then connect to the
 # selected one.
 
 
+import sys
 import shlex
 import subprocess as sp
 from pathlib import Path
@@ -33,11 +34,17 @@ def pgrep(query: str) -> list[list[str]]:
 
 # Find active dtach sessions
 dtach_socks = dict()
+sock_flags = ('-a', '-A', '-c', '-n', '-N', '-p')
 for proc in pgrep('dtach'):
     args = shlex.split(proc)
-    sock_flags = ('-a', '-A', '-c', '-n', '-N', '-p')
-    if (args[2] in sock_flags) and Path(args[3]).exists():
-        dtach_socks[args[3]] = proc
+    pid, _, flag, sock_path = args[:4]
+    if not Path(sock_path).exists():
+        # TODO
+        # # Remove phandom dtach processes
+        # sp.run(["kill", str(pid)], check=True)
+        continue
+    if flag in sock_flags:
+        dtach_socks[sock_path] = proc
 
 # Display menu of active dtach sessions
 cmd = (
@@ -52,7 +59,11 @@ p = sp.run(
     input='\n'.join(list(dtach_socks.values())),
     stdout=sp.PIPE,
 )
-sock_path = shlex.split(p.stdout)[3]
+try:
+    sock_path = shlex.split(p.stdout)[3]
+except IndexError:
+    print("No selection made")
+    sys.exit()
 
 # Connect to selected dtach session
 sp.run(['dtach', '-a', sock_path])

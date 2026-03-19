@@ -2,16 +2,13 @@
 # author: daniel rode
 # name:
 # tags:
-# dependencies:
-#   bash 4.3+
-#   pv
-#   ...
+# dependencies: bash 4.3+, pv
 # version: 1
-# created:
+# created: 01 jan 2026
 # updated: -
 
 
-# DESCRIPTION
+# Description.
 
 
 # Setup temp directory and set it to be removed on exit
@@ -26,21 +23,21 @@ trap cleanup EXIT
 max_workers=16
 for path in path-of-interest/*
 do (
-  cd "$path"
-  long-running-command
-  )&
-  echo "Started task $path"
+    cd "$path"
+    long-running-command
+    )&
+    echo "Started task $path"
 
-  # Limit number of jobs running in parallel
-  (( "$(jobs -p | wc -l)" == $max_workers)) && wait -n
+    # Limit number of jobs running in parallel
+    (( "$(jobs -p | wc -l)" == $max_workers)) && wait -n
 done | pv --timer --bytes --numeric --line-mode
 wait
 
 
 # Use array to store options
 cmd_args=(
-  --flag1 value1
-  # I included this flag because reasons
-  --flag2 value2
+    --flag1 value1
+    # I included this flag because reasons
+    --flag2 value2
 )
 command "${cmd_args[@]}"

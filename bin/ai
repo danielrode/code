@@ -37,6 +37,7 @@ MODEL_MAP = {model: repo for i in (
     # 'unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-Q4_0',
 ) for repo, model in [i.split(':')]}
 
+CON_NAME = "llama-swap"
 PORT = 5001
 # MODEL_CONTEXT = 2**17
 MODEL_CONTEXT = 0
@@ -74,7 +75,7 @@ def get_compose_yaml(llama_swap_yaml_path, port=PORT):
         'version': 3.2,
         'services': {
             'llama-swap': {
-                'container_name': 'llama-swap',
+                'container_name': CON_NAME,
                 'image': 'ghcr.io/mostlygeek/llama-swap:vulkan',
                 'networks': ['ai'],
                 'devices': ['/dev/dri'],
@@ -140,6 +141,7 @@ if urls:
     shutil.rmtree(GGUF_MODEL_DIR / '.tmp_aria')
 
 # Run llama.cpp
+sp.run(['podman', 'rm', '--force', CON_NAME], check=True)
 cmd = (
     'podman-compose',
     '--file', '-',

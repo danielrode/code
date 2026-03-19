@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# author: daniel rode
+# dependencies:
+#   podman
+#   ~/code/bin/ai
+# created: 05 mar 2026
+# updated: -
+
+
+# Run Aider (AI coding assistant) in current directory.
+
+
+import os
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+DEFAULT_MODEL = 'Qwen2.5-Coder-14B-Instruct-Q4_0'
+
+HOME = Path.home()
+PWD = Path.cwd()
+
+LLAMA_SWAP_CON_NAME = 'llama-swap'
+LLAMA_SWAP_NET_NAME = 'ai'
+LLAMA_SWAP_EXE = HOME / 'code/bin/ai'
+
+
+# Make sure LLM server is running
+try:
+    sp.run(
+        ['pgrep', '-xf', f'python3 {LLAMA_SWAP_EXE}'],
+        capture_output=True,
+        check=True,
+    )
+except sp.CalledProcessError:
+    sp.Popen([str(LLAMA_SWAP_EXE)])
+
+# Start Aider
+podman_args = (
+    '--rm',
+    '--replace',
+    '--name', 'aider',
+    '--interactive', '--tty',
+    '--network=' + LLAMA_SWAP_NET_NAME,
+    '--user', f'{os.getuid()}:{os.getgid()}',
+    f'--userns=keep-id:uid={os.getuid()},gid={os.getgid()}',
+    '--env', 'OPENAI_API_KEY=none',
+    '--env', f'OPENAI_API_BASE=http://{LLAMA_SWAP_CON_NAME}:5001/v1',
+    # HOME=/app in container
+    f'--volume={HOME / ".gitconfig"}:/app/.gitconfig:ro',
+    f'--volume={HOME / "code"}:/app/code:ro',
+    '--volume=' + f'{PWD}:{PWD}:z',
+    '--workdir=' + str(PWD),
+    'docker.io/paulgauthier/aider:latest',
+    # 'docker.io/paulgauthier/aider-full:latest',
+    # https://aider.chat/docs/config/options.html
+    '--analytics-disable',
+    '--no-check-update',
+    '--no-show-release-notes',
+    '--no-show-model-warnings',
+    '--model', f'openai/{DEFAULT_MODEL}',
+    '--map-tokens', '2048',
+    '--max-chat-history-tokens', '131072',
+)
+sp.run(['podman', 'run', *podman_args, *sys.argv[1:]])
+
+
+
+# TODO
+# - allow overriding default model via sys.argv
+# - allow /voice to work in container
