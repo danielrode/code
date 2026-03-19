@@ -23,6 +23,8 @@ LINK_MAP = {
         '.bash_profile',
     'config.fish':
         '.config/fish/config.fish',
+    'desktops':
+        '.local/share/applications/com.github.danielrode',
     'foot.ini':
         '.config/foot/foot.ini',
     'ghostty':
@@ -57,12 +59,8 @@ LINK_MAP = {
         '.config/sway',
     'systemd-immich.service':
         '.config/systemd/user/immich.service',
-    'systemd-open-webui.service':
-        '.config/systemd/user/open-webui.service',
     'systemd-thelounge-irc.service':
         '.config/systemd/user/thelounge-irc.service',
-    'tiny.yml':
-        '.config/tiny/config.yml',
     'user-dirs.dirs':
         '.config/user-dirs.dirs',
     'waybar':
@@ -88,27 +86,35 @@ LINK_MAP = {
 
 
 def install_link(link, target):
-    if link.exists():
-        if link.is_symlink():
-            current_target = link.readlink()
-            if target == current_target:
-                # Link is already correctly set
-                return
-            else:
-                # Current link will be replaced
-                print(
-                    f"WARNING: Replacing existing link '{link}' target "
-                    f"'{current_target}' with '{target}'"
-                )
-        else:
-            # Abort because desired link location is occupied by something else
-            raise Exception(f"File already exists as is not symlink: {link}")
+    # Abort if desired link location is occupied by something else
+    if link.exists() and (not link.is_symlink()):
+        raise Exception(f"File already exists and is not symlink: {link}")
 
-    # Create dir tree for link, if needed
+    # Ensure target exists
+    if not target.exists():
+        raise Exception(f"Target does not exist: {target}")
+
+    # Check if link is already installed
+    if link.is_symlink():
+        current_target = link.readlink()
+        if target == current_target:
+            # Link is already correctly set
+            return False
+
+        # Current link will be replaced
+        print(
+            f"WARNING: Replacing existing link '{link}' target "
+            f"'{current_target}' with '{target}'"
+        )
+
+    # Create parent dirs for link, if needed
     link.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
 
+    # Create link
     link.unlink(missing_ok=True)
     link.symlink_to(target)
+
+    return True
 
 
 # Install dotfile symlinks
@@ -118,8 +124,10 @@ for target, link in LINK_MAP.items():
         continue
 
     # Install the symlink
-    print("Installing: ", link)
-    install_link(link, target)
+    if install_link(link, target):
+        print("Installed: ", link)
+    else:
+        print("Verified: ", link)
 
 # Check if there are any config files that are missing from the link map
 for i in CODE_ETC.glob('*'):
