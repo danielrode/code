@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=nn - New Note
+Comment=Create new cursory markdown note file
+Exec=nn
+Terminal=true

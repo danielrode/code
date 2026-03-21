@@ -1,4 +1,3 @@
-foot ~/code/bin/nn  # New Note
 ~/code/bin/latest-screenshot  # View Latest Screenshots
 ~/code/bin/sway-pick-color  # Color Picker
 wl-paste | ~/code/bin/strip-newline | wl-copy  # Clipboard Strip Newline
@@ -11,31 +10,24 @@ foot ~/code/bin/sway-rename-workspace  # Sway: Rename Workspace
 wl-paste | ~/code/bin/mutate unwrap | wl-copy --trim-newline  # Flatten Clibpoard Text
 wl-paste | ~/code/bin/mutate title | wl-copy --trim-newline  # Title-Case Clipboard Text
 ~/code/bin/nerd-up  # Dictation
-googleearth  # Maps, GIS
 pomodoro  # Eye Timer
-~/code/bin/qgis  # QGIS
-~/job/csu/bin/init-workspace.py  # Job workspace
 ~/code/bin/redx  # Overlay Red Crosshair
 wl-copy 'https://www.amazon.com/dp/'`wl-paste | sed 's,.*/dp/,,' | sed 's,[/\?].*,,'`  # Shorten Amazon clipboard link
 nm-connection-editor  # Network Manager (wifi, eth)
-nwg-look  # Desktop Environment GTK Theme Settings
 wlsunset -s 00:00 -t 5000 -g 1.5  # Nice screen (gentle contrast and temp)
 ~/code/bin/dim  # Dim screen (reduce brightness)
-keymapp  # Moonlander Keyboard
 sudo vsv up waydroid-container && waydroid app launch eu.faircode.email  # FairEmail (Android app)
-foot bluetuith  # Bluetooth Manager
-wl-paste | tr '\\' '/' | wl-copy  # Fix path slashes
-openra-ra  # OpenRA (game)
-hedgewars  # Game
-~/code/bin/sway-fix-displays
 wl-paste | nl -w 1 -s ' ' | wl-copy  # Enumerate/count/number clipboard lines
 swaymsg input type:touchpad dwt disable  # Allow touchpad while keyboarding/typing
+
+
+opt desktop files should go under /opt ? or /usr/local
+maybe make a directory under ins/ for these system-wide desktop files, and a companion install script, but the install script only adds a desktop file if it finds the executable installed on the system
+
 speedcrunch  # Calculator
 darktable  # Virtual lighttable and darkroom for photos
 doublecmd  # File Manager
-zeal  # Offline Documentation Viewer
-~/code/bin/sway-startup-windows  # Workspace
 ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
-wl-paste | pandoc -f markdown -t dokuwiki |wl-copy  # Md to DokuWiki
-
-
+foot bluetuith  # Bluetooth Manager
+keymapp  # Moonlander Keyboard
+googleearth  # Maps, GIS

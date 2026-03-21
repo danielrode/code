@@ -11,11 +11,11 @@
 #   htop
 #   fish
 # created: 26 dec 2022
-# updated: 02 feb 2026
+# updated: 20 mar 2026
 
 
-# Description: Start list of defined programs under Sway session and then
-# arrange their windows.
+# Start list of defined programs under Sway session and then arrange their
+# windows.
 
 
 from i3ipc import Connection
@@ -69,7 +69,7 @@ i3 = Connection()
 i3.on(Event.WINDOW_NEW, arrange_startup_windows)
 
 # Launch programs I want to start when I login to Sway
-i3.command("exec foot-helix ~/union/notes/wiki/programs/helix.txt")
+i3.command("exec foot -a foot_helix hx ~/union/notes/wiki/programs/helix.txt")
 i3.command("exec foot -e fish")
 i3.command("exec foot -a foot_htop -e htop")
 i3.command("exec firefox")

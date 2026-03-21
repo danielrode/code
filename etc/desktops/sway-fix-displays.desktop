@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Sway Fix Displays
+Exec=sway-fix-displays
+Terminal=false
