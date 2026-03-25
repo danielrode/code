@@ -1,5 +1,4 @@
-
-# Dependencies:
+# dependencies:
 #   fish
 #   ~/code/bin/can
 #   ~/code/bin/o
@@ -8,22 +7,23 @@
 #   wl-clipboard
 
 
-# Documentation:
+# DOCUMENTATION:
 # - https://pkg.go.dev/github.com/gokcehan/lf
 # - https://github.com/gokcehan/lf/wiki/Tips
 #
-# Prefixes:
+# PREFIXES:
 #   :  read (default)  builtin/custom command
 #   $  shell           shell command
 #   %  shell-pipe      shell command running with the ui
 #   !  shell-wait      shell command waiting for key press
 #   &  shell-async     shell command running asynchronously
 # 
-# Variables:
+# VARIABLES:
 #   f   Current file selection as a full path.
 #   fs  Selected file(s) separated with value of 'filesep' as full path(s).
 #   fx  $fs if any selected files, otherwise $f.
 
+# -----------------------------------------------------------------------------
 
 # Warn about nested instances
 &{{
@@ -33,14 +33,16 @@
 	fi
 }}
 
+# -----------------------------------------------------------------------------
 
-# Settings
+# SETTINGS
+
 set shell dash
 # I am using dash to avoid "unbound variable" bash error. If you would rather
 # use bash, make sure /etc/bash.bashrc has
 # `"${PROBLEM_VAR:-}"` instead of `"$PROBLEM_VAR"`
 
-# Safer shell commands.
+# Safer shell commands
 # '-e': exit on error
 # '-u': give error for unset variables
 # '-f': disable pathname expansion (can be useful when $f, $fs, and $fx 
@@ -61,8 +63,13 @@ set ratios '1:3:3'
 set wrapscroll true
 # set period 5
 
+# -----------------------------------------------------------------------------
 
-# Commands
+# COMMANDS
+
+cmd quit_without_cd %{{
+	lf -remote "send $id :cd $OLDPWD; quit"
+}}
 cmd trash &~/code/bin/can $fx
 cmd new_file ${{
     echo -n '> '
@@ -121,6 +128,8 @@ cmd paste_cow ${{
                     name="$name"_dup
                 done
 
+				# This will only reflink when the fs supports it, and do a
+				# regular copy otherwise
 				cp --verbose --archive --no-clobber --recursive --reflink=auto \
 					"$file" "./$name"
             done
@@ -132,14 +141,39 @@ cmd paste_cow ${{
 }}
 
 
-# Report working directory path changes to terminal
-cmd on-cd &printf '\033]7;file://%s\033\\' "$PWD" > /dev/tty
-cmd on-quit &printf '\033]7;\033\\' > /dev/tty
-# on-cd  # trigger on-cd upon startup
+# Report working directory path changes to terminal (via OSC 7)
+cmd on-cd &printf '\033]7;file://%s%s\033\\' "$HOSTNAME" "$PWD" > /dev/tty
+# TODO use tty-write instead
+#      tty-write
+#      Write the given string to the tty. This is useful for sending escape
+#      sequences to the terminal to control its behavior (e.g. OSC 0 to set the
+#      window title). Using tty-write is preferred over directly writing to
+#      /dev/tty because the latter is not synchronized and can interfere with
+#      drawing the UI.
 
+# -----------------------------------------------------------------------------
 
-# Mappings
-map <c-d> quit
+# KEYBINDINGS
+
+# `map` sets a bind for both normal and visual mode. `nmap` will set the bind
+# for just normal mode, and vmap will set it just for visual mode.
+#     map       Normal, Visual
+#     nmap      Normal
+#     vmap      Visual
+#     cmap      Command-line
+# 
+# You can delete an existing binding by leaving the expression empty:
+#     map gh         # deletes 'gh' mapping in Normal and Visual mode
+#     nmap v         # deletes 'v' mapping in Normal mode
+#     vmap o         # deletes 'o' mapping in Visual mode
+#     cmap <c-g>     # deletes '<c-g>' mapping
+
+# Remove undesired default mappings
+map sn
+
+# Set custom mappings
+map <c-d> quit_without_cd
+map q quit_without_cd
 map e $"$EDITOR" $fx
 map i $ov $f
 map X trash
@@ -148,26 +182,29 @@ map bt new_file
 map bd new_dir
 map be new_txt_exe
 map <enter> open
-map w $fish
-map W &{{
-	DCV_SHELL_PROMPT_MSG= LF_LEVEL= foot --working-directory "$PWD"
-}}
+# map w $fish
+map w quit
+# map W &{{ foot --working-directory "$PWD"; }}
+map W &{{ ghostty +new-window; }}
 map ~ cd ~
 map ` cd /
 map . set hidden!
 map c :clear; unselect
-# map C clear  # u is unselect/deselect
 map <f-5> reload
 map zz set info
 map ss :{{ set sortby natural; set info; }}
 map su :{{ set sortby size; set info size; }}
 map R bulk_rename
 map Y yank_path
-# map p paste_cow
+map p paste_cow
 
 map z1 :{{
-	set preview false
 	set ratios 1
+	set preview false
+}}
+map z2 :{{
+	set ratios '1:3'
+	set preview false
 }}
 map z3 :{{
 	set ratios '1:3:3'
@@ -190,9 +227,3 @@ map ap !{{
 map ax !{{
 	7z x -o"${f%.*}" $f
 }}
-
-
-
-# TODO
-# - use LF_LEVEL var to tell shell it is running inside lf (and thus to exit 
-#   when calling lf, rather than starting another recursive instance)

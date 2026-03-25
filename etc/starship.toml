@@ -322,9 +322,3 @@ symbol = "terraform "
 [zig]
 disabled = true
 symbol = "zig "
-
-[env_var.DCV_SHELL_PROMPT_MSG]
-variable = "DCV_SHELL_PROMPT_MSG"
-default = ""
-format = "[$env_value ]($style)"
-style = "red bold"

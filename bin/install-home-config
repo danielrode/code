@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: 19 mar 2026
+# updated: 24 mar 2026
 
 
 # Install links to home config dotfiles.
@@ -21,6 +21,8 @@ LINK_MAP = {
         '.config/alacritty',
     'bash_profile':
         '.bash_profile',
+    'bashrc':
+        '.bashrc',
     'config.fish':
         '.config/fish/config.fish',
     'desktops':

@@ -79,7 +79,5 @@ alias ag='agenda | bat \
     --language=org \
     --pager="$PAGER --pattern=`date +%Y-%m-%d`"'
 alias log='svlogtail'
-# th = terminal here
-alias th='env -u DCV_SHELL_PROMPT_MSG nohup alacritty --command zsh 1>/dev/null 2>/dev/null & disown'
 # alias btm='btm --basic --regex --process_command --hide_table_gap --battery --hide_avg_cpu'
 alias btm='btm --basic --regex --group --hide_table_gap --battery --hide_avg_cpu --mem_as_value'

@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# author: Daniel Rode
-# name: Restic Shell
+# author: daniel rode
+# name: restic shell
 # type: macro, wrapper
 # dependencies:
 #   restic
 #   starship
 #   fish
 #   ~/code/bin/getcred
-# created: 17 May 2020
-# updated: 03 Jan 2026
+# created: 17 may 2020
+# updated: 25 mar 2026
 
 
-# Description:
 # Lists restic profiles, then loads credentials into environment variables.
 # Depending on which flags are passed (if any), these variables will either be
 # dumped to stdout or made available by entering a sub-shell.
@@ -47,7 +46,6 @@ then
     exit 1
 fi
 
-
 # Init selected profile
 echo2 "Loading credentials..."
 if test "$profile" = 'backblazeB2'
@@ -79,14 +77,12 @@ else
     exit 1
 fi
 
-
 # Print environment and exit
 if [ "$1" = '--dump-env' ]
 then
     env
     exit
 fi
-
 
 # Mount chosen restic repo and exit
 if [ "$1" = '--mount' ]
@@ -95,6 +91,19 @@ then
 	exit
 fi
 
+# Change shell prompt so user knows this is a special session
+tdir="$(mktemp -d)"
+function cleanup { rm -rf -- "$tdir"; }
+trap cleanup EXIT
+
+cat <<'EOF' > "$tdir/tmp.toml"
+format = """RS|\
+$directory\
+$cmd_duration\
+$character"""
+EOF
+
+export STARSHIP_CONFIG="$tdir/tmp.toml"
 
 # Spawn subshell
 echo "PROFILE: $profile"
@@ -113,9 +122,4 @@ echo "# Show size of latest snapshot"
 echo "# (Use diff command shown above)"
 echo
 
-# Tells starship (shell prompt setter) to notify user (via prompt decoration)
-# that this script has spawned the sub-shell. (This only works with shells
-# that I configured to load starship and when my starship config is in place.)
-export DCV_SHELL_PROMPT_MSG="${DCV_SHELL_PROMPT_MSG}[RSTSH]"
-echo $0
 fish
