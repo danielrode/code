@@ -42,7 +42,7 @@ import (
 var print = fmt.Println
 
 // Variables
-const version = "38"
+const version = "39"
 
 // Golang time format spec: https://go.dev/src/time/format.go
 const lauoutMthDayHrMinS = "Jan 02 15:04:05"
@@ -95,7 +95,7 @@ func getProgramByFiletype(path string) []string {
 		// return []string{"flatpak", "run", "org.qgis.qgis"}
 		return []string{os.Getenv("HOME") + "/code/bin/qgis"}
 	default:
-		return []string{"foot-helix"}
+		return []string{"foot", "hx"}
 	}
 }
 

@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: yt-dlp, ~/code/bin/l
+# created: 26 mar 2026
+# updated: -
+
+
+# Download internet video.
+
+
+import os
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+HOME = Path.home()
+YTDLP_ARGS = (
+    '--no-playlist',
+    '--format', '[height<721][fps<31]',
+)
+
+
+url = input("ENTER URL: ").strip()
+with TemporaryDirectory() as tdir:
+    tdir = Path(tdir)
+
+    # Switch directory to tempdir
+    os.chdir(tdir)
+
+    # Download video
+    sp.run(['yt-dlp', *YTDLP_ARGS, url], check=True)
+
+    # Browse video directory
+    sp.run([str(HOME / "code/bin/l")])
