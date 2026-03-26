@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Name: File History
-# Tags: file management, backup, history
-# Dependencies:
+# author: daniel rode
+# name: file history
+# tags: file management, backup, history
+# dependencies:
 #   restic
 #   lf
 #   ~/code/bin/rs
-# Version: 6
-# Created: 27 Jan 2022
-# Updated: 13 Feb 2024
+#   ~/code/bin/l
+# created: 27 jan 2022
+# updated: 25 mar 2026
 
 
-# Description:
-#
 # Given some file path, this script will iterate over whatever restic
 # repository is mounted at /mnt/restic finding all snapshots of the given
 # file path. It will create links to each snapshot under some temp directory
@@ -77,7 +75,7 @@ do
 done
 
 
-lf "$LINK_BUCKET"
+~/code/bin/l "$LINK_BUCKET"
 
 
 echo "Unmounting restic repo..."

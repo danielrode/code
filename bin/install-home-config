@@ -76,15 +76,16 @@ LINK_MAP = {
     'zshrc':
         '.config/zsh/.zshrc',
 
-    # Exemptions
-    'i3status-rs.toml': None,  # Path gets passed to program
-    'launch.txt': None,        # Path gets passed to program
-    'kmonad': None,            # Path gets passed to program
-    'mako.conf': None,         # Path gets passed to program
-    'byobu': None,             # Abandoned (no longer used)
-    'emacs-init.el': None,     # Abandoned (no longer used)
-    'goneovim.toml': None,     # Abandoned (no longer used)
-}.items()}
+        # Exemptions
+        'i3status-rs.toml': None,  # Path gets passed to program
+        'launch.txt': None,        # Path gets passed to program
+        'kmonad': None,            # Path gets passed to program
+        'mako.conf': None,         # Path gets passed to program
+        'byobu': None,             # Abandoned (no longer used)
+        'emacs-init.el': None,     # Abandoned (no longer used)
+        'goneovim.toml': None,     # Abandoned (no longer used)
+    }.items()
+}
 
 
 def install_link(link, target):

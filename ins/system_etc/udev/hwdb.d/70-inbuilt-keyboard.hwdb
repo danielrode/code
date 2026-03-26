@@ -1,5 +1,5 @@
-#
-# Hard remap in-build LG Gram laptop keyboard to Colemak
+###############################################################################
+# Hard remap built-in LG Gram laptop keyboard to Colemak
 #
 # Device input ID was obtained from
 #   cat /sys/class/input/eventNUMBER/device/modalias

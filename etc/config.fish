@@ -29,13 +29,9 @@ set fish_greeting ""
 # Default file/dir permissions
 umask 027
 
-# Change working dir in fish to last dir in lf on exit
-# Source: https://github.com/gokcehan/lf/blob/master/etc/lfcd.fish
-# function lfcd --wraps="lf" \
-function lf --wraps="lf" \
-    --description="lf - Terminal file manager (changing directory on exit)"
-    # `command` is needed in case `lfcd` is aliased to `lf`.
-    cd "$(command lf -print-last-dir $argv)"
+# Change shell's working dir to last dir in lf on exit
+function l
+    exec ~/code/bin/l
 end
 
 # PROFILE #####################################################################

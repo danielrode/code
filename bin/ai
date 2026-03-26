@@ -26,12 +26,12 @@ MODEL_MAP = {model: repo for i in (
     # 'bartowski/gemma-2-9b-it-GGUF:gemma-2-9b-it-Q8_0_L',  # 10.7 GB
     # 'bartowski/Meta-Llama-3.1-8B-Instruct-GGUF:Meta-Llama-3.1-8B-Instruct-Q8_0',
     # 'bartowski/Ministral-8B-Instruct-2410-GGUF:Ministral-8B-Instruct-2410-Q8_0',  # 8.5 GB
-    'bartowski/Qwen2.5-7B-Instruct-GGUF:Qwen2.5-7B-Instruct-Q4_0',  # 4.1 GB
+    # 'bartowski/Qwen2.5-7B-Instruct-GGUF:Qwen2.5-7B-Instruct-Q4_0',  # 4.1 GB
     'bartowski/Qwen2.5-Coder-3B-Instruct-GGUF:Qwen2.5-Coder-3B-Instruct-Q4_0',  # 1.8 GB
-    # 'bartowski/Qwen2.5-Coder-14B-Instruct-GGUF:Qwen2.5-Coder-14B-Instruct-Q4_0',  # 8.5 GB
+    'bartowski/Qwen2.5-Coder-14B-Instruct-GGUF:Qwen2.5-Coder-14B-Instruct-Q4_0',  # 8.5 GB
     # 'bartowski/Qwen2.5-Coder-14B-Instruct-GGUF:Qwen2.5-Coder-14B-Instruct-Q8_0',  # 16 GB
     # 'Manojb/Qwen3-4B-toolcalling-gguf-codex:Qwen3-4B-Function-Calling-Pro',
-    'Qwen/Qwen2.5-Coder-7B-Instruct-GGUF:qwen2.5-coder-7b-instruct-q4_k_m',  # 4.7 GB 
+    # 'Qwen/Qwen2.5-Coder-7B-Instruct-GGUF:qwen2.5-coder-7b-instruct-q4_k_m',  # 4.7 GB 
     # 'tiiuae/Falcon3-3B-Instruct-GGUF:Falcon3-3B-Instruct-q4_0',  # 1.9 GB
     'unsloth/gemma-3-1b-it-GGUF:gemma-3-1b-it-BF16',  # 1.8 GB
     # 'unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-Q4_0',

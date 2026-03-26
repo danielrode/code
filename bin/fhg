@@ -6,14 +6,15 @@
 # dependencies:
 #   git
 #   lf
+#   ~/code/bin/l
 # created: 25 mar 2025
-# updated: 20 jan 2026
+# updated: 25 mar 2026
 
 
-# Description: Given some file path, assuming the file is part of a git
-# repository, create a read-only cache of all committed revisions of said
-# file as a temporary filesystem directory and open that directory in a
-# file manager (lf).
+# Given some file path, assuming the file is part of a git repository,
+# create a read-only cache of all committed revisions of said file as a
+# temporary filesystem directory and open that directory in a file manager
+# (lf).
 
 
 import sys
@@ -27,6 +28,7 @@ from collections.abc import Iterable
 # Constants
 EXE_NAME = sys.argv[0].split('/')[-1]  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME}  GIT_FILE_PATH"
+HOME = Path.home()
 
 
 # Functions
@@ -115,4 +117,4 @@ with TemporaryDirectory() as tmpdir:
             f.write(p.stdout)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run(['lf', tmpdir], check=True)
+    sp.run([str(HOME / "code/bin/l"), tmpdir], check=True)

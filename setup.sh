@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 14 mar 2026
+# updated: 23 mar 2026
 
 
 # TODO this script is WIP
 
 
 set -e
+
+
+export HOSTNAME="$(hostname)"
 
 
 # Install packages
@@ -18,7 +21,7 @@ pkgs=(
     cargo
     chayang
     dtach
-    fuzzel  # TODO setup
+    fuzzel
     gocryptfs
     grimshot
     imv
@@ -89,13 +92,19 @@ go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
 # Enable systemd user services
 if command -v systemctl >/dev/null 2>&1
 then
-    # Syncthing
-    systemctl --user enable syncthing
-    systemctl --user start syncthing
-
-    # Open WebUI
-    # systemctl --user enable open-webui
-    # systemctl --user start open-webui
+    if [[ $HOSTNAME == mesa ]]
+    then
+        # Globus
+        # https://docs.globus.org/globus-connect-personal/install/linux/
+        # Defining share paths:
+        # https://docs.globus.org/globus-connect-personal/install/linux/#config-paths
+        # Share paths config file: ~/.globusonline/lta/config-paths
+        systemctl --user enable --now globus.service 
+    else
+        # Syncthing
+        systemctl --user enable syncthing
+        systemctl --user start syncthing
+    fi
 
     # Immich
     # systemctl --user enable immich
@@ -277,8 +286,7 @@ fi
 
 
 
-# todo firewall
-# ufw
+# todo firewall (ufw)
 
 
 

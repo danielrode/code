@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Name: File History Git
-# Tags: file management, backup, history
-# Dependencies:
+# author: daniel rode
+# name: file history git
+# tags: file management, backup, history
+# dependencies:
 #   btrfs
 #   lf
-# Created: 22 Sep 2025
-# Updated: -
+#   ~/code/bin/l
+# created: 22 sep 2025
+# updated: 25 mar 2026
 
 
-# Description: Given some file path, assuming the file is included in some
-# BTRFS snapshot(s), create a read-only cache of all committed revisions of
-# said file as a temporary filesystem directory and open that directory in
-# a file manager (lf).
+# Given some file path, assuming the file is included in some BTRFS
+# snapshot(s), create a read-only cache of all committed revisions of said
+# file as a temporary filesystem directory and open that directory in a
+# file manager (lf).
 
 
 import sys
@@ -25,6 +26,7 @@ from tempfile import TemporaryDirectory
 # Constants
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME} FILE_PATH"
+HOME = Path.home()
 
 
 # Functions
@@ -81,4 +83,4 @@ with TemporaryDirectory() as tmpdir:
         sp.run(cmd)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run(['lf', tmpdir], check=True)
+    sp.run([str(HOME / "code/bin/l"), tmpdir], check=True)

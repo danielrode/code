@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 14 jan 2026
+# updated: 23 mar 2026
 
 
 # Install system config files
@@ -13,45 +13,57 @@ import subprocess as sp
 from pathlib import Path
 
 
-# Ensure script is run as root
-if os.geteuid() != 0:
-    print("This script must be run as root")
-    exit(1)
-
-# Parse command line arugments
+HOME = Path.home()
+DRYRUN = False
 try:
-    src = Path(sys.argv[1])
-except IndexError:
-    print("error: Must provide path to installation files dir; typically:")
-    print("sudo install-root-etc ~/code/ins/root_etc/")
-    sys.exit(1)
-if not src.exists():
-    print("error: Does not exist:", src)
+    if os.environ['dryrun'] == "true":
+        DRYRUN = True
+except KeyError:
+    pass
+
+
+print("WARNING: rsync will run as root")
 
 # Install config files
-rsync_cmd = (
+args = [
+    'sudo',
     'rsync',
-
-    # '--dry-run',
 
     # Configure rsync information verbosity and format
     '--verbose',
-    # '--stats',
-    # '--progress',
     '--human-readable',
     '--itemize-changes',
 
     # Configure rsync data transfer method
+    '--fsync',
     '--recursive',  # Copy source recursively
     '--perms', '--chmod=D755,F644',  # Set permissions
-    # '--links',  # Copy symlinks as symlinks
-    # '--executability',  # Preserve executability
-    '--backup',  # Keep backup of existing dest file
-    '--mkpath',  # Create destination is it does not exist
-    '--ignore-times',  # Copy file again even if size and times match dest  # TODO does not seem to work
-
-    # Set source dest
-    str(src) + '/',
-    '/etc/',
+    '--chown=root:root',
+    '--links',  # Copy symlinks as symlinks
+    '--backup-dir=/etc/.trash',  # Keep backup of existing dest file
+    '--mkpath',  # Create destination if it does not exist
+    '--checksum',  # Copy file again even if size and times match dest
+    '--omit-dir-times',
+    '--omit-link-times',
+]
+if DRYRUN:
+    args += [
+        '--dry-run',
+    ]
+sp.run(
+    args + [
+        # Set source dest
+        str(HOME / 'code/ins/system_etc') + '/',
+        '/etc/',
+    ],
+    check=True,
 )
-sp.run(rsync_cmd, check=True)
+
+# Fix permissions
+if DRYRUN:
+    sys.exit()
+for perms in (
+    ['0700', '/etc/ssh/sshd_config.d/'],
+    ['0600', '/etc/ssh/sshd_config.d/99-harden.conf'],
+):
+    sp.run(['sudo', 'chmod'] + perms, check=True)

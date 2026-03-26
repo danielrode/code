@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-# Author: Daniel Rode
-# Dependencies:
-#   freerdp
-# Created: 15 Jul 2025
-# Updated: 12 Nov 2025
+# author: daniel rode
+# dependencies: freerdp
+# created: 15 jul 2025
+# updated: 23 mar 2026
 
 
-# Description: Alias/shortcuts for starting RDP (remote desktop) sessions.
+# Alias/shortcuts for starting RDP (remote desktop) sessions.
 
 
 import sys
 import json
+import i3ipc
 import socket
 import subprocess as sp
 from pathlib import Path
@@ -20,13 +20,9 @@ from pathlib import Path
 HOSTNAME = socket.gethostname()
 HOME = Path.home()
 
-FREERDP_ARGS = (
+FREERDP_ARGS = [
     '/clipboard',
-    # '/scale:180',
-    # '/scale-desktop:200',
-    '/w:1920',
-    '/h:1000',
-)
+]
 
 with open(HOME / '.crypt/private_code_vars.json') as f:
     VARS = json.load(f)
@@ -41,7 +37,7 @@ VARS |= json.loads(sp.run(
 ).stdout)
 
 
-# Main
+# Parse command line arguments
 try:
     endpoint = sys.argv[1]
 except IndexError:
@@ -61,5 +57,25 @@ match endpoint:
         print("error: Unknown host alias")
         sys.exit(1)
 
+# Determine Sway output (screen) resolution
+sway = i3ipc.Connection()
+focused_output = next((o for o in sway.get_outputs() if o.focused), None)
+if not focused_output:
+    raise Exception("Could not determine Sway display resolution")
+scale = focused_output.scale
+w = focused_output.rect.width * scale
+h = focused_output.rect.height * scale
+FREERDP_ARGS += [
+    '/scale-desktop:' + str(int(scale * 100)),
+    # '/scale:180',
+    '/w:' + str(int(w - (w * 0.01))),
+    '/h:' + str(int(h - (h * 0.1))),
+]
+
+# Run FreeRDP
 cmd = ['wlfreerdp', *FREERDP_ARGS, f"/d:{domain}", f"/u:{user}", f"/v:{ip}"]
-sp.run(cmd)
+print(cmd)
+try:
+    sp.run(cmd)
+except KeyboardInterrupt:
+    pass
