@@ -1,61 +1,62 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: freerdp
+# dependencies:
+#   freerdp
+#   ~/.crypt/private_code_vars.toml
 # created: 15 jul 2025
-# updated: 23 mar 2026
+# updated: 26 mar 2026
 
 
 # Alias/shortcuts for starting RDP (remote desktop) sessions.
 
 
 import sys
-import json
 import i3ipc
+import shutil
 import socket
+import tomllib
 import subprocess as sp
 from pathlib import Path
+from getpass import getpass
 
 
-# Constants
 HOSTNAME = socket.gethostname()
 HOME = Path.home()
-
 FREERDP_ARGS = [
     '/clipboard',
 ]
 
-with open(HOME / '.crypt/private_code_vars.json') as f:
-    VARS = json.load(f)
-VARS |= json.loads(sp.run(
-    [
-        'bash', '-c', '''
-            source ~/.crypt/private_code_vars.sh
-            python3 -c "import os, json; print(json.dumps(dict(os.environ)))"
-        ''',
-    ],
-    check=True, capture_output=True, text=True,
-).stdout)
-
 
 # Parse command line arguments
 try:
-    endpoint = sys.argv[1]
+    alias = sys.argv[1]
 except IndexError:
     print("Provide host alias")
     sys.exit(1)
 
-match endpoint:
+# Import and set remote host connection attributes
+with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
+    private_code_vars = tomllib.load(f)
+
+match alias:
     case 'a':
-        domain = VARS["WORK3_DOMAIN"]
-        user = VARS["WORK3_USER"]
-        ip = VARS["WORK3_IP"]
+        host = "WORK3"
     case 'w':
-        domain = VARS["WORK4_DOMAIN"]
-        user = VARS["WORK4_USER"]
-        ip = VARS["WORK4_IP_PART1"] + sys.argv[2] + VARS["WORK4_IP_PART2"]
+        host = "WORK4"
     case _:
         print("error: Unknown host alias")
         sys.exit(1)
+
+domain = private_code_vars[host]["domain"]
+user = private_code_vars[host]["user"]
+try:
+    ip = private_code_vars[host]["ip"]
+except KeyError:
+    ip = ''.join((
+        private_code_vars[host]['ip_part1'],
+        sys.argv[2],
+        private_code_vars[host]["ip_part2"],
+    ))
 
 # Determine Sway output (screen) resolution
 sway = i3ipc.Connection()
@@ -72,10 +73,29 @@ FREERDP_ARGS += [
     '/h:' + str(int(h - (h * 0.1))),
 ]
 
+# Find and set path to FreeRDP executable
+exe = None
+for i in (
+    'wlfreerdp',
+    'sdl3-freerdp3',
+):
+    exe = shutil.which(i)
+    if exe is not None:
+        break
+if exe is None:
+    print("error: No FreeRDP installation detected")
+    sys.exit(2)
+
 # Run FreeRDP
-cmd = ['wlfreerdp', *FREERDP_ARGS, f"/d:{domain}", f"/u:{user}", f"/v:{ip}"]
-print(cmd)
+cmd = [exe, '/args-from:stdin']
+args_str = '\n'.join((
+    *FREERDP_ARGS,
+    "/d:" + domain,
+    "/u:" + user,
+    "/v:" + ip,
+    "/p:" + getpass(),
+))
 try:
-    sp.run(cmd)
+    sp.run(cmd, text=True, input=args_str)
 except KeyboardInterrupt:
     pass

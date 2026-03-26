@@ -3,7 +3,6 @@
 # dependencies:
 #   sshfs (local)
 #   dtach (on remote host)
-#   ~/code/bin/dt (on remote host)
 #   ~/.crypt/private_code_vars.toml (local)
 # created: 23 feb 2025
 # updated: 26 mar 2026
@@ -15,6 +14,7 @@
 import sys
 import shlex
 import tomllib
+import getpass
 import subprocess as sp
 from pathlib import Path
 
@@ -35,8 +35,12 @@ SSH_CMD = (
     # leave any program in the remote SSH shell running without killing it.
     'bash', '--login', '-c', f''':
         tmpdir="$(mktemp -d)"
-        function cleanup {{ rm -fr -- "$tmpdir"; }}
-        trap cleanup EXIT
+        # Commenting out for now because Bash would remove socket file before
+        # dtach was done with it if connection closed, making it impossible to
+        # connect to the socket later, even though the original dtach instance
+        #  was still using it.
+        # function cleanup {{ rm -fr -- "$tmpdir"; }}
+        # trap cleanup EXIT
         [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
         dtach -c "$tmpdir/dtach.sock" -zE fish
     '''
@@ -75,8 +79,12 @@ with Path(HOME, ".crypt", "private_code_vars.toml").open('rb') as f:
     private_code_vars = tomllib.load(f)
 
 title = private_code_vars[host]['title']
-user = private_code_vars[host]['user']
 ip = private_code_vars[host]['ip']
+
+try:
+    user = private_code_vars[host]['user']
+except KeyError:
+    user = getpass.getuser()
 
 if use_sock:
     sock_path = Path(HOME, '.ssh', f"{user}@{ip}.sock")

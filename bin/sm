@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-# Author: Daniel Rode
-# Created: 25 Jul 2024
-# Updated: 15 Jul 2025
+# author: daniel rode
+# created: 25 jul 2024
+# updated: 26 mar 2026
 
 
-# Description: Alias/shortcuts for mounting remote directories via SSH.
+# Alias/shortcuts for mounting remote directories via SSH.
 
 
-import os
 import sys
 import time
-import json
 import socket
+import tomllib
+import getpass
 import subprocess as sp
 from pathlib import Path
 
@@ -35,17 +35,8 @@ SSHFS_ARGS = (
     '-o', 'ServerAliveInterval=11',
 )
 
-with open(HOME / '.crypt/private_code_vars.json') as f:
-    VARS = json.load(f)
-VARS |= json.loads(sp.run(
-    [
-        'bash', '-c', '''
-            source ~/.crypt/private_code_vars.sh
-            python3 -c "import os, json; print(json.dumps(dict(os.environ)))"
-        ''',
-    ],
-    check=True, capture_output=True, text=True,
-).stdout)
+with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
+    VARS = tomllib.load(f)
 
 
 # Functions
@@ -78,38 +69,57 @@ def sshfs(
     sp.run(cmd, check=True)
 
 
-# Main
+# Parse command line input
 try:
-    arg1 = sys.argv[1]
+    alias = sys.argv[1]
 except IndexError:
     print("Enter mount point")
     sys.exit(1)
 
-match arg1:
+# Import and set remote host connection attributes
+with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
+    private_code_vars = tomllib.load(f)
+
+mnt_list = None
+use_sock = False
+match alias:
     case 's':
-        ip = VARS['HOME_SERVER_IP']
-        user = os.environ['USER']
-        mnt_list = {'/': '/mnt/s'}
+        host = "HOME_SERVER"
+        mnt_list = (('/', '/mnt/s'),)
     case 'm':
-        ip = VARS['WORK1_IP']
-        user = VARS['WORK1_USER']
-        mnt_list = VARS['WORK1_MOUNTS']
+        host = "WORK1"
     case 'h':
-        ip = VARS['WORK2_IP']
-        user = VARS['WORK2_USER']
-        mnt_list = VARS['WORK2_MOUNTS']
-        sock_path = HOME / f'.ssh/{user}@{ip}.sock'
-        SSHFS_ARGS += (
-            '-o', f'ssh_command=ssh -S {sock_path}',
-        )
-        # Wait for master SSH connection to be established by user
-        while not sock_path.exists():
-            print("Waiting for user to establish SSH session via `s`...")
-            time.sleep(5)
+        host = "WORK2"
+        use_sock = True
+        SSH_CMD = ( 'bash', '--login' )
     case _:
-        print("error: Unknown mount alias:", arg1)
+        print("error: Unknown mount alias:", alias)
         sys.exit(1)
 
-for dir in mnt_list:
-    mnt = mnt_list[dir]
-    sshfs(mnt, SSHFS_ARGS, user, ip, dir)
+if mnt_list is None:
+    mnt_list = private_code_vars[host]['mounts']
+
+try:
+    user = private_code_vars[host]['user']
+except KeyError:
+    user = getpass.getuser()
+
+try:
+    ip = VARS[host]["ip"]
+except KeyError:
+    ip = VARS[host]['ip_part1'] + sys.argv[2] + VARS[host]["ip_part2"]
+
+if use_sock:
+    sock_path = HOME / f'.ssh/{user}@{ip}.sock'
+    SSHFS_ARGS += (
+        # TODO should I shlex.quote the sock_path here?
+        '-o', f'ssh_command=ssh -S {sock_path}',
+    )
+    # Wait for master SSH connection to be established by user
+    while not sock_path.exists():
+        print("Waiting for user to establish SSH session via `s`...")
+        time.sleep(5)
+
+# Mount
+for remote_dir, mount_point in mnt_list:
+    sshfs(mount_point, SSHFS_ARGS, user, ip, remote_dir)
