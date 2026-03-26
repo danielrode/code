@@ -1,71 +1,106 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # dependencies:
-#   sshfs
-#   dtach
+#   sshfs (local)
+#   dtach (on remote host)
+#   ~/code/bin/dt (on remote host)
+#   ~/.crypt/private_code_vars.toml (local)
 # created: 23 feb 2025
-# updated: 19 feb 2026
+# updated: 26 mar 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
 
 
-# Constants
-source "$HOME/.crypt/private_code_vars.sh"
+import sys
+import shlex
+import tomllib
+import subprocess as sp
+from pathlib import Path
 
-PWD="$(pwd)"
-SSH_ARGS=(
+
+HOME = Path.home()
+PWD = Path.cwd()
+SSH_ARGS = (
     # Give up trying to connect if it takes too long
-    -o ConnectionAttempts=64
-    -o ConnectTimeout=5
+    '-o', 'ConnectionAttempts=64',
+    '-o', 'ConnectTimeout=5',
 
     # Disconnect if server disappears for too long
-    -o ServerAliveCountMax=4
-    -o ServerAliveInterval=11
+    '-o', 'ServerAliveCountMax=4',
+    '-o', 'ServerAliveInterval=11',
 )
-SSH_CMD=(
+SSH_CMD = (
     # By using dtach, the user can simply close the terminal and it will
     # leave any program in the remote SSH shell running without killing it.
-    bash --login -c ':
+    'bash', '--login', '-c', f''':
         tmpdir="$(mktemp -d)"
-        function cleanup { rm -fr -- "$tmpdir"; }
+        function cleanup {{ rm -fr -- "$tmpdir"; }}
         trap cleanup EXIT
-        '"[[ -d $PWD ]] && cd '${PWD@Q}'"'
+        [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
         dtach -c "$tmpdir/dtach.sock" -zE fish
-    '
+    '''
 )
 
 
-# Main
-if [[ $1 == s ]]; then
-    title="$HOME_SERVER_TITLE"
-    user="$USER"
-    ip="$HOME_SERVER_IP"
-elif [[ $1 == m ]]; then
-    title="$WORK1_TITLE"
-    user="$WORK1_USER"
-    ip="$WORK1_IP"
-elif [[ $1 == h ]]; then
-    title="$WORK2_TITLE"
-    user="$WORK2_USER"
-    ip="$WORK2_IP"
-    sock_path="$HOME/.ssh/$user@$ip.sock"
-    [[ -e "$sock_path" ]] || SSH_ARGS+=( -M )  # Use "master" mode
-    SSH_ARGS+=(
-        -S "$sock_path"
+def set_term_win_title(title):
+    sys.stdout.write(f"\x1b]2;{title}\x07")
+    sys.stdout.flush()
+
+
+# Parse command line arguments
+try:
+    alias = sys.argv[1]
+except IndexError:
+    print("error: SSH remote host alias not provided")
+    sys.exit(1)
+
+# Set values for remote host
+use_sock = False
+match alias:
+    case 's':
+        host = "HOME_SERVER"
+    case 'm':
+        host = "WORK1"
+    case 'h':
+        host = "WORK2"
+        use_sock = True
+        SSH_CMD = ( 'bash', '--login' )
+    case _:
+        print("error: SSH remote host alias not defined")
+        sys.exit(1)
+
+# Import alias to host map and set remote host values
+with Path(HOME, ".crypt", "private_code_vars.toml").open('rb') as f:
+    private_code_vars = tomllib.load(f)
+
+title = private_code_vars[host]['title']
+user = private_code_vars[host]['user']
+ip = private_code_vars[host]['ip']
+
+if use_sock:
+    sock_path = Path(HOME, '.ssh', f"{user}@{ip}.sock")
+    if not sock_path.exists():
+        SSH_ARGS += [ '-M' ]  # Use "master" mode
+    SSH_ARGS += [
+        '-S', str(sock_path),
         # -f  # Authenticate, then run in background
         # -N  # Do not execute a remote command
-        -C  # Compress all data
-    )
-    SSH_CMD=( bash --login ) # -c ~/opt/fish
-else
-    echo "error: SSH remote host alias not defined"
-    exit 1
-fi
+        '-C'  # Compress all data
+    ]
+    
 
 # Set terminal window title
-echo -ne "\033]0;$title\007"
+set_term_win_title(title)
 
 # Connect to remote host via SSH
-echo "Connecting..."
-TERM=xterm ssh -t "${SSH_ARGS[@]}" -l "$user" "$ip" "${SSH_CMD[@]}"
+print("Connecting...")
+cmd = (
+    'env', 'TERM=xterm',
+    'ssh', '-t',
+    *SSH_ARGS,
+    '-l', user,
+    ip,
+    *SSH_CMD
+)
+sp.run(cmd)
