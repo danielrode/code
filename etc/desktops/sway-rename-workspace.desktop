@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=sway-rename-workspace
+Exec=sway-rename-workspace
+Terminal=true

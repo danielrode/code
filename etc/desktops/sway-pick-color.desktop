@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Application
-Name=sway-fix-displays
-Exec=sway-fix-displays
+Name=sway-pick-color
+Exec=sway-pick-color
 Terminal=false

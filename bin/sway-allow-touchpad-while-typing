@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Allow touchpad to still process input while keyboard is being typed on in
+# Sway. (Needed when playing games that require simultaneous mouse and keyboard
+# input.)
+
+
+swaymsg input type:touchpad dwt disable

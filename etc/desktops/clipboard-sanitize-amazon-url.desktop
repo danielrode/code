@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=clipboard-sanitize-amazon-url
+Exec=clipboard-sanitize-amazon-url
+Terminal=false

@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Title-case Wayland clipboard text.
+
+
+wl-paste | ~/code/bin/mutate title | wl-copy --trim-newline

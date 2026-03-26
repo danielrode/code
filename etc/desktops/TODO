@@ -1,28 +1,9 @@
-~/code/bin/latest-screenshot  # View Latest Screenshots
-~/code/bin/sway-pick-color  # Color Picker
-wl-paste | ~/code/bin/strip-newline | wl-copy  # Clipboard Strip Newline
-bluetoothctl power off  # Turn off Bluetooth
-pactl set-sink-mute '@DEFAULT_SINK@' toggle  # Toggle mute/unmute
-qrgen "$(wl-paste | ~/code/bin/strip-newline)"  # Display clipboard contents as qrcode
-kmonad ~/code/etc/kmonad/colemak2qwerty.kbd  # Keyboard Layout: Qwerty (qwfpgj)
-pkill kmonad  # Keyboard Layout: Colemak (c;ukman)
-foot ~/code/bin/sway-rename-workspace  # Sway: Rename Workspace
-wl-paste | ~/code/bin/mutate unwrap | wl-copy --trim-newline  # Flatten Clibpoard Text
-wl-paste | ~/code/bin/mutate title | wl-copy --trim-newline  # Title-Case Clipboard Text
-~/code/bin/nerd-up  # Dictation
-pomodoro  # Eye Timer
-~/code/bin/redx  # Overlay Red Crosshair
-wl-copy 'https://www.amazon.com/dp/'`wl-paste | sed 's,.*/dp/,,' | sed 's,[/\?].*,,'`  # Shorten Amazon clipboard link
-nm-connection-editor  # Network Manager (wifi, eth)
-wlsunset -s 00:00 -t 5000 -g 1.5  # Nice screen (gentle contrast and temp)
-~/code/bin/dim  # Dim screen (reduce brightness)
-sudo vsv up waydroid-container && waydroid app launch eu.faircode.email  # FairEmail (Android app)
-wl-paste | nl -w 1 -s ' ' | wl-copy  # Enumerate/count/number clipboard lines
-swaymsg input type:touchpad dwt disable  # Allow touchpad while keyboarding/typing
-
-
-opt desktop files should go under /opt ? or /usr/local
-maybe make a directory under ins/ for these system-wide desktop files, and a companion install script, but the install script only adds a desktop file if it finds the executable installed on the system
+create desktop files for the /opt programs below and place them under
+~/ins/system-opt-desktops
+these files should get installed to /usr/local/share/applications/
+via a new install script I should create (`install-system-opt-desktops`).
+the install script should only install a desktop file if it detects the
+executable is available on the system.
 
 speedcrunch  # Calculator
 darktable  # Virtual lighttable and darkroom for photos

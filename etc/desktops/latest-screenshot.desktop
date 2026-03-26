@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Application
-Name=sway-fix-displays
-Exec=sway-fix-displays
+Name=latest-screenshot
+Exec=latest-screenshot
 Terminal=false

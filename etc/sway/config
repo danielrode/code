@@ -56,8 +56,6 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
             ~/code
 
     # Preferred application launcher
-    # set $menu $lw_term --window-size-chars=96x32 --app-id=sway_prompt_float \
-    #     ~/code/bin/launch
     set $menu ~/code/bin/launch-fuzzel
 
     # Wallpaper
@@ -854,7 +852,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
     for_window [class="Google Earth Pro" title="Google Earth - New Polygon"] \
         resize set 500 500; move position 0 0
 
-    # My Sway prompts (file search, program launcher, unicode picker, etc...)
+    # My Sway prompts (file search, unicode picker, etc...)
     for_window [app_id="^sway_prompt_float$"] floating enable, border pixel, \
         sticky enable
 

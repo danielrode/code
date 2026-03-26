@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=sway-redx - Overlay Red Crosshair
+Exec=sway-redx
+Terminal=false

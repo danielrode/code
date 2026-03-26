@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Toggle system sound mute/unmute.
+
+
+pactl set-sink-mute '@DEFAULT_SINK@' toggle

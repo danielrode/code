@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=sway-toggle-qwerty-colemak - Toggle keyboard layout between Qwerty (qwfpgj) & Colemak (c;ukman)
+Exec=sway-toggle-qwerty-colemak
+Terminal=false

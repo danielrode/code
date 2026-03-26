@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Toggle Sway keyboard layout between QWERTY and Colemak.
+
+
+pkill kmonad || kmonad ~/code/etc/kmonad/colemak2qwerty.kbd &

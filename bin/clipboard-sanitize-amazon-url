@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Clean a given Amazon product URL, removing tracking parameters and other
+# junk.
+
+
+echo "https://www.amazon.com/dp/$(wl-paste | sed 's,.*/dp/,,' | sed 's,[/\?].*,,')" \
+| wl-copy --trim-newline --no-newline

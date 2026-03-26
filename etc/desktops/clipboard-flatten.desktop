@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=clipboard-flatten - Flatten clibpoard text
+Exec=clipboard-flatten
+Terminal=false

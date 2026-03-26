@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# author: daniel rode
+# tags: text processing
+# created: 26 mar 2026
+# updated: -
+
+
+# Strip newline(s) from Wayland clipboard contents.
+
+
+wl-paste | ~/code/bin/strip-newline | wl-copy

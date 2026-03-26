@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# author: daniel rode
+# created: 26 mar 2026
+# updated: -
+
+
+# Prepend each line in the Wayland clipboard with a number, counting up
+# sequentially. (Enumerate/count/number clipboard lines.)
+
+
+wl-paste | nl -w 1 -s ' ' | wl-copy
