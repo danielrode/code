@@ -22,7 +22,7 @@
 # NOTE: This script requires getcred to get the master password from the
 # user. Under termux, this is difficult. In order to work around this, start
 # getcred before calling this script. Use:
-#  dtach -c `mktemp -d`/sock getcred --server --password-prompt-fallback 
+#   dtach -c `mktemp -d`/sock getcred --server --password-prompt-fallback 
 # Enter the master KeePass credential password when prompted, then press
 # Ctrl+\ to detach, letting getcred continue on in the background.
 

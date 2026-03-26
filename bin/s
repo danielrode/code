@@ -36,9 +36,9 @@ SSH_CMD = (
     'bash', '--login', '-c', f''':
         tmpdir="$(mktemp -d)"
         # Commenting out for now because Bash would remove socket file before
-        # dtach was done with it if connection closed, making it impossible to
+        # dtach was done with it if terminal closed, making it impossible to
         # connect to the socket later, even though the original dtach instance
-        #  was still using it.
+        # was still using it.
         # function cleanup {{ rm -fr -- "$tmpdir"; }}
         # trap cleanup EXIT
         [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}

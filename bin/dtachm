@@ -22,15 +22,17 @@ import subprocess as sp
 from pathlib import Path
 
 
-# Functions
 def pgrep(query: str) -> list[list[str]]:
     cmd = ('pgrep', '--list-full', str(query))
-    p = sp.run(cmd, check=True, text=True, capture_output=True)
+    p = sp.run(cmd, text=True, capture_output=True)
 
-    return p.stdout.strip().splitlines()
+    if p.returncode == 0:
+        return p.stdout.strip().splitlines()
+    elif p.returncode == 1:
+        return []
+    else:
+        raise Exception("pgrep failed: " + str(p))
 
-
-# Main
 
 # Find active dtach sessions
 dtach_socks = dict()
@@ -45,6 +47,9 @@ for proc in pgrep('dtach'):
         continue
     if flag in sock_flags:
         dtach_socks[sock_path] = proc
+
+if not dtach_socks:
+    sys.exit()
 
 # Display menu of active dtach sessions
 cmd = (
@@ -67,3 +72,7 @@ except IndexError:
 
 # Connect to selected dtach session
 sp.run(['dtach', '-a', sock_path])
+
+
+# TODO
+# - omit self from menu (if running inside dtach)
