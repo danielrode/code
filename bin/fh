@@ -6,9 +6,9 @@
 #   restic
 #   lf
 #   ~/code/bin/rs
-#   ~/code/bin/l
+#   ~/code/bin/lfexec
 # created: 27 jan 2022
-# updated: 25 mar 2026
+# updated: 30 mar 2026
 
 
 # Given some file path, this script will iterate over whatever restic
@@ -75,7 +75,7 @@ do
 done
 
 
-~/code/bin/l "$LINK_BUCKET"
+~/code/bin/lfexec "$LINK_BUCKET"
 
 
 echo "Unmounting restic repo..."

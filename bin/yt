@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: yt-dlp, ~/code/bin/l
+# dependencies: yt-dlp, ~/code/bin/lfexec
 # created: 26 mar 2026
-# updated: -
+# updated: 30 mar 2026
 
 
 # Download internet video.
@@ -32,4 +32,4 @@ with TemporaryDirectory() as tdir:
     sp.run(['yt-dlp', *YTDLP_ARGS, url], check=True)
 
     # Browse video directory
-    sp.run([str(HOME / "code/bin/l")])
+    sp.run([str(HOME / "code/bin/lfexec")])

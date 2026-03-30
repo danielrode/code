@@ -7,6 +7,7 @@
 #   lm_sensors
 #   nvtop
 #   lf
+#   ~/code/bin/lfexec
 
 # USER TIPS:
 # You can navigate forward and back throgh 'cd' history via the use of the
@@ -30,8 +31,8 @@ set fish_greeting ""
 umask 027
 
 # Change shell's working dir to last dir in lf on exit
-function l
-    exec ~/code/bin/l
+function lf
+    exec ~/code/bin/lfexec
 end
 
 # PROFILE #####################################################################

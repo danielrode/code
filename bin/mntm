@@ -4,9 +4,9 @@
 # dependencies:
 #   udisks2
 #   lf
-#   ~/code/bin/l
+#   ~/code/bin/lfexec
 # created: 12 apr 2020
-# updated: 25 mar 2026
+# updated: 30 mar 2026
 
 
 import io
@@ -103,7 +103,7 @@ part_path = [i.split(' ')[0] for i in p.stdout.strip().split('\n')][0]
 _, mnt_point = udisksctl(part_path)
 
 # Open mounted partition in file manager
-sp.run([str(HOME / "code/bin/l"), mnt_point], check=True)
+sp.run([str(HOME / "code/bin/lfexec"), mnt_point], check=True)
 
 # Unmount partition
 sp.run(['umount', mnt_point], check=True)

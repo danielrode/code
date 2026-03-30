@@ -6,9 +6,9 @@
 # dependencies:
 #   git
 #   lf
-#   ~/code/bin/l
+#   ~/code/bin/lfexec
 # created: 25 mar 2025
-# updated: 25 mar 2026
+# updated: 30 mar 2026
 
 
 # Given some file path, assuming the file is part of a git repository,
@@ -117,4 +117,4 @@ with TemporaryDirectory() as tmpdir:
             f.write(p.stdout)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run([str(HOME / "code/bin/l"), tmpdir], check=True)
+    sp.run([str(HOME / "code/bin/lfexec"), tmpdir], check=True)

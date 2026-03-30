@@ -11,4 +11,4 @@ PS1='[\u@\h \W]\$ '
 # FUNCTIONS -------------------------------------------------------------------
 
 # Change shell's working dir to last dir in lf on exit
-alias l='exec ~/code/bin/l'
+alias lf='exec ~/code/bin/lfexec'
