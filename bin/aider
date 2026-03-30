@@ -5,10 +5,12 @@
 #   podman
 #   ~/code/bin/ai
 # created: 05 mar 2026
-# updated: -
+# updated: 29 mar 2026
 
 
 # Run Aider (AI coding assistant) in current directory.
+#
+# NOTE DOC GUIDE: https://aider.chat/examples/pong.html
 
 
 import os

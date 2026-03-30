@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
-# Author: Daniel Rode
-# Dependencies:
+# author: daniel rode
+# dependencies:
 #   helix
-# Created: 23 Feb 2025
-# Updated: 29 Sep 2025
+# created: 23 feb 2025
+# updated: 27 mar 2026
 
 
-hx "$(which "$1" | head -1)"
+exe_path="$(which "$1" | head -1)"
+
+if ! file --brief --mime --dereference "$exe_path" \
+    | egrep --silent '\bcharset=(us-ascii|utf-8)$'
+then
+    echo "Not a text file: $exe_path"
+    exit 1
+fi
+
+hx "$exe_path"

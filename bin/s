@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.crypt/private_code_vars.toml (local)
 # created: 23 feb 2025
-# updated: 26 mar 2026
+# updated: 29 mar 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -21,7 +21,7 @@ from pathlib import Path
 
 HOME = Path.home()
 PWD = Path.cwd()
-SSH_ARGS = (
+SSH_ARGS = [
     # Give up trying to connect if it takes too long
     '-o', 'ConnectionAttempts=64',
     '-o', 'ConnectTimeout=5',
@@ -29,7 +29,7 @@ SSH_ARGS = (
     # Disconnect if server disappears for too long
     '-o', 'ServerAliveCountMax=4',
     '-o', 'ServerAliveInterval=11',
-)
+]
 SSH_CMD = (
     # By using dtach, the user can simply close the terminal and it will
     # leave any program in the remote SSH shell running without killing it.

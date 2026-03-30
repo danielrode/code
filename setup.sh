@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 23 mar 2026
+# updated: 27 mar 2026
 
+
+# Setup and configure Linux system to be how I like it.
 
 # TODO this script is WIP
 
@@ -10,7 +12,7 @@
 set -e
 
 
-export HOSTNAME="$(hostname)"
+HOSTNAME="$(hostname)"
 
 
 # Install packages
@@ -34,6 +36,8 @@ pkgs=(
     pavucontrol
     pspg
     python3-pykeepass
+    restic
+    ripgrep
     smartmontools
     swaylock
     syncthing
@@ -46,6 +50,7 @@ then
     ;
     sudo dnf install -y \
         "${pkgs[@]}" \
+        fd-find \
         git-delta \
         golang \
         liberation-fonts-all \
@@ -55,12 +60,23 @@ then
     sudo xbps-install -y \
         "${pkgs[@]}" \
         delta \
+        fd \
         go \
+        lf \
         liberation-fonts-ttf \
         socklog-void \
         turnstile \
     ;
 fi
+
+# Install foot, if not already installed TODO
+# ~/code/bin/install-foot
+
+# Install ghostty, if not already installed TODO
+# ~/code/bin/install-ghostty
+
+# Install lf, if not already installed TODO
+# ~/code/bin/install-lf
 
 # Prevent user processes from dying on logout
 sudo loginctl enable-linger "$USER"
@@ -299,8 +315,9 @@ fi
 
 
 # Also see
-# - sudo crontab -e
-# - crontab -e
-# - /etc/fstab
 # - ~/.ssh/config
+# - ~/.crypt/private_code_vars.toml
+# - crontab -e
+# - sudo crontab -e
+# - /etc/fstab
 # - /etc/rc.local  # for Void installs

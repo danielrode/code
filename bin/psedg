@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# author: daniel rode
+# created: 28 mar 2026
+# updated: -
+
+
+"""Search and replace stdin using Python regex syntax.
+"""
+
+
+import re
+import sys
+
+# Process command line arguments
+query = sys.argv[1]
+replace = sys.argv[2]
+
+# Modify stdin text and print it
+for line in sys.stdin.readlines():
+    print(re.sub(query, replace, line), end='')
