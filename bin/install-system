@@ -15,16 +15,17 @@ from pathlib import Path
 
 HOME = Path.home()
 DRYRUN = False
+
+
+# Determine whether to make actual changes, or just simulate them
 try:
     if os.environ['dryrun'] == "true":
         DRYRUN = True
 except KeyError:
     pass
 
-
-print("WARNING: rsync will run as root")
-
 # Install config files
+input("WARNING: will now attempt to run rsync as ROOT (press ENTER to allow)")
 args = [
     'sudo',
     'rsync',
@@ -50,14 +51,12 @@ if DRYRUN:
     args += [
         '--dry-run',
     ]
-sp.run(
-    args + [
-        # Set source dest
-        str(HOME / 'code/ins/system_etc') + '/',
-        '/etc/',
-    ],
-    check=True,
-)
+args +=
+    # Set source dest
+    str(HOME / 'code/ins/system') + '/',
+    '/',
+]
+sp.run(args, check=True)
 
 # Fix permissions
 if DRYRUN:

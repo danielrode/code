@@ -32,7 +32,7 @@ umask 027
 
 # Change shell's working dir to last dir in lf on exit
 function lf
-    exec ~/code/bin/lfexec
+    exec ~/code/bin/lfexec $argv
 end
 
 # PROFILE #####################################################################

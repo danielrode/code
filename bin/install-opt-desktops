@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: bash 4+
+# created: 31 mar 2026
+# updated: -
+
+
+# Install desktop files for installed /opt programs.
+
+
+# TODO
+# see ~/code/ins/opt-desktops
+exit 1
