@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: fuzzel
 # created: 15 mar 2026
-# updated: -
+# updated: 30 mar 2026
 
 
 # Run fuzzel program launcher (for Sway)
@@ -19,5 +19,6 @@ args=(
     --no-exit-on-keyboard-focus-loss
     --counter
     --no-mouse
+    --dpi-aware=yes
 )
 fuzzel "${args[@]}"
