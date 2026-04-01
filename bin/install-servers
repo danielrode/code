@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
+# dependencies:
+#   ~/code/bin/install-system
 # created: 14 jan 2026
 # updated: 16 jan 2026
 
@@ -14,6 +16,7 @@ exit 1
 
 
 # Ensure script is run as root
+# TODO first call ~/code/bin/install-system, then bootstrap self with sudo?
 if [[ $(id -u) != 0 ]]
 then
     echo "This script must be run as root"
