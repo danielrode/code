@@ -84,7 +84,7 @@ fi
 
 # Install system config files and assets
 echo "Installing system files..."
-~/code/bin/install-system
+"$HOME"/code/bin/install-system
 cmd_exists systemctl && systemctl daemon-reload
 
 # Prevent user processes from dying on logout
@@ -107,9 +107,9 @@ then
     line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
     if ! grep -qFx "$line"
     then
-        echo "$line" | sudo tee -a /etc/smartmontools/smartd.conf
+        echo "$line" | tee -a /etc/smartmontools/smartd.conf
     fi
-    sudo systemctl enable --now smartd
+    systemctl enable --now smartd
 fi
 # TODO verify this works (actually detects drive failuers)
 # TODO monitor /var/spool/mail/daniel and notify me via email
@@ -118,16 +118,16 @@ fi
 # Enable Void system services
 if [[ -d /var/service/ ]]
 then
-    sudo ln -sf /etc/sv/socklog-unix /var/service/
-    sudo ln -sf /etc/sv/nanoklogd /var/service/
-    sudo ln -sf /etc/sv/turnstiled /var/service/
+    ln -sf /etc/sv/socklog-unix /var/service/
+    ln -sf /etc/sv/nanoklogd /var/service/
+    ln -sf /etc/sv/turnstiled /var/service/
 fi
 
 # Configure Void system
 if [[ -e /etc/rc.local ]]
 then
     # Set timezone
-    sudo ln -sf /usr/share/zoneinfo/America/Denver /etc/localtime
+    ln -sf /usr/share/zoneinfo/America/Denver /etc/localtime
 fi
 
 # Configure Void startup
@@ -136,7 +136,7 @@ then
     # Configure turnstile service
     if grep -qFx 'manage_rundir = yes' /etc/turnstile/turnstiled.conf
     then
-        sudo patch -uNs /etc/turnstile/turnstiled.conf \
+        patch -uNs /etc/turnstile/turnstiled.conf \
 <<EOF
 @@ -78,7 +78,7 @@
  #
@@ -168,5 +168,5 @@ EOF
     # hierarchy
     # TODO make this user agnostic (not hardcoded to 'daniel')
     uid=1000
-    sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+    ln -sf /etc/sv/cgroup"$uid" /var/service/
 fi
