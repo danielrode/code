@@ -91,8 +91,11 @@ LINK_MAP = {
 
 def install_link(link, target):
     # Abort if desired link location is occupied by something else
-    if link.exists() and (not link.is_symlink()):
-        raise Exception(f"File already exists and is not symlink: {link}")
+    if link.is_file(follow_symlinks=False):
+        link.rename(str(link) + '~')
+        return "REPLACING!"
+    elif (not link.is_symlink()) and link.exists(follow_symlinks=False):
+        raise Exception(f"Path already exists and is not symlink: {link}")
 
     # Ensure target exists
     if not target.exists():
@@ -103,7 +106,7 @@ def install_link(link, target):
         current_target = link.readlink()
         if target == current_target:
             # Link is already correctly set
-            return False
+            return "Verified"
 
         # Current link will be replaced
         print(
@@ -118,7 +121,7 @@ def install_link(link, target):
     link.unlink(missing_ok=True)
     link.symlink_to(target)
 
-    return True
+    return "Installed"
 
 
 # Install dotfile symlinks
@@ -128,10 +131,8 @@ for target, link in LINK_MAP.items():
         continue
 
     # Install the symlink
-    if install_link(link, target):
-        print("Installed: ", link)
-    else:
-        print("Verified: ", link)
+    status = install_link(link, target)
+    print(f"{status}: ", link)
 
 # Check if there are any config files that are missing from the link map
 for i in CODE_ETC.glob('*'):
