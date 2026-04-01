@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 31 mar 2026
+# updated: 01 apr 2026
 
 
 # Install system files.
@@ -45,8 +45,16 @@ args = [
     # Configure rsync data transfer method
     '--fsync',
     '--recursive',  # Copy source recursively
-    '--perms', '--chmod=D755,F644',  # Set permissions
+
+    # Set permissions
+    # "...to give destination files (both old and new) the source
+    # permissions, use --perms.  To give new files the destination-default
+    # permissions (while leaving existing files unchanged), make sure that
+    # the --perms option is off and use --chmod..."
+    # '--perms', '--chmod=D755,F644',
+    '--chmod=D755,F644',
     '--chown=root:root',
+
     '--links',  # Copy symlinks as symlinks
     '--backup-dir=/etc/.trash',  # Keep backup of existing dest file
     '--mkpath',  # Create destination if it does not exist
@@ -71,4 +79,4 @@ for perms in (
     ['0755', '/etc/sv/cgroup1000/run'],
     ['0755', '/etc/sv/cgroup1000/log/run'],
 ):
-    sp.run(['chmod', *perms], check=True)
+    sp.run(['chmod', '--changes', *perms], check=True)

@@ -3,7 +3,7 @@
 # dependencies:
 #   ~/code/bin/install-system
 # created: 14 jan 2026
-# updated: 16 jan 2026
+# updated: 01 apr 2026
 
 
 # Install user accounts, permissions, and template files needed to serve
@@ -35,7 +35,16 @@ rsync_args=(
 
     # Configure rsync data transfer method
     --recursive  # Copy source recursively
-    --perms --chmod=D755,F644  # Set permissions
+
+    # Set permissions
+    # "...to give destination files (both old and new) the source
+    # permissions, use --perms.  To give new files the destination-default
+    # permissions (while leaving existing files unchanged), make sure that
+    # the --perms option is off and use --chmod..."
+    # --perms --chmod=D755,F644
+    --chmod=D755,F644
+    --chown=root:root
+
     --backup  # Keep backup of existing dest file
     --mkpath  # Create destination is it does not exist
     --ignore-times  # Copy file again even if size and times match dest  # TODO does not seem to work

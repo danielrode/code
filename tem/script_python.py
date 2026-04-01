@@ -134,7 +134,7 @@ def main() -> None:
         if not a.startswith('-'):
             pos_args += [a]
             continue
-        match i:
+        match a:
             case '-p' | '--path':
                 path = next(args)
             case '-d' | '--do':

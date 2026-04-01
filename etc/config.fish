@@ -77,7 +77,7 @@ fish_add_path $DCV_HOME_OPT"/bin"
 fish_add_path $HOME"/.cargo/bin"
 fish_add_path $GOPATH"/bin"
 
-# ALIASES #####################################################################
+# ALIASES & FUNCTIONS #########################################################
 
 # NOTE: Once abbreviations are removed from here,
 # rm ~/.config/fish/fish_variables
@@ -141,7 +141,6 @@ abbr --add pspg pspg -X -b
 abbr --add pstree pstree -aps
 
 # One-liners
-abbr --add lspath bash -c '"compgen -c"'
 abbr --add lswifi nmcli device wifi list
 abbr --add lsfont fc-list : family
 abbr --add fwatch inotifywait --monitor --event modify
@@ -153,3 +152,7 @@ abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set sty
 abbr --add hoff fish --private
 
 abbr --add reboot doas /usr/bin/reboot
+
+# COMPLETIONS #################################################################
+
+complete -c we -x -a '(lscmd -b)'

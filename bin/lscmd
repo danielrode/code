@@ -1,39 +1,60 @@
 #!/usr/bin/env python3
-# Author: Daniel Rode
-# Name: lscmds
-# Description: List commands by listing all the directories in the PATH
-#              variable
-# Version: 1.4
-# Made: Aug 11 2013
-# Last updated: Aug 05 2018
+# -*- coding: utf-8 -*-
+# author: daniel rode
+# created: 11 aug 2013
+# updated: 01 apr 2026
+
+
+# List commands by listing all the directories in the PATH variable.
 
 
 import os
 import sys
-import pathlib
+from pathlib import Path
+
 
 PATH = os.environ['PATH'].split(':')
 
-args = sys.argv[1:]
-search_term = None
-if len(args) > 0:
-    search_term = args[0]
 
 def is_exe(path):
     return os.access(path, os.X_OK)
 
-def match_search_term(path):
-    # Result is a match if it matches the search term and is an exe
-    return ((search_term in path.name) and is_exe(path))
 
-if search_term:
-    return_result = match_search_term
-else:
-    return_result = is_exe
+# Parse command line arguments
+print_end = '\n'
+basename = False
+search_term = False
 
+args = iter(sys.argv[1:])
+pos_args = []
+for a in args:
+    if not a.startswith('-'):
+        pos_args += [a]
+        continue
+    match a:
+        case '-0' | '--null':
+            print_end='\0'
+        case '-b' | '--basename':
+            basename = True
+        case _:
+            print("error: Invalid flag", a)
+            sys.exit(1)
+
+if len(pos_args) > 0:
+    search_term = pos_args[0]
+
+# Print PATH executables
 for directory in PATH:
-    directory = pathlib.Path(directory)
-    if directory.exists():
-        for path in directory.iterdir():
-            if return_result(path):
-                print(path)
+    directory = Path(directory)
+    if not directory.exists():
+        continue
+    for path in directory.iterdir():
+        result = path
+        if all((
+            path.is_file(),
+            is_exe(path),
+            (not search_term) or (search_term in path.name),
+        )):
+            if basename:
+                result = path.name
+            print(result, end=print_end)
