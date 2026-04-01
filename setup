@@ -17,6 +17,7 @@
 
 
 set -e
+set -x
 
 
 HOSTNAME="$(hostname)"

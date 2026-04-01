@@ -15,6 +15,10 @@ from pathlib import Path
 
 HOME = Path.home()
 DRYRUN = False
+try:
+    CODE_REPO = Path(os.environ['CODE_REPO'])
+except KeyError:
+    CODE_REPO = HOME / "code"
 
 
 # Verify script is being run as root
@@ -53,7 +57,7 @@ args = [
 if DRYRUN:
     args += ['--dry-run']
 args += [
-    str(HOME / 'code/ins/system') + '/',  # Source
+    str(CODE_REPO / 'ins/system') + '/',  # Source
     '/',  # Destination
 ]
 sp.run(args, check=True)
