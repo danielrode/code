@@ -14,6 +14,7 @@ set -e
 
 
 HOSTNAME="$(hostname)"
+[[ -z "$CODE_REPO" ]] && CODE_REPO="$HOME/code"
 
 
 function cmd_exists {
@@ -84,7 +85,7 @@ fi
 
 # Install system config files and assets
 echo "Installing system files..."
-"$HOME"/code/bin/install-system
+"$CODE_REPO"/bin/install-system
 cmd_exists systemctl && systemctl daemon-reload
 
 # Prevent user processes from dying on logout
