@@ -107,8 +107,9 @@ cmd_exists dnf && dnf remove PackageKit-command-not-found
 if cmd_exists systemctl
 then
     line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
-    if ! grep -qFx "$line"
+    if ! grep -qFx "$line" /etc/smartmontools/smartd.conf
     then
+        echo "" | tee -a /etc/smartmontools/smartd.conf
         echo "$line" | tee -a /etc/smartmontools/smartd.conf
     fi
     systemctl enable --now smartd
