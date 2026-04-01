@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: 26 mar 2026
+# updated: 31 mar 2026
 
 
 # Install links to home config dotfiles.
@@ -59,6 +59,8 @@ LINK_MAP = {
         '.config/starship.toml',
     'sway':
         '.config/sway',
+    'systemd-globus.service':
+        '.config/systemd/user/globus.service',
     'systemd-immich.service':
         '.config/systemd/user/immich.service',
     'systemd-thelounge-irc.service':

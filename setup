@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 19 jul 2025
+# updated: 31 mar 2026
+
+
+# Setup and configure Linux system to be how I like it.
+#
+# DOC: Also see (for system setup/config)
+# - ~/.ssh/config
+# - ~/.crypt/private_code_vars.toml
+# - crontab -e
+# - sudo crontab -e
+# - /etc/fstab
+# - /etc/rc.local  # for Void installs
+# - /etc/doas.conf
+
+
+set -e
+
+
+HOSTNAME="$(hostname)"
+
+
+function cmd_exists {
+    command -v "$1" >/dev/null 2>&1
+}
+
+
+# Run setup parts requring root privledges
+sudo --preserve-env ~/code/bin/setup-system
+
+# Install foot, if not already installed TODO
+# ~/code/bin/install-foot
+
+# Install ghostty, if not already installed TODO
+# ~/code/bin/install-ghostty
+
+# Install lf, if not already installed TODO
+# ~/code/bin/install-lf
+
+# Add home log directory
+[[ $HOSTNAME == bigpan ]] && mkdir -p ~/logs
+
+# Install user config files
+echo "Linking configs..."
+~/code/bin/install-home-config
+cmd_exists systemctl && systemctl --user daemon-reload
+
+# Configure settings for this git repo
+echo "Configuring git..."
+git -C ~/code config core.fileMode true
+git -C ~/code config commit.gpgSign true
+
+# Enable systemd user services
+if cmd_exists systemctl
+then
+    echo "Enabling user systemd services..."
+
+    if [[ $HOSTNAME == mesa ]]
+    then
+        # Globus
+        # https://docs.globus.org/globus-connect-personal/install/linux/
+        # Defining share paths:
+        # https://docs.globus.org/globus-connect-personal/install/linux/#config-paths
+        # Share paths config file: ~/.globusonline/lta/config-paths
+        systemctl --user enable --now globus.service 
+    else
+        # Syncthing
+        systemctl --user enable syncthing
+        systemctl --user start syncthing
+    fi
+
+    if [[ $HOSTNAME == bigpan ]]
+    then
+        # Immich
+        systemctl --user enable immich
+        systemctl --user start immich
+
+        # IRC client
+        systemctl --user enable thelounge-irc
+        systemctl --user start thelounge-irc
+    fi
+fi
+
+# Compile binaries
+echo "Building binaries..."
+go build -o ~/code/bin/o ~/code/src/o/o.go
+go build -C ~/code/src/sway-win-info/ -o ~/code/bin/sway-win-info main.go
+go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
+
+# Set 'focus-follows-mouse' in Gnome Shell
+echo "Configuring GNOME..."
+gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
+
+# Set wallpaper
+# https://github.com/DenverCoder1/minimalistic-wallpaper-collection
+echo "Setting Sway theme..."
+wget --no-verbose https://minimalistic-wallpaper.demolab.com/?random \
+    -O ~/.wallpaper \
+;
+
+
+
+
+
+
+# TODO
+# Create a script called change-scenery then take the wallpaper updating code
+# above and put it in there. Add code that changes the color palette of
+# fuzzel and waybar to match the color palette of the newly set wallpaper. Call
+# change`scenery script from (setup.sh).
+#
+# todo firewall (ufw)

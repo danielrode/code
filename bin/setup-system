@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 19 jul 2025
+# updated: 31 mar 2026
+
+
+# Setup and configure Linux system to be how I like it.
+#
+# DOC: Also see (for system setup/config)
+# - ~/code/setup
+
+
+set -e
+
+
+HOSTNAME="$(hostname)"
+
+
+function cmd_exists {
+    command -v "$1" >/dev/null 2>&1
+}
+
+
+# Verify script is being run as root
+if [[ $EUID -ne 0 ]]
+then
+   echo "error: This script must be run as root"
+   exit 1
+fi
+
+# Install packages
+pkgs=(
+    # List of packages that have the same names across Fedora and Void repos
+    aria2
+    btrfs-progs
+    cargo
+    chayang
+    dtach
+    fuzzel
+    gocryptfs
+    grimshot
+    imv
+    kanshi
+    mako
+    meld
+    mpv
+    opendoas
+    openssh
+    pavucontrol
+    pspg
+    python3-pykeepass
+    restic
+    ripgrep
+    smartmontools
+    swaylock
+    syncthing
+    zathura
+)
+if cmd_exists dnf
+then
+    dnf group install -y \
+        sway-desktop-environment \
+    ;
+    dnf install -y \
+        "${pkgs[@]}" \
+        fd-find \
+        git-delta \
+        golang \
+        liberation-fonts-all \
+    ;
+elif cmd_exists xbps-install
+then
+    xbps-install -y \
+        "${pkgs[@]}" \
+        delta \
+        fd \
+        go \
+        lf \
+        liberation-fonts-ttf \
+        socklog-void \
+        turnstile \
+    ;
+fi
+
+# Install system config files and assets
+echo "Installing system files..."
+~/code/bin/install-system
+cmd_exists systemctl && systemctl daemon-reload
+
+# Prevent user processes from dying on logout
+loginctl enable-linger "$USER"
+
+# Enable systemd system services
+if cmd_exists systemctl
+then
+    # Make sure SSH server is running
+    systemctl enable sshd
+    systemctl start sshd
+fi
+
+# Prevent DNF from checking for packages that provide commands
+cmd_exists dnf && dnf remove PackageKit-command-not-found
+
+# Setup disk health monitoring
+if cmd_exists systemctl
+then
+    line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
+    if ! grep -qFx "$line"
+    then
+        echo "$line" | sudo tee -a /etc/smartmontools/smartd.conf
+    fi
+    sudo systemctl enable --now smartd
+fi
+# TODO verify this works (actually detects drive failuers)
+# TODO monitor /var/spool/mail/daniel and notify me via email
+# TODO make this work on void too
+
+# Enable Void system services
+if [[ -d /var/service/ ]]
+then
+    sudo ln -sf /etc/sv/socklog-unix /var/service/
+    sudo ln -sf /etc/sv/nanoklogd /var/service/
+    sudo ln -sf /etc/sv/turnstiled /var/service/
+fi
+
+# Configure Void system
+if [[ -e /etc/rc.local ]]
+then
+    # Set timezone
+    sudo ln -sf /usr/share/zoneinfo/America/Denver /etc/localtime
+fi
+
+# Configure Void startup
+if [[ -e /etc/rc.local ]]
+then
+    # Configure turnstile service
+    if grep -qFx 'manage_rundir = yes' /etc/turnstile/turnstiled.conf
+    then
+        sudo patch -uNs /etc/turnstile/turnstiled.conf \
+<<EOF
+@@ -78,7 +78,7 @@
+ #
+ # Valid values are 'yes' and 'no'.
+ #
+-manage_rundir = yes
++manage_rundir = no
+ 
+ # Whether to export DBUS_SESSION_BUS_ADDRESS into the
+ # environment. When enabled, this will be exported and
+EOF
+    fi
+
+    # Configure GRUB
+    if ! grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub \
+        | grep -q \
+        'systemd.unified_cgroup_hierarchy=1 elogind.unified_cgroup_hierarchy'
+    then
+        echo "'systemd.unified_cgroup_hierarchy=1' and"
+        echo "'elogind.unified_cgroup_hierarchy' arguments have not been added"
+        echo "to GRUB's GRUB_CMDLINE_LINUX_DEFAULT variable under"
+        echo "/etc/default/grub"
+        echo 'Please do this, then run `sudo update-grub`, then run this'
+        echo 'setup script again.'
+        exit 1
+    fi
+
+    # Give users access to create and modify new cgroups within their own
+    # hierarchy
+    # TODO make this user agnostic (not hardcoded to 'daniel')
+    uid=1000
+    sudo ln -sf /etc/sv/cgroup"$uid" /var/service/
+fi

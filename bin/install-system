@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 30 mar 2026
+# updated: 31 mar 2026
 
 
 # Install system files.
@@ -17,6 +17,11 @@ HOME = Path.home()
 DRYRUN = False
 
 
+# Verify script is being run as root
+if os.geteuid() != 0:
+    print("This script must be run via `sudo -E`")
+    sys.exit(1)
+
 # Determine whether to make actual changes, or just simulate them
 try:
     if os.environ['dryrun'] == "true":
@@ -25,9 +30,7 @@ except KeyError:
     pass
 
 # Install config files
-input("WARNING: will now attempt to run rsync as ROOT (press ENTER to allow)")
 args = [
-    'sudo',
     'rsync',
 
     # Configure rsync information verbosity and format
@@ -48,21 +51,20 @@ args = [
     '--omit-link-times',
 ]
 if DRYRUN:
-    args += [
-        '--dry-run',
-    ]
-args +=
-    # Set source dest
-    str(HOME / 'code/ins/system') + '/',
-    '/',
+    args += ['--dry-run']
+args += [
+    str(HOME / 'code/ins/system') + '/',  # Source
+    '/',  # Destination
 ]
 sp.run(args, check=True)
 
 # Fix permissions
 if DRYRUN:
-    sys.exit()
+    sys.exit(0)
 for perms in (
     ['0700', '/etc/ssh/sshd_config.d/'],
     ['0600', '/etc/ssh/sshd_config.d/99-harden.conf'],
+    ['0755', '/etc/sv/cgroup1000/run'],
+    ['0755', '/etc/sv/cgroup1000/log/run'],
 ):
-    sp.run(['sudo', 'chmod'] + perms, check=True)
+    sp.run(['chmod', *perms], check=True)
