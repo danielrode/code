@@ -90,10 +90,11 @@ LINK_MAP = {
 
 
 def install_link(link, target):
-    # Abort if desired link location is occupied by something else
+    # If desired link location is occupied by regular file, move it aside
     if link.is_file(follow_symlinks=False):
         link.rename(str(link) + '~')
-        return "REPLACING!"
+        print(f"WARNING: Moving existing file '{link}' to '{link}~'")
+    # Abort if desired link location is occupied by something else
     elif (not link.is_symlink()) and link.exists(follow_symlinks=False):
         raise Exception(f"Path already exists and is not symlink: {link}")
 
