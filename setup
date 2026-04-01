@@ -29,7 +29,7 @@ function cmd_exists {
 
 
 # Run setup parts requring root privledges
-sudo --preserve-env env CODE_REPO="$HOME/code" ~/code/bin/setup-system
+sudo ~/code/bin/setup-system "$(id -un)"
 
 # Install foot, if not already installed TODO
 # ~/code/bin/install-foot
@@ -44,20 +44,16 @@ sudo --preserve-env env CODE_REPO="$HOME/code" ~/code/bin/setup-system
 [[ $HOSTNAME == bigpan ]] && mkdir -p ~/logs
 
 # Install user config files
-echo "Linking configs..."
 ~/code/bin/install-home-config
 cmd_exists systemctl && systemctl --user daemon-reload
 
 # Configure settings for this git repo
-echo "Configuring git..."
 git -C ~/code config core.fileMode true
 git -C ~/code config commit.gpgSign true
 
 # Enable systemd user services
 if cmd_exists systemctl
 then
-    echo "Enabling user systemd services..."
-
     if [[ $HOSTNAME == mesa ]]
     then
         # Globus
@@ -85,18 +81,15 @@ then
 fi
 
 # Compile binaries
-echo "Building binaries..."
 go build -o ~/code/bin/o ~/code/src/o/o.go
 go build -C ~/code/src/sway-win-info/ -o ~/code/bin/sway-win-info main.go
 go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
 
 # Set 'focus-follows-mouse' in Gnome Shell
-echo "Configuring GNOME..."
 gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
 
 # Set wallpaper
 # https://github.com/DenverCoder1/minimalistic-wallpaper-collection
-echo "Setting Sway theme..."
 wget --no-verbose https://minimalistic-wallpaper.demolab.com/?random \
     -O ~/.wallpaper \
 ;

@@ -14,8 +14,15 @@ set -e
 set -x
 
 
+user="$1"
+if [[ -z "$user" ]]
+then
+    echo 'Must provide your username (`setup-system "$(id -un)"`)'
+    exit 1
+fi
+
 HOSTNAME="$(hostname)"
-[[ -z "$CODE_REPO" ]] && CODE_REPO="$HOME/code"
+[[ -z "$CODE_REPO" ]] && CODE_REPO="/home/$user/code"
 
 
 function cmd_exists {
@@ -85,12 +92,11 @@ then
 fi
 
 # Install system config files and assets
-echo "Installing system files..."
-"$CODE_REPO"/bin/install-system
+env CODE_REPO="$CODE_REPO" "$CODE_REPO"/bin/install-system
 cmd_exists systemctl && systemctl daemon-reload
 
 # Prevent user processes from dying on logout
-loginctl enable-linger "$USER"
+loginctl enable-linger "$user"
 
 # Enable systemd system services
 if cmd_exists systemctl
@@ -106,7 +112,7 @@ cmd_exists dnf && dnf remove PackageKit-command-not-found
 # Setup disk health monitoring
 if cmd_exists systemctl
 then
-    line="DEVICESCAN -H -m $(whoami) -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
+    line="DEVICESCAN -H -m $user -M exec /usr/libexec/smartmontools/smartdnotify -n standby,10,q"
     if ! grep -qFx "$line" /etc/smartmontools/smartd.conf
     then
         echo "" | tee -a /etc/smartmontools/smartd.conf
@@ -169,7 +175,7 @@ EOF
 
     # Give users access to create and modify new cgroups within their own
     # hierarchy
-    # TODO make this user agnostic (not hardcoded to 'daniel')
+    # TODO make this user agnostic (not hardcoded to 'daniel'; will need to change files under ~/code/ins/system/etc/sv/cgroup1000)
     uid=1000
     ln -sf /etc/sv/cgroup"$uid" /var/service/
 fi
