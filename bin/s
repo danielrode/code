@@ -96,7 +96,7 @@ if use_sock:
         # -N  # Do not execute a remote command
         '-C'  # Compress all data
     ]
-    
+
 
 # Set terminal window title
 set_term_win_title(title)

@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 27 mar 2026
+# updated: 31 mar 2026
 
 
 # Setup and configure Linux system to be how I like it.
+#
+# DOC: Also see (for system setup/config)
+# - ~/.ssh/config
+# - ~/.crypt/private_code_vars.toml
+# - crontab -e
+# - sudo crontab -e
+# - /etc/fstab
+# - /etc/rc.local  # for Void installs
 
-# TODO this script is WIP
+# TODO (this script is WIP)
 
 
 set -e
@@ -78,32 +86,36 @@ fi
 # Install lf, if not already installed TODO
 # ~/code/bin/install-lf
 
+# Add home log directory
+if [[ $HOSTNAME == bigpan ]]
+then
+    mkdir -p ~/logs
+fi
+
+# Install user config files
+echo "Linking configs..."
+~/code/bin/install-home-config
+command -v systemctl >/dev/null 2>&1 && systemctl --user daemon-reload
+
+# Configure settings for this git repo
+git -C ~/code config core.fileMode true
+git -C ~/code config commit.gpgSign true
+
+# Install system config files and assets
+echo "Installing system files..."
+~/code/bin/install-system
+command -v systemctl >/dev/null 2>&1 && systemctl --user daemon-reload
+
 # Prevent user processes from dying on logout
 sudo loginctl enable-linger "$USER"
 
 # Enable systemd system services
-# TODO install unit files first
 if command -v systemctl >/dev/null 2>&1
 then
     # Make sure SSH server is running
     sudo systemctl enable sshd
     sudo systemctl start sshd
 fi
-
-# Configure settings for this git repo
-git -C ~/code config core.fileMode true
-git -C ~/code config commit.gpgSign true
-
-# Install config files
-echo "Linking configs..."
-~/code/bin/install-home-config
-command -v systemctl >/dev/null 2>&1 && systemctl --user daemon-reload
-
-# Compile binaries
-echo "Building binaries..."
-go build -o ~/code/bin/o ~/code/src/o/o.go
-go build -C ~/code/src/sway-win-info/ -o ~/code/bin/sway-win-info main.go
-go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
 
 # Enable systemd user services
 if command -v systemctl >/dev/null 2>&1
@@ -122,14 +134,23 @@ then
         systemctl --user start syncthing
     fi
 
-    # Immich
-    # systemctl --user enable immich
-    # systemctl --user start immich
+    if [[ $HOSTNAME == bigpan ]]
+    then
+        # Immich
+        systemctl --user enable immich
+        systemctl --user start immich
 
-    # IRC client
-    # systemctl --user enable thelounge-irc
-    # systemctl --user start thelounge-irc
+        # IRC client
+        systemctl --user enable thelounge-irc
+        systemctl --user start thelounge-irc
+    fi
 fi
+
+# Compile binaries
+echo "Building binaries..."
+go build -o ~/code/bin/o ~/code/src/o/o.go
+go build -C ~/code/src/sway-win-info/ -o ~/code/bin/sway-win-info main.go
+go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
 
 # Set 'focus-follows-mouse' in Gnome Shell
 gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
@@ -311,13 +332,3 @@ fi
 # above and put it in there. Add code that changes the color palette of
 # fuzzel and waybar to match the color palette of the newly set wallpaper. Call
 # change`scenery script from (setup.sh).
-
-
-
-# Also see
-# - ~/.ssh/config
-# - ~/.crypt/private_code_vars.toml
-# - crontab -e
-# - sudo crontab -e
-# - /etc/fstab
-# - /etc/rc.local  # for Void installs
