@@ -11,7 +11,8 @@
 
 
 # TODO
-# instead of storing config files (the read-only ones) under app_NAME home dir, install them under /etc/com.github.danielrode/NAME
+# TODO instead of storing config files (the read-only ones) under app_NAME home dir, install them under /etc/com.github.danielrode/NAME
+# TODO private vars toml
 exit 1
 
 

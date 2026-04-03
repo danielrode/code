@@ -2,13 +2,14 @@
 # author: daniel rode
 # dependencies: yt-dlp, ~/code/bin/lfexec
 # created: 26 mar 2026
-# updated: 30 mar 2026
+# updated: 02 apr 2026
 
 
 # Download internet video.
 
 
 import os
+import sys
 import subprocess as sp
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -21,7 +22,11 @@ YTDLP_ARGS = (
 )
 
 
-url = input("ENTER URL: ").strip()
+try:
+    url = sys.argv[1]
+except IndexError:
+    url = input("ENTER URL: ").strip()
+
 with TemporaryDirectory() as tdir:
     tdir = Path(tdir)
 
