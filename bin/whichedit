@@ -3,13 +3,13 @@
 # dependencies:
 #   helix
 # created: 23 feb 2025
-# updated: 27 mar 2026
+# updated: 30 mar 2026
 
 
 exe_path="$(which "$1" | head -1)"
 
 if ! file --brief --mime --dereference "$exe_path" \
-    | egrep --silent '\bcharset=(us-ascii|utf-8)$'
+    | grep -E --silent '\bcharset=(us-ascii|utf-8)$'
 then
     echo "Not a text file: $exe_path"
     exit 1

@@ -1,49 +1,36 @@
 [user]
-    name = Daniel Rode
-    email = d.rode@protonmail.com
-    signingkey = d.rode@protonmail.com
-
+	name = Daniel Rode
+	email = d.rode@protonmail.com
+	signingkey = d.rode@protonmail.com
+[commit]
+	gpgSign = true
 [alias]
-    l = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'
-    lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
-    l1 = log -1
-    l2 = log -2
-    l3 = log -3
-    l4 = log -4
-    l5 = log -5
-    l6 = log -6
-    l7 = log -7
-    l8 = log -8
-    l9 = log -9
-    wd = diff --word-diff=color --word-diff-regex='\\w+|.'
-    wdiff = wd
-
+	l = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'
+	lt = !git --no-pager log --max-count $(($(tput lines) - 8)) --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'  # Same as 'l' alias, but just shows enough recent commits to fit the current terminal screen, and also disables pager
+	llt = log -8  # Long (detailed) log tail (show 8 most recent commits)
+	lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
+	wd = diff --word-diff=color --word-diff-regex='\\w+|.'
+	wdiff = wd
 [core]
 	pager = delta
-
 [credential]
 	helper = cache
-
 [init]
 	defaultBranch = master
-
 [interactive]
-    diffFilter = delta --color-only
-
+	diffFilter = delta --color-only
 [delta]
-    navigate = true  # use n and N to move between diff sections
-    dark = true      # or light = true, or omit for auto-detection
+	navigate = true  # use n and N to move between diff sections
+	dark = true      # or light = true, or omit for auto-detection
 	# pager = ov -XF  # Disabled because it breaks `checkout --patch`
-
 [merge]
-    conflictStyle = zdiff3
-
+	conflictStyle = zdiff3
 # I believe it is required that the SSH instance on a machine
 # recognize codeberg.org as a known host before git will interface with
 # it over SSH. Connecting once directly should do the trick:
-#
 # 	ssh -i "$HOME"/.ssh/YOUR_PRIVATE_KEY_FILE git@codeberg.org
-#
 # Use SSH instead of HTTPS on codeberg.org
 [url "ssh://git@codeberg.org/"]
 	insteadOf = https://codeberg.org/
+[advice]
+	diverging = false
