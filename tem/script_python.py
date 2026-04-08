@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # author: daniel rode
-# name:
-# tags:
 # dependencies:
 #   python 3.10+
-#   dep2
-#   dep3
-#   ...
-# version: 1
 # created:
 # updated: -
 
