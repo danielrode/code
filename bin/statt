@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 06 apr 2026
+
+
+# Get modification time of file(s), and print in human-friendly format.
+
+
+stat -c '%y %n' "$@"

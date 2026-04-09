@@ -1,27 +1,55 @@
-#!/usr/bin/env bash
-# Author: Daniel Rode
-# Dependencies:
-#   podman
-# Created: 21 Jul 2025
-# Updated: 11 Sep 2025
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman
+# created: 21 jul 2025
+# updated: 09 apr 2026
 
 
-CON_IMG=ghcr.io/danielrode/gis-utils:dev
-CON_ARGS=(
-    --rm
-    --tty --interactive
-    --mount "type=bind,src=/tmp,dst=/tmp"
-    --mount "type=bind,src=/mnt,dst=/mnt"
-    --mount "type=bind,src=/home,dst=/home"
-    --mount "type=bind,src=$PWD,dst=$PWD"
-    --workdir "$PWD"
-    "$CON_IMG"
+import sys
+import subprocess as sp
+from pathlib import Path
+
+# TODO error if mount mounted with 'readonly' flag has sub-mounts (as podman will make them rw by default)
+
+
+HELP_TEXT = "Usage: gis-utils UTILITY_NAME [ARGS...]"
+PWD = Path.cwd()
+CON_IMG = 'ghcr.io/danielrode/gis-utils:dev'
+CON_ARGS = (
+    '--rm',
+    '--tty',
+    '--interactive',
+    '--mount=type=bind,source=/tmp,target=/tmp',
+    '--mount=type=bind,source=/home,target=/home,readonly',
+    *[
+        '--mount=type=bind,source={},target={},readonly'.format(d, d)
+        for d in Path('/mnt').iterdir()
+        if d.is_dir()
+    ],
+    '--mount=type=bind,source={},target={}'.format(PWD, PWD),
+    '--workdir={}'.format(PWD),
+    CON_IMG,
 )
 
 
 # Parse command line arguments
-exe="$(basename $0)"
-[ "$exe" = gis-utils ] && exe="$1" && shift
+exe = Path(sys.argv[0]).name
+if exe in ('git-utils', 'gu'):
+    try:
+        exe = Path(sys.argv[1]).name
+    except IndexError:
+        print(HELP_TEXT)
+        exit(1)
+    args = sys.argv[2:]
+else:
+    args = sys.argv[1:]
 
 # Run container
-podman run "${CON_ARGS[@]}" "$exe" "$@"
+cmd = (
+    'podman', 'run',
+    *CON_ARGS,
+    exe,
+    *args,
+)
+p = sp.run(cmd)
+sys.exit(p.returncode)
