@@ -140,16 +140,16 @@ cmd paste_cow ${{
     esac
 }}
 
-
 # Report working directory path changes to terminal (via OSC 7)
-cmd on-cd &printf '\033]7;file://%s%s\033\\' "$HOSTNAME" "$PWD" > /dev/tty
-# TODO use tty-write instead
-#      tty-write
-#      Write the given string to the tty. This is useful for sending escape
-#      sequences to the terminal to control its behavior (e.g. OSC 0 to set the
-#      window title). Using tty-write is preferred over directly writing to
-#      /dev/tty because the latter is not synchronized and can interfere with
-#      drawing the UI.
+cmd on-cd &lf -remote "send $id tty-write \"\033]7;file://$PWD\033\\\""
+# Unset when quitting and trigger on start-up
+cmd on-quit tty-write "\033]7;\033\\"
+on-cd
+
+# Update terminal window title to match current directory
+cmd on-cd &{{
+    lf -remote "send $id tty-write \"\033]0;$(pwd | sed "s|^$HOME|~|")\007\""
+}}
 
 # -----------------------------------------------------------------------------
 
