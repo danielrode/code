@@ -140,16 +140,17 @@ cmd paste_cow ${{
     esac
 }}
 
-# Report working directory path changes to terminal (via OSC 7)
-cmd on-cd &lf -remote "send $id tty-write \"\033]7;file://$PWD\033\\\""
-# Unset when quitting and trigger on start-up
-cmd on-quit tty-write "\033]7;\033\\"
-on-cd
-
-# Update terminal window title to match current directory
+# Configure what happens when changing directories
 cmd on-cd &{{
+	# Report working directory path changes to terminal (via OSC 7)
+	lf -remote "send $id tty-write \"\033]7;file://$HOSTNAME$PWD\033\\\""
+
+	# Update terminal window title to match current directory
     lf -remote "send $id tty-write \"\033]0;$(pwd | sed "s|^$HOME|~|")\007\""
 }}
+# Reset hook when quitting and trigger on start-up
+cmd on-quit tty-write "\033]7;\033\\"
+on-cd
 
 # -----------------------------------------------------------------------------
 
