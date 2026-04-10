@@ -9,57 +9,91 @@
 #   firefox
 #   htop
 #   fish
+#   google-chrome
+#   ~/code/bin/lfexec
+#   others?
 # created: 26 dec 2022
-# updated: 20 mar 2026
+# updated: 09 apr 2026
 
 
 # Start list of defined programs under Sway session and then arrange their
 # windows.
 
 
+import sys
+import socket
+
 from i3ipc import Connection
 from i3ipc import Event
 
 
-# Functions
+HOSTNAME = socket.gethostname()
+
+STARTUP_CMDS_MESA = (
+    "foot -a foot_tasks -e ~/code/bin/lfexec ~/union/csu-nrel/notes/Worklog/tasks/",
+    "foot -a foot_notes -e hx ~/union/csu-nrel/notes/",
+    "foot -a foot_htop -e htop",
+    "flatpak run com.google.Chrome",
+)
+WIN_ARRANGEMENT_MESA = {
+    '1': ('foot_tasks', 'foot_htop', 'foot_notes'),
+    '2': ('google-chrome',),
+}
+STARTUP_CMDS = (
+    "foot -a foot_helix hx ~/union/notes/wiki/programs/helix.txt",
+    "foot -e fish",
+    "foot -a foot_htop -e htop",
+    "firefox",
+)
+WIN_ARRANGEMENT = {
+    '1': ('foot', 'foot_htop', 'foot_helix',),
+    '2': ('org.mozilla.firefox',),
+}
+if HOSTNAME == 'mesa':
+    STARTUP_CMDS = STARTUP_CMDS_MESA
+    WIN_ARRANGEMENT = WIN_ARRANGEMENT
+
+STARTUP_WIN_SET = set((
+    win for workspace in list(WIN_ARRANGEMENT)
+    for win in WIN_ARRANGEMENT[workspace]
+))
+
+
 def arrange_startup_windows(i3, e) -> None:
     """New window hook for arranging windows opened on Sway init."""
 
+    # Temporarily hide new window until it is time to arrange everything
     e.container.command("move scratchpad")
 
+    # Resolve ambiguous program names (some apps have different window/program
+    # names on different platforms/distros)
+    con_id = e.container.app_id
+    match con_id:
+        case 'Firefox':
+            con_id = 'org.mozilla.firefox'
+
+    # Add container to arrangement queue
     global INIT_CONS
-    INIT_CONS[e.container.app_id] = e.container
+    INIT_CONS[con_id] = e.container
 
-    if all((
-        'foot' in INIT_CONS,
-        'foot_helix' in INIT_CONS,
-        'foot_htop' in INIT_CONS,
-        ('Firefox' in INIT_CONS) or ('org.mozilla.firefox' in INIT_CONS),
-    )):
-        # Arrange startup program windows for workspace 1
-        INIT_CONS['foot'].command("move workspace 1")
-        INIT_CONS['foot'].command("floating disable")
+    # Check if queue has all containers needed for arrangement to commence
+    if STARTUP_WIN_SET != set(INIT_CONS):
+        return
 
-        INIT_CONS['foot_htop'].command("move workspace 1")
-        INIT_CONS['foot_htop'].command("floating disable")
+    # Arrange windows
+    for workspace in WIN_ARRANGEMENT:
+        wins = WIN_ARRANGEMENT[workspace]
+        for i in range(len(wins)):
+            INIT_CONS[wins[i]].command(f"move workspace {workspace}")
+            INIT_CONS[wins[i]].command("floating disable")
 
-        INIT_CONS['foot_helix'].command("move workspace 1")
-        INIT_CONS['foot_helix'].command("floating disable")
+        if len(wins) == 3:
+            INIT_CONS[wins[0]].command("splitv")
+            INIT_CONS[wins[1]].command("move left")
 
-        INIT_CONS['foot'].command("splitv")
-        INIT_CONS['foot_htop'].command("move left")
-
-        # Arrange startup program windows for workspace 2
-        try:
-            INIT_CONS['Firefox'].command("move workspace 2")
-            INIT_CONS['Firefox'].command("floating disable")
-        except KeyError:
-            INIT_CONS['org.mozilla.firefox'].command("move workspace 2")
-            INIT_CONS['org.mozilla.firefox'].command("floating disable")
-
-        # Now that initial windows are arranged, switch to monitor mode
-        i3.off(arrange_startup_windows)
-        exit()
+    # Now that initial windows are arranged, exit
+    i3.off(arrange_startup_windows)
+    sys.exit()
 
 
 # Initialize Sway IPC connection
@@ -68,10 +102,8 @@ i3 = Connection()
 i3.on(Event.WINDOW_NEW, arrange_startup_windows)
 
 # Launch programs I want to start when I login to Sway
-i3.command("exec foot -a foot_helix hx ~/union/notes/wiki/programs/helix.txt")
-i3.command("exec foot -e fish")
-i3.command("exec foot -a foot_htop -e htop")
-i3.command("exec firefox")
+for cmd in STARTUP_CMDS:
+    i3.command(f"exec {cmd}")
 
 # Run IPC event loop
 i3.main()
