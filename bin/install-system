@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 06 apr 2026
+# updated: 10 apr 2026
 
 
 # Install system files.
@@ -21,14 +21,10 @@ except KeyError:
     CODE_REPO = HOME / "code"
 
 
-# Verify script is being run as root while retaining user's env vars
+# Verify script is being run as root
 if os.geteuid() != 0:
-    print("This script must be run via `sudo -E`")
+    print("This script must be run as root")
     sys.exit(1)
-
-if os.environ['HOME'] == '/root':
-    print("This script must be run via `sudo -E`")
-    sys.exit(2)
 
 # Determine whether to make actual changes, or just simulate them
 try:
@@ -55,8 +51,8 @@ args = [
     # permissions, use --perms.  To give new files the destination-default
     # permissions (while leaving existing files unchanged), make sure that
     # the --perms option is off and use --chmod..."
-    # '--perms', '--chmod=D755,F644',
-    '--chmod=D755,F644',
+    '--perms', '--chmod=D755,F644',
+    # '--chmod=D755,F644',
     '--chown=root:root',
 
     '--links',  # Copy symlinks as symlinks

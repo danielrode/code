@@ -13,7 +13,7 @@
 #   ~/code/bin/lfexec
 #   others?
 # created: 26 dec 2022
-# updated: 09 apr 2026
+# updated: 10 apr 2026
 
 
 # Start list of defined programs under Sway session and then arrange their
@@ -51,7 +51,7 @@ WIN_ARRANGEMENT = {
 }
 if HOSTNAME == 'mesa':
     STARTUP_CMDS = STARTUP_CMDS_MESA
-    WIN_ARRANGEMENT = WIN_ARRANGEMENT
+    WIN_ARRANGEMENT = WIN_ARRANGEMENT_MESA
 
 STARTUP_WIN_SET = set((
     win for workspace in list(WIN_ARRANGEMENT)
