@@ -148,9 +148,8 @@ cmd on-cd &{{
 	# Update terminal window title to match current directory
     lf -remote "send $id tty-write \"\033]0;$(pwd | sed "s|^$HOME|~|")\007\""
 }}
-# Reset hook when quitting and trigger on start-up
-cmd on-quit tty-write "\033]7;\033\\"
-on-cd
+# cmd on-quit tty-write "\033]7;\033\\"  # "Unreport" cwd on exit
+on-cd  # Trigger on-cd hook on startup
 
 # -----------------------------------------------------------------------------
 
