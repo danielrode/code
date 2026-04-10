@@ -16,7 +16,3 @@ then
 fi
 
 hx "$exe_path"
-
-
-
-# TODO make fish completion for this script

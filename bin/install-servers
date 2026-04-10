@@ -42,8 +42,8 @@ rsync_args=(
     # permissions, use --perms.  To give new files the destination-default
     # permissions (while leaving existing files unchanged), make sure that
     # the --perms option is off and use --chmod..."
-    # --perms --chmod=D755,F644
-    --chmod=D755,F644
+    --perms --chmod=D755,F644
+    # --chmod=D755,F644
     --chown=root:root
 
     --backup  # Keep backup of existing dest file
