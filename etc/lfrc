@@ -5,6 +5,7 @@
 #   7zip
 #   ov
 #   wl-clipboard
+#   foot
 
 
 # DOCUMENTATION:
@@ -184,8 +185,8 @@ map be new_txt_exe
 map <enter> open
 # map w $fish
 map w quit
-# map W &{{ foot --working-directory "$PWD"; }}
-map W &{{ ghostty +new-window; }}
+map W &{{ foot --working-directory "$PWD"; }}
+# map W &{{ ghostty +new-window; }}
 map ~ cd ~
 map ` cd /
 map . set hidden!

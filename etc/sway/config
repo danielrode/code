@@ -44,7 +44,8 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
     set $alt Mod1
 
     # Preferred terminal
-    set $term ~/code/bin/launch-ghostty
+    # set $term ~/code/bin/launch-ghostty
+    set $term /usr/local/bin/foot
 
     # Lightweight terminal
     set $lw_term footclient --override=colors.background=111111
