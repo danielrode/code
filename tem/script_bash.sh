@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
-# name:
-# tags:
 # dependencies: bash 4.3+, pv
-# version: 1
-# created: 01 jan 2026
+# created: 11 apr 2026
 # updated: -
 
 

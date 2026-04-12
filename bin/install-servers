@@ -11,8 +11,8 @@
 
 
 # TODO
-# TODO instead of storing config files (the read-only ones) under app_NAME home dir, install them under /etc/com.github.danielrode/NAME
 # TODO private vars toml
+# TODO setup user for service, install ~/.crypt secret(s) for that user, setup systemd startup unit, and setup rathole proxy
 exit 1
 
 

@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies:
+#   podman
+#   podman-compose
+#   ~/.crypt/private_code_vars.toml
+# created: 12 apr 2026
+# updated: -
+
+
+# Run containerized Joplin (notes) server.
+
+# NOTE:
+# Joplin server's default username and pw: "admin@localhost", "admin"
+# Change these first thing!
+
+
+import os
+import secrets
+import tomllib
+import subprocess as sp
+from pathlib import Path
+
+import yaml
+
+
+HOME = Path.home()
+
+DATA_DIR = Path(
+    HOME,
+    ".local",
+    "share",
+    "com.github.danielrode",
+    "serve-joplin",
+)
+CON_ENV_PATH = DATA_DIR / "compose.env"
+CON_COMPOSE = {
+    'version': '3',
+    'services': {
+    'db': {
+        'image': 'docker.io/postgres:16',
+        'volumes': [
+            f'{DATA_DIR}/postgres:/var/lib/postgresql/data',
+        ],
+        'environment': [
+            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_USER=joplin0',
+            'POSTGRES_DB=joplindb',
+        ],
+        'restart': 'always',
+        'security_opt': ['no-new-privileges'],
+        'deploy': { 'resources': { 'limits': {
+            # Limit memory to 256MB
+            'mem_limit': '256m',
+            # Limit CPU usage to 50% of a single core
+            'cpus': 0.5,
+        }}},
+    },
+    'joplin': {
+        'image': 'docker.io/joplin/server:latest',
+        'container_name': 'joplin-server',
+        'depends_on': ['db'],
+        'ports': [
+            "127.0.0.1:22300:22300",
+        ],
+        'environment': [
+            'APP_PORT=22300',
+            'APP_BASE_URL=${APP_BASE_URL}',
+            'DB_CLIENT=pg',
+            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_DATABASE=joplindb',
+            'POSTGRES_USER=joplin0',
+            'POSTGRES_PORT=5432',
+            'POSTGRES_HOST=db',
+        ],
+        'restart': 'always',
+        'security_opt': ['no-new-privileges'],
+        'deploy': { 'resources': { 'limits': {
+            # Limit memory to 256MB
+            'mem_limit': '256m',
+            # Limit CPU usage to 50% of a single core
+            'cpus': 0.5,
+        }}},
+    },
+}}
+
+PODMAN_CMD = (
+    'podman-compose',
+    '--project-name=joplin',
+    '--file=-',
+    '--env-file=' + str(CON_ENV_PATH),
+    'up',
+)
+
+
+def gen_secret():
+    return secrets.token_urlsafe(64)
+
+def gen_compose_env(fp):
+    # Import secrets
+    with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
+        crypt_vars = tomllib.load(f)
+
+    # Compile and save podman compose variables file
+    os.umask(0)
+    fp.touch(mode=0o600)
+    fp.write_text('\n'.join((
+        f"DB_PW={gen_secret()}",
+        f"APP_BASE_URL={crypt_vars['SERVES']['joplin_url']}",
+    )))
+
+
+# Main
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+if not CON_ENV_PATH.exists():
+    gen_compose_env(CON_ENV_PATH)
+
+sp.run(PODMAN_CMD, input=yaml.dump(CON_COMPOSE), text=True)

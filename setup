@@ -86,20 +86,11 @@ go build -o ~/code/bin/rotate-ls-output ~/code/src/rotate-ls-output/main.go
 gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
 
 # Set wallpaper
-# https://github.com/DenverCoder1/minimalistic-wallpaper-collection
-wget --no-verbose https://minimalistic-wallpaper.demolab.com/?random \
-    -O ~/.wallpaper \
-;
-
+~/code/bin/sway-change-scenery
 
 
 
 
 
 # TODO
-# Create a script called change-scenery then take the wallpaper updating code
-# above and put it in there. Add code that changes the color palette of
-# fuzzel and waybar to match the color palette of the newly set wallpaper. Call
-# change`scenery script from (setup.sh).
-#
 # todo firewall (ufw)

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: bash 4.3+, pv
+# created: 11 apr 2026
+# updated: -
+
+
+# Set Sway look and feel (such as wallpaper, etc...)
+
+
+# TODO
+# Add code that changes the color palette of fuzzel and waybar to match the color palette of the newly set wallpaper
+
+
+# Set wallpaper
+# https://github.com/DenverCoder1/minimalistic-wallpaper-collection
+wget --no-verbose https://minimalistic-wallpaper.demolab.com/?random \
+    -O ~/.wallpaper \
+;
