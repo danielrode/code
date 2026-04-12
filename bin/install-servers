@@ -12,7 +12,7 @@
 
 # TODO
 # TODO private vars toml
-# TODO setup user for service, install ~/.crypt secret(s) for that user, setup systemd startup unit, and setup rathole proxy
+# TODO setup user for service, install ~/.crypt secret(s) for that user, setup systemd startup unit, and setup rathole proxy; see deamonize.sh for insporation
 exit 1
 
 
