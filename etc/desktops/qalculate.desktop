@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Qalculate (CLI)
+Exec=qalc
+Terminal=true
