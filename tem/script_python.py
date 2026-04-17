@@ -15,8 +15,10 @@ More in-depth description of what the script does.
 
 import os
 import sys
+import socket
 import subprocess as sp
 from pathlib import Path
+from shutil import which
 
 from collections.abc import Iterable
 
@@ -24,6 +26,10 @@ import dbus
 
 
 # Constants
+PWD = Path.cwd()
+HOME = Path.home()
+HOSTNAME = socket.gethostname()
+
 PROGRAM_NAME = "[Unique Name of Program]"
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME} [OPTION]... ARG"
@@ -38,21 +44,21 @@ DST = Path(
 if 'XDG_CONFIG_HOME' in os.environ:
     XDG_CONFIG_HOME = Path(os.environ['XDG_CONFIG_HOME'])
 else:
-    XDG_CONFIG_HOME = Path.home() / '.config'
+    XDG_CONFIG_HOME = HOME / '.config'
 CONFIG_HOME = XDG_CONFIG_HOME / 'daniel_rode_code' / PROGRAM_NAME
 CONFIG_HOME.mkdir(parents=True, exist_ok=True)
 
 if 'XDG_CACHE_HOME' in os.environ:
     XDG_CACHE_HOME = Path(os.environ['XDG_CACHE_HOME'])
 else:
-    XDG_CACHE_HOME = Path.home() / '.cache'
+    XDG_CACHE_HOME = HOME / '.cache'
 CACHE_HOME = XDG_CACHE_HOME / 'daniel_rode_code' / PROGRAM_NAME
 CACHE_HOME.mkdir(parents=True, exist_ok=True)
 
 if 'XDG_DATA_HOME' in os.environ:
     XDG_DATA_HOME = Path(os.environ['XDG_DATA_HOME'])
 else:
-    XDG_DATA_HOME = Path.home() / '.local/share'
+    XDG_DATA_HOME = HOME / '.local/share'
 DATA_HOME = XDG_DATA_HOME / 'daniel_rode_code' / PROGRAM_NAME
 DATA_HOME.mkdir(parents=True, exist_ok=True)
 

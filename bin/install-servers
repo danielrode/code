@@ -16,6 +16,13 @@
 exit 1
 
 
+
+cp ~/code/bin/serve-joplin /usr/local/bin/
+# add user serve_joplin
+# remove user pw (disable non-sudo login)?
+
+
+
 # Ensure script is run as root
 # TODO first call ~/code/bin/install-system, then bootstrap self with sudo?
 if [[ $(id -u) != 0 ]]
