@@ -13,7 +13,7 @@
 #   ~/code/bin/lfexec
 #   others?
 # created: 26 dec 2022
-# updated: 10 apr 2026
+# updated: 17 apr 2026
 
 
 # Start list of defined programs under Sway session and then arrange their
@@ -93,6 +93,7 @@ def arrange_startup_windows(i3, e) -> None:
 
     # Now that initial windows are arranged, exit
     i3.off(arrange_startup_windows)
+    i3.main_quit()
     sys.exit()
 
 

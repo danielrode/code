@@ -90,11 +90,12 @@ abbr --add lst eza -l --sort=modified
 abbr --add lss eza -l --sort=size
 abbr --add lsp eza --classify=never --color=never --icons=never # Plain
 
-# Set file copy, move, and remove operations to report actions taken
+# Make default commands safer
 abbr --add cp cp -v
 abbr --add mv mv -v
 abbr --add rm rm -v
 abbr --add rmdir rmdir -v
+abbr --add cat strings -aw -n 1 -U x
 
 # Abbreviations
 abbr --add c wl-copy
