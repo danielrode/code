@@ -58,6 +58,9 @@ set shellopts '-euf'
 # commands accordingly.
 set ifs "\n"
 
+# Set file previewer
+set previewer ~/code/bin/lf-previewer
+
 set mouse true
 # set dirfirst false
 set ratios '1:3:3'

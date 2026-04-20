@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+# author: daniel rode
+# dependencies: unzip, 7z, pdftotext
+# created: 20 apr 2026
+
+
+# Generate preview for LF preview pane for given (highlighted) file.
+
+
+# DOC (from LF man):
+# The following arguments are passed to the file by lf, (1) current
+# filename, (2) width, (3) height, (4) horizontal position, (5) vertical
+# position, and (6) mode ("preview" or "preload"). The output of this
+# script is printed in the LF preview pane.
+
+
+case "$(file -bL --mime-type "$1")" in
+	text/*)
+		strings -aw -n 1 -U x "$1";;
+	application/x-tar|application/gzip)
+		tar tf "$1";;
+	application/x-7z-compressed|application/zip)
+		7z l "$1";;
+	application/pdf)
+		pdftotext "$1" -;;
+	# TODO add ascii preview for png and jpg and tif image files
+	application/*)
+		echo "binary";;
+	*)
+		echo "no preview";;
+esac
