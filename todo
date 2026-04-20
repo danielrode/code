@@ -1,1 +1,5 @@
 https://stackoverflow.com/questions/40091541/can-git-be-told-to-use-spaces-in-gitconfig
+
+make 'ax' binding in lf extract .tar.gz fully, rather than just to .tar
+
+file preview in lf should use `strings` instead of `cat`
