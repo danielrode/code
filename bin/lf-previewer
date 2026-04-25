@@ -2,6 +2,7 @@
 # author: daniel rode
 # dependencies: unzip, 7z, pdftotext
 # created: 20 apr 2026
+# updated: 23 apr 2026
 
 
 # Generate preview for LF preview pane for given (highlighted) file.
@@ -15,7 +16,7 @@
 
 
 case "$(file -bL --mime-type "$1")" in
-	text/*)
+	text/*|application/json|application/x-ndjson)
 		strings -aw -n 1 -U x "$1";;
 	application/x-tar|application/gzip)
 		tar tf "$1";;

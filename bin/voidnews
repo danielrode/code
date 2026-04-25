@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 24 apr 2026
+
+
+curl https://voidlinux.org/news/ \
+| pandoc --from html --to markdown \
+| bat --language markdown
