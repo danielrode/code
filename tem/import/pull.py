@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# author: daniel rode
+# dependencies: python 3.14
+# created: 24 apr 2026
+# updated: -
+
+
+# Retrieve and cache assets locally (under this import directory).
+
+
+import os
+import sys
+import shutil
+import logging
+import subprocess as sp
+from pathlib import Path
+
+import pyogrio
+
+
+SCRIPT_NAME = Path(__file__).name
+
+
+def cd0() -> None:
+    """Change directory to the parent path of this script file."""
+
+    this_dir = sys.path[0]  # Dir where this script resides
+    os.chdir(this_dir)
+
+def run(cmd: list) -> None:
+    """Run system command."""
+
+    p = sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
+    if p.returncode != 0:
+        print(p.stdout)
+        sys.exit(p.returncode)
+
+def init_logger(
+    path: Path=None, level=logging.INFO, capture_exceptions=True,
+) -> logging.Logger:
+    """Initialize logger, set format, and set verbosity level."""
+
+    fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    # Set logger to output to stderr
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
+
+    # Set logger to output to a file as well
+    if path:
+        file = logging.FileHandler(path, mode='a')
+        file.setFormatter(fmt)
+        logger.addHandler(file)
+
+    # Capture unhandled exceptions
+    if capture_exceptions:
+        sys.excepthook = lambda e_type, e_val, e_traceback: logger.critical(
+            "Program terminating:", exc_info=(e_type, e_val, e_traceback)
+        )
+
+    return logger
+
+
+# Set directory this script resides in as the current working directory
+cd0()
+
+# Setup logging
+log = init_logger(SCRIPT_NAME + ".log")
+log.info("Starting...")
+
+# Get internet thing
+log.info("Getting shp file...")
+run((
+    'wget',
+    # Link parent page: https://data.fs.usda.gov/geodata/edw/datasets.php
+    'URL',
+))
+
+# Clone vendor collection boundaries
+log.info("Getting external disk thing...")
+run((
+    'rsync',
+    '/PATH/TO/FILE',
+    './'
+))
+
+log.info("DONE")
