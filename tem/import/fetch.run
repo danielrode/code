@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 # author: daniel rode
 # dependencies: python 3.14
-# created: 24 apr 2026
+# created: 26 apr 2026
 # updated: -
 
 
-# Retrieve and cache assets locally (under this import directory).
+# Retrieve and cache assets locally (under this directory).
 
 
 import os
@@ -31,10 +31,31 @@ def cd0() -> None:
 def run(cmd: list) -> None:
     """Run system command."""
 
+    log.info("Running cmd:", cmd)
     p = sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
+    log.info(p.stdout)
     if p.returncode != 0:
-        print(p.stdout)
         sys.exit(p.returncode)
+
+def clone(rsync_args: list) -> None:
+    cmd = [
+        'rsync',
+        '--recursive',
+        '--links',
+        '--executability',
+        '--times',
+        '--omit-dir-times',
+        '--omit-link-times',
+        '--delete',
+        '--force',
+        '--mkpath',
+        '--human-readable',
+        '--itemize-changes',
+        '--exclude=.*',  # Do not copy hidden files
+        *[str(a) for a in rsync_args],
+    ]
+    log.info("Running cmd:", cmd)
+    sp.run(cmd, check=True)
 
 def init_logger(
     path: Path=None, level=logging.INFO, capture_exceptions=True,
