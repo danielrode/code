@@ -88,7 +88,7 @@ _Graphical Representation and Stability Conditions of Predator-Prey Interactions
 #grid(
   columns: (0.6fr, 0.4fr),
   column-gutter: 2em,
-  image("./assets/example.png"),
+  image("./import/example.png"),
   [
     - Given technological advances, how might population dynamics between four interacting species be visualized?
   ],
