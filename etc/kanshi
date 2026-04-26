@@ -30,11 +30,9 @@ profile HomeDesk {
 }
 
 profile TV {
-    output "LG Display 0x0645 Unknown" enable
+    # Turn laptop display off
+    output "LG Display 0x0645 Unknown" disable
 
     # Lower TV display resolution
     output "XXX 2CH4K30 0x00000001" mode 1920x1080@30.000Hz
-
-    # Set laptop display brightness very low
-    exec bl 5
 }

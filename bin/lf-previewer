@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # author: daniel rode
-# dependencies: unzip, 7z, pdftotext
+# dependencies: unzip, 7z, pdftotext, GraphicsMagick, chafa
 # created: 20 apr 2026
-# updated: 24 apr 2026
+# updated: 26 apr 2026
 
 
 # Generate preview for LF preview pane for given (highlighted) file.
@@ -24,7 +24,12 @@ case "$(file -bL --mime-type "$1")" in
 		7z l "$1";;
 	application/pdf)
 		pdftotext "$1" -;;
-	# TODO add ascii preview for png and jpg and tif image files
+	image/png|image/jpeg|image/gif)
+		chafa --format=symbols --polite=on --align=top,left "$1";;
+	image/tiff)
+		gm convert "$1" jpg:- | \
+			chafa --format=symbols --polite=on --align=top,left
+		;;
 	application/*)
 		echo "binary";;
 	inode/x-empty)

@@ -21,40 +21,43 @@
 }
 
 
-// CONSTANTS
-#let c_title = [
-  ECOL 600 (Community Ecology) Discussion:
-  Consumer-Resource Interactions and Trophic Control
-]
-#let c_auth = "Daniel Rode"
-#let c_date = "25 Apr 2026"
+// DEFINITIONS
+#let title_page(title, author, date) = {
+  align(center + horizon)[
+    #text(size: 36pt, weight: "bold")[#title]
+    #v(1em)
+    #text(size: 24pt)[#author]
+    #v(1em)
+    #text(size: 24pt)[#date]
+    #pagebreak()
+  ]
+}
+
+#let two_panes(col1, col2, col1_w: 1fr, col2_w: 1fr) = {
+  grid(
+    columns: (col1_w, col2_w),  // Column widths
+    column-gutter: 2em,  // Space between columns
+    col1, col2,
+  )
+}
 
 
 // DOCUMENT
-#align(center + horizon)[
-  #text(size: 36pt, weight: "bold")[#c_title]
-  #v(1em)
-  #text(size: 24pt)[#c_auth]
-  #v(1em)
-  #text(size: 24pt)[#c_date]
-]
-
-#pagebreak()
+#title_page(
+  [Using GIS to Reveal Hidden Mutualisms in Nature: Mycorrhizal Networks],
+  [Daniel Rode],
+  [27 Apr 2026],
+)
 
 = Introduction <intro>
 
-#let col1 = [
+#two_panes[
   - Consumer-Resource Interactions: Essentially resource economics
   - Trophic Control: Top-down vs bottom-up
-]
-#let col2 = [
+][
   - These topics matter because without them, populations would grow infinitely
   - Ecological interventions often require determining the trophic control of a given community
 ]
-#grid(
-  columns: (1fr, 1fr), // Two equal-width columns
-  column-gutter: 2em,  // Space between columns
-  col1, col2,
 )
 
 = The Papers
@@ -99,6 +102,7 @@ _Recovery of a Marine Keystone Predator Transforms Terrestrial Predator-Prey Dyn
 - Why didn't sea otters becoming the wolves' new primary food source help the deer population bounce back?
 - Might wolves preying on marine life be a historical behavior historical?
 - Why did the wolves wipe out their food source (deer), while the sea otters did not wipe out theirs?
+
 
 // CITATIONS
 #bibliography("citations.bib")
