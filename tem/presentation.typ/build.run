@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: typst, pandoc
+# created: 25 apr 2026
+# updated: -
+
+
+import os
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+# Functions
+def cd0() -> None:
+    """Set working directory to the same location as the running script."""
+
+    os.chdir(Path(__file__).resolve().parent)
+
+
+# Set working directory
+cd0()
+
+# Spell check
+cmd = (
+    "cat ./presentation.typ"
+    "| podman run --interactive docker.io/pandoc/typst:latest"
+        " --from typst --to plain"
+    "| hunspell -l"
+    "| sort | uniq"
+)
+sp.run(cmd, check=True, shell=True)
+
+# Compile to PDF
+cmd = (
+    "typst",
+    "compile",
+    "./presentation.typ",
+    "./export.pdf",
+)
+sp.run(cmd, check=True)
+
+# Compile to PPTX (PowerPoint)
+with TemporaryDirectory() as tmpdir:
+    tmpdir = Path(tmpdir)
+
+    # Compile to PNGs
+    cmd = (
+        "typst",
+        "compile",
+        "--ppi", "300",
+        "./presentation.typ",
+        str(tmpdir / "img{0p}.png"),
+    )
+    sp.run(cmd, check=True)
+
+    # Compile to PPTX
+    md_blob = "\n".join([
+        '# {data-background-image="' + str(i) + '"}'
+        for i in sorted(list(tmpdir.glob("*.png")))
+    ])
+    cmd = (
+        "pandoc",
+        "--from", "markdown",
+        "--to", "pptx",
+        "--output", "./export.pptx",
+        "-",  # Read from stdin
+    )
+    sp.run(cmd, check=True, text=True, input=md_blob)
+
+
+# TODO use docker container for all calls to typst, and I guess pandoc as well
+# TODO check out https://github.com/polylux-typ/polylux
