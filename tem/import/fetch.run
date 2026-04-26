@@ -20,20 +20,33 @@ import pyogrio
 
 
 SCRIPT_NAME = Path(__file__).name
+LOG_NAME = SCRIPT_NAME + ".log"
 
 
-def cd0() -> None:
-    """Change directory to the parent path of this script file."""
+# Set directory this script resides in as the current working directory
+os.chdir(Path(__file__).parent)
 
-    this_dir = sys.path[0]  # Dir where this script resides
-    os.chdir(this_dir)
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+        # Set logger to output to file and stderr
+        logging.FileHandler(LOG_NAME, mode='a'),
+        logging.StreamHandler(),
+    ]
+)
+logger = logging.getLogger()
+sys.excepthook = lambda *a: logger.critical("Fatal:", exc_info=a)
+log = lambda *x: logger.info(" ".join(map(str, x)))
 
+# Functions
 def run(cmd: list) -> None:
     """Run system command."""
 
-    log.info("Running cmd:", cmd)
+    log("Running cmd:", cmd)
     p = sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
-    log.info(p.stdout)
+    log(p.stdout)
     if p.returncode != 0:
         sys.exit(p.returncode)
 
@@ -54,59 +67,25 @@ def clone(rsync_args: list) -> None:
         '--exclude=.*',  # Do not copy hidden files
         *[str(a) for a in rsync_args],
     ]
-    log.info("Running cmd:", cmd)
+    log("Running cmd:", cmd)
     sp.run(cmd, check=True)
 
-def init_logger(
-    path: Path=None, level=logging.INFO, capture_exceptions=True,
-) -> logging.Logger:
-    """Initialize logger, set format, and set verbosity level."""
 
-    fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    # Set logger to output to stderr
-    console = logging.StreamHandler()
-    console.setFormatter(fmt)
-    logger.addHandler(console)
-
-    # Set logger to output to a file as well
-    if path:
-        file = logging.FileHandler(path, mode='a')
-        file.setFormatter(fmt)
-        logger.addHandler(file)
-
-    # Capture unhandled exceptions
-    if capture_exceptions:
-        sys.excepthook = lambda e_type, e_val, e_traceback: logger.critical(
-            "Program terminating:", exc_info=(e_type, e_val, e_traceback)
-        )
-
-    return logger
-
-
-# Set directory this script resides in as the current working directory
-cd0()
-
-# Setup logging
-log = init_logger(SCRIPT_NAME + ".log")
-log.info("Starting...")
-
-# Get internet thing
-log.info("Getting shp file...")
+# Download internet assets
+log("Getting shp file...")
 run((
     'wget',
     # Link parent page: https://data.fs.usda.gov/geodata/edw/datasets.php
     'URL',
 ))
 
-# Clone vendor collection boundaries
-log.info("Getting external disk thing...")
-run((
-    'rsync',
-    '/PATH/TO/FILE',
-    './'
-))
+# Clone local assets
+log("Copying files...")
+# fisher2016fig4.png was manually extracted from source PDF (see citations.bib)
+for i in (
+    'PATH/2/FILE1',
+    'PATH/2/FILE2',
+):
+    clone((i, './'))
 
-log.info("DONE")
+log("DONE")
