@@ -2,12 +2,12 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, aria2
 # created: 07 feb 2026
-# updated: 26 apr 2026
+# updated: 27 apr 2026
 
 
 # Run LLMs (AI chat) locally via llama.cpp.
 #
-# ssh -tL 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/lcpp Qwen2.5-7B-Instruct-Q4_0.gguf
+# ssh -tL 5001:localhost:5001 REMOTE_IP ~/code/bin/lcpp Qwen2.5-7B-Instruct-Q4_0
 
 
 import sys
@@ -17,22 +17,29 @@ from pathlib import Path
 import yaml
 
 
-DEFAULT_MODEL = 'gemma-3-1b-it-BF16.gguf'
-MODEL_URL_MAP = {i.split('/')[-1]:i for i in (
-    # Useful model list: https://huggingface.co/bartowski
-    'https://huggingface.co/tiiuae/Falcon3-3B-Instruct-GGUF/resolve/main/Falcon3-3B-Instruct-q4_0.gguf',
-    'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-BF16.gguf',
-    'https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-UD-TQ1_0.gguf',
-    'https://huggingface.co/Manojb/Qwen3-4B-toolcalling-gguf-codex/resolve/main/Qwen3-4B-Function-Calling-Pro.gguf',
-    'https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/GLM-4.7-Flash-UD-Q2_K_XL.gguf',
-    'https://huggingface.co/bartowski/Ministral-8B-Instruct-2410-GGUF/resolve/main/Ministral-8B-Instruct-2410-Q8_0.gguf',
-    'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_0.gguf',
-    'https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_0.gguf',
-)}
+DEFAULT_MODEL = 'gemma-3-1b-it-BF16'
+MODEL_LIST = [
+    # Useful model lists:
+    # - https://huggingface.co/bartowski
+    # - https://huggingface.co/unsloth
+    'bartowski/gemma-2-9b-it-GGUF:gemma-2-9b-it-Q8_0_L',  # 10.7 GB
+    'bartowski/Meta-Llama-3.1-8B-Instruct-GGUF:Meta-Llama-3.1-8B-Instruct-Q8_0',
+    'bartowski/Ministral-8B-Instruct-2410-GGUF:Ministral-8B-Instruct-2410-Q8_0',  # 8.5 GB
+    'bartowski/Qwen2.5-Coder-3B-Instruct-GGUF:Qwen2.5-Coder-3B-Instruct-Q4_0',  # 1.8 GB
+    'bartowski/Qwen2.5-Coder-14B-Instruct-GGUF:Qwen2.5-Coder-14B-Instruct-Q8_0',  # 16 GB
+    'Manojb/Qwen3-4B-toolcalling-gguf-codex:Qwen3-4B-Function-Calling-Pro',
+    'tiiuae/Falcon3-3B-Instruct-GGUF:Falcon3-3B-Instruct-q4_0',  # 1.9 GB
+    'unsloth/gemma-3-1b-it-GGUF:gemma-3-1b-it-BF16',  # 1.8 GB
+    'unsloth/GLM-4.7-Flash-GGUF:GLM-4.7-Flash-Q4_0',
+    'unsloth/gemma-4-E2B-it-GGUF:gemma-4-E2B-it-Q4_0',  # 3.0 GB,
+]
+MODEL_MAP = {
+    model: repo
+    for i in MODEL_LIST
+    for repo, model in [i.split(':')]
+}
 
-MODEL_CONTEXT = 2**17
-
-LLAMACPP_IMG = 'ghcr.io/ggml-org/llama.cpp:server-vulkan'
+CON_IMG = 'ghcr.io/ggml-org/llama.cpp:server-vulkan'
 
 HOME = Path.home()
 CACHE_DIR = HOME / ".cache"
@@ -44,7 +51,7 @@ def get_con_yaml(model_filename, port=5001):
         'version': 3.2,
         'services': {
             'llamacpp': {
-                'image': LLAMACPP_IMG,
+                'image': CON_IMG,
                 'devices': [
                     '/dev/dri',
                 ],
@@ -66,9 +73,6 @@ def get_con_yaml(model_filename, port=5001):
                     # 'LLAMA_ARG_N_GPU_LAYERS=64',
                     # 'LLAMA_ARG_N_GPU_LAYERS=99',
                     'LLAMA_ARG_N_GPU_LAYERS=auto',
-
-                    # Size of the prompt context (0 = loaded from model)
-                    '--ctx-size' + str(MODEL_CONTEXT),
                 ],
                 'ports': [
                     f'127.0.0.1:{port}:{port}',
@@ -79,32 +83,41 @@ def get_con_yaml(model_filename, port=5001):
     })
 
 
-# Main
-
 # Parse command line input
 try:
-    model_filename = sys.argv[1]
+    model = sys.argv[1].removesuffix(".gguf")
 except IndexError:
-    model_filename = DEFAULT_MODEL
+    model = DEFAULT_MODEL
 
-if model_filename not in MODEL_URL_MAP:
-    print("error: Model not found:", model_filename)
+if model not in MODEL_MAP:
+    print("error: Model not found:", model)
     sys.exit(1)
 
 # Download model, if needed
-if not (GGUF_MODEL_DIR / model_filename).exists():
-    print("Model file not found; downloading...")
+fname = model + '.gguf'
+if any((
+    not (GGUF_MODEL_DIR / fname).exists(),
+    Path(GGUF_MODEL_DIR, "{}.aria2".format(fname)).exists(),
+)):
+    print("Model not found in cache; downloading...")
     GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
+    url = '/'.join((
+        'https://huggingface.co',
+        MODEL_MAP[model],
+        'resolve',
+        'main',
+        fname,
+    ))
     cmd = (
         'aria2c',
         '--dir', str(GGUF_MODEL_DIR),
-        '--out', str(model_filename),
-        MODEL_URL_MAP[model_filename],
+        '--out', str(fname),
+        url,
     )
     sp.run(cmd, check=True)
 
 # Update llama.cpp, if needed
-cmd = ('podman', 'pull', '--policy=newer', LLAMACPP_IMG)
+cmd = ('podman', 'pull', '--policy=newer', CON_IMG)
 sp.run(cmd, check=True)
 
 # Run llama.cpp
@@ -113,5 +126,5 @@ cmd = (
     '--file', '-',
     'up',
 )
-con_yaml = get_con_yaml(model_filename)
+con_yaml = get_con_yaml(fname)
 sp.run(cmd, input=con_yaml, text=True)

@@ -7,7 +7,7 @@
 
 # Run llama-swap locally.
 #
-# ssh -tL 5001:localhost:5001 REMOTE_IP /home/daniel/code/bin/ai
+# ssh -tL 5001:localhost:5001 REMOTE_IP ~/code/bin/ai
 
 
 import shutil
