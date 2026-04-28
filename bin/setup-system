@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 14 apr 2026
+# updated: 27 apr 2026
 
 
 # Setup and configure Linux system to be how I like it.
@@ -65,6 +65,7 @@ pkgs=(
     swaylock
     syncthing
     zathura
+    zathura-pdf-mupdf
 )
 if cmd_exists dnf
 then

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: yt-dlp, ~/code/bin/lfexec
+# dependencies: yt-dlp, ~/code/bin/lfcdsh
 # created: 26 mar 2026
 # updated: 02 apr 2026
 
@@ -37,4 +37,4 @@ with TemporaryDirectory() as tdir:
     sp.run(['yt-dlp', *YTDLP_ARGS, url], check=True)
 
     # Browse video directory
-    sp.run([str(HOME / "code/bin/lfexec")])
+    sp.run([str(HOME / "code/bin/lfcdsh")])

@@ -26,7 +26,7 @@ case "$(file -bL --mime-type "$1")" in
 		pdftotext "$1" -;;
 	image/png|image/jpeg|image/gif)
 		chafa --format=symbols --polite=on --align=top,left "$1";;
-	image/tiff)
+	image/tiff|image/webp)
 		gm convert "$1" jpg:- | \
 			chafa --format=symbols --polite=on --align=top,left
 		;;

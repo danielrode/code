@@ -24,7 +24,7 @@ cd0()
 # Spell check
 cmd = (
     "cat ./presentation.typ"
-    "| podman run --interactive docker.io/pandoc/typst:latest"
+    "| podman run --rm --interactive docker.io/pandoc/typst:latest"
         " --from typst --to plain"
     "| hunspell -l"
     "| sort | uniq"

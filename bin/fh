@@ -6,7 +6,7 @@
 #   restic
 #   lf
 #   ~/code/bin/rs
-#   ~/code/bin/lfexec
+#   ~/code/bin/lfcdsh
 # created: 27 jan 2022
 # updated: 30 mar 2026
 
@@ -75,7 +75,7 @@ do
 done
 
 
-~/code/bin/lfexec "$LINK_BUCKET"
+~/code/bin/lfcdsh "$LINK_BUCKET"
 
 
 echo "Unmounting restic repo..."

@@ -6,7 +6,7 @@
 # dependencies:
 #   btrfs
 #   lf
-#   ~/code/bin/lfexec
+#   ~/code/bin/lfcdsh
 # created: 22 sep 2025
 # updated: 30 mar 2026
 
@@ -83,4 +83,4 @@ with TemporaryDirectory() as tmpdir:
         sp.run(cmd)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run([str(HOME / "code/bin/lfexec"), tmpdir], check=True)
+    sp.run([str(HOME / "code/bin/lfcdsh"), tmpdir], check=True)
