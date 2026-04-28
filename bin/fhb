@@ -6,9 +6,8 @@
 # dependencies:
 #   btrfs
 #   lf
-#   ~/code/bin/lfcdsh
 # created: 22 sep 2025
-# updated: 30 mar 2026
+# updated: 27 apr 2026
 
 
 # Given some file path, assuming the file is included in some BTRFS
@@ -83,4 +82,4 @@ with TemporaryDirectory() as tmpdir:
         sp.run(cmd)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run([str(HOME / "code/bin/lfcdsh"), tmpdir], check=True)
+    sp.run(["lf", tmpdir], check=True)

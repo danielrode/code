@@ -14,4 +14,6 @@ PS1='[\u@\h \W]\$ '
 # FUNCTIONS -------------------------------------------------------------------
 
 # Change shell's working dir to last dir in lf on exit
-alias lf='exec ~/code/bin/lfcdsh'
+function lf {
+	cd "$(command lf -print-last-dir -command 'map w quit' "$@")"
+}

@@ -7,7 +7,6 @@
 #   lm_sensors
 #   nvtop
 #   lf
-#   ~/code/bin/lfcdsh
 
 # USER TIPS:
 # You can navigate forward and back throgh 'cd' history via the use of the
@@ -32,7 +31,7 @@ umask 027
 
 # Change shell's working dir to last dir in lf on exit
 function lf
-    exec ~/code/bin/lfcdsh $argv
+    cd (command lf -print-last-dir -command 'map w quit' $argv)
 end
 
 # PROFILE #####################################################################

@@ -71,6 +71,10 @@ set wrapscroll true
 
 # COMMANDS
 
+cmd quit_original_wd %{{
+    # CD back to original working directory, then quit LF instance
+    lf -remote "send $id :cd $OLDPWD; quit"
+}}
 cmd trash &~/code/bin/can $fx
 cmd new_file ${{
     echo -n '> '
@@ -173,8 +177,8 @@ on-cd  # Trigger on-cd hook on startup
 map sn
 
 # Set custom mappings
-map <c-d> quit
-map q quit
+map <c-d> quit_original_wd
+map q quit_original_wd
 map e $"$EDITOR" $fx
 map i $ov $f
 map X trash
@@ -183,8 +187,7 @@ map bt new_file
 map bd new_dir
 map be new_txt_exe
 map <enter> open
-# map w $fish
-map w %{{ ~/code/bin/lfcdsh; lf -remote "send $id :cd $OLDPWD; quit"; }}
+map w $bash
 map W &{{ foot --working-directory "$PWD"; }}
 # map W &{{ ghostty +new-window; }}
 map ~ cd ~

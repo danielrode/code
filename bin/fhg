@@ -6,9 +6,8 @@
 # dependencies:
 #   git
 #   lf
-#   ~/code/bin/lfcdsh
 # created: 25 mar 2025
-# updated: 30 mar 2026
+# updated: 27 apr 2026
 
 
 # Given some file path, assuming the file is part of a git repository,
@@ -117,4 +116,4 @@ with TemporaryDirectory() as tmpdir:
             f.write(p.stdout)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run([str(HOME / "code/bin/lfcdsh"), tmpdir], check=True)
+    sp.run(['lf', tmpdir], check=True)
