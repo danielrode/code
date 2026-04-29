@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # author: daniel rode
 # dependencies: python 3.14
-# created: 26 apr 2026
+# created: 28 apr 2026
 # updated: -
 
 
@@ -11,14 +11,12 @@
 
 import os
 import sys
-import shutil
 import logging
 import subprocess as sp
 from pathlib import Path
 
-import pyogrio
 
-
+HOME = Path.home()
 SCRIPT_NAME = Path(__file__).name
 LOG_NAME = SCRIPT_NAME + ".log"
 
@@ -45,8 +43,8 @@ def run(cmd: list) -> None:
     """Run system command."""
 
     log("Running cmd:", cmd)
-    p = sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
-    log(p.stdout)
+    p = sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT, text=True)
+    log("\n" + p.stdout)
     if p.returncode != 0:
         sys.exit(p.returncode)
 
@@ -55,7 +53,7 @@ def clone(rsync_args: list) -> None:
         'rsync',
         '--recursive',
         '--links',
-        '--executability',
+        # '--executability',
         '--times',
         '--omit-dir-times',
         '--omit-link-times',
@@ -67,25 +65,28 @@ def clone(rsync_args: list) -> None:
         '--exclude=.*',  # Do not copy hidden files
         *[str(a) for a in rsync_args],
     ]
-    log("Running cmd:", cmd)
-    sp.run(cmd, check=True)
+    run(cmd)
+
+def download(url: str) -> None:
+    run(['wget', '--continue', url])
 
 
-# Download internet assets
-log("Getting shp file...")
-run((
-    'wget',
-    # Link parent page: https://data.fs.usda.gov/geodata/edw/datasets.php
-    'URL',
-))
-
-# Clone local assets
+# Clone files
 log("Copying files...")
-# fisher2016fig4.png was manually extracted from source PDF (see citations.bib)
 for i in (
     'PATH/2/FILE1',
     'PATH/2/FILE2',
+    'PATH/DIR',
 ):
     clone((i, './'))
+
+# Download internet assets
+for i in (
+    'https://upload.wikimedia.org/wikipedia/commons/8/86/Arbuscular_mycorrhiza_microscope.jpg',
+    # Link parent page:
+    # https://www.npr.org/2020/06/26/882828756/suzanne-simard-how-do-trees-collaborate
+    'https://media.npr.org/assets/img/2020/06/24/scn_0010-fb682a8b41f123a6a93207ee7715b8eee24a19b0.jpg',
+):
+    download(i)
 
 log("DONE")

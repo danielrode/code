@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: neovim
+# created: 28 apr 2026
+
+
+# Interactively diff 2-8 files on the command line (CLI).
+
+
+nvim -d "$@"
