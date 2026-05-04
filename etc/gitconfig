@@ -6,7 +6,7 @@
 	gpgSign = true
 [alias]
 	l = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'
-	lt = !git --no-pager log --max-count $(($(tput lines) - 8)) --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'  # Same as 'l' alias, but just shows enough recent commits to fit the current terminal screen, and also disables pager
+	lt = !git --no-pager log --max-count 10 --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)'  # Same as 'l' alias, but only shows most recent entries (like tail)
 	llt = log -8  # Long (detailed) log tail (show 8 most recent commits)
 	lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
 	wd = diff --word-diff=color --word-diff-regex='\\w+|.'

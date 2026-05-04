@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: pandoc, pdftoppm, GraphicsMagick
+# created: 01 may 2026
+# updated: -
+
+
+# Convert a PDF to a PowerPoint PPTX presentation.
+
+
+import sys
+import subprocess as sp
+from tempfile import TemporaryDirectory
+from pathlib import Path
+
+
+def get_img_size(img_path):
+    cmd = (
+        'gm', 'identify',
+        '-format', '%w,%h',
+        str(img_path),
+    )
+    p = sp.run(cmd, capture_output=True, text=True)
+    x, y = p.stdout.strip().split(',')
+
+    return float(x), float(y)
+
+
+src_pdf = Path(sys.argv[1])
+try:
+    dst_pptx = Path(sys.argv[2])
+except IndexError:
+    dst_pptx = Path(src_pdf.stem + '.pptx')
+
+with TemporaryDirectory() as td:
+    assert '"' not in td
+    td = Path(td)
+    print("Converting PDF to PNGs...")
+    cmd = (
+        'pdftoppm',
+        '-png',
+        str(src_pdf),
+        str(td/'page'),
+    )
+    sp.run(cmd, check=True)
+
+    print("Stretching PNGs to have 16:9 aspect ratio...")
+    for i in td.glob('page-*.png'):
+        x, y = get_img_size(i)
+        new_x = int(x)
+        new_y = round(x/16*9)
+        cmd = (
+            'gm', 'mogrify',
+            '-resize', '{}x{}!'.format(new_x, new_y),
+            str(i),
+        )
+        sp.run(cmd, check=True)
+
+    print("Generating markdown template...")
+    md_blob = '\n'.join((
+        '## {{background-image="{}"}}'.format(i)
+        for i in td.glob('page-*.png')
+    ))
+    print(md_blob)
+
+    print("Converting template to PPTX")
+    cmd = (
+        'pandoc',
+        '--from=markdown',
+        '--to=pptx',
+        '--output', str(dst_pptx),
+    )
+    sp.run(cmd, check=True, text=True, input=md_blob)
