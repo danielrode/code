@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies:
-#   podman
-#   podman-compose
-#   ~/.crypt/private_code_vars.toml
+# dependencies: podman, podman-compose, ~/.nunyuh
 # created: 12 apr 2026
-# updated: -
+# updated: 05 may 2026
 
 
+# TODO
 # Run containerized Joplin (notes) server.
 
 # NOTE:
@@ -16,7 +14,6 @@
 
 
 import os
-import secrets
 import tomllib
 import subprocess as sp
 from pathlib import Path
@@ -26,14 +23,17 @@ import yaml
 
 HOME = Path.home()
 
+NUNYUH = tomllib.loads(Path(HOME, '.nunyuh').read_text())
+
 DATA_DIR = Path(
     HOME,
-    ".local",
-    "share",
-    "com.github.danielrode",
-    "serve-joplin",
+    '.local',
+    'share',
+    'com.github.danielrode',
+    'joplin',
 )
-CON_ENV_PATH = DATA_DIR / "compose.env"
+CON_ENV_PATH = DATA_DIR / 'compose.env'
+
 CON_COMPOSE = {
     'version': '3',
     'services': {
@@ -84,21 +84,22 @@ CON_COMPOSE = {
     },
 }}
 
-PODMAN_CMD = (
-    'podman-compose',
-    '--project-name=joplin',
-    '--file=-',
-    '--env-file=' + str(CON_ENV_PATH),
-    'up',
+RH_TOML = '''
+[client]
+remote_addr = "{RH_ADDR}"
+[client.services.joplin]
+type = "tcp"
+token = "{TOKEN}"
+local_addr = "joplin:3280"
+'''.format(
+    RH_ADDR=NUNYUH['SERVES']['joplin_rh_addr'],
+    TOKEN=NUNYUH['SERVES']['joplin_rh_token'],
 )
 
 
-def gen_secret():
-    return secrets.token_urlsafe(64)
-
 def gen_compose_env(fp):
     # Import secrets
-    with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
+    with open(HOME / '.nunyuh', 'rb') as f:
         crypt_vars = tomllib.load(f)
 
     # Compile and save podman compose variables file
@@ -112,8 +113,27 @@ def gen_compose_env(fp):
 
 # Main
 DATA_DIR.mkdir(parents=True, exist_ok=True, 0o700)
+with TemporaryDirectory(ignore_cleanup_errors=True) as td:
+    rh_fp = Path(td, 'rathole.toml')
+    rh_fp.touch(mode=0o600)
+    rh_fp.write_text(RH_TOML)
 
-if not CON_ENV_PATH.exists():
-    gen_compose_env(CON_ENV_PATH)
+    env_fp = Path(td, 'compose.env')
+    env_fp.touch(mode=0o600)
+    env_fp.write_text('\n'.join((
+        'DB_PW=' + NUNYUH['SERVES']['joplin_db_pw'],
+        'APP_BASE_URL' + NUNYUH['SERVES']['joplin_origin'],
+    ))
 
-sp.run(PODMAN_CMD, input=yaml.dump(CON_COMPOSE), text=True)
+    cmd = (
+        'podman-compose',
+        '--no-ansi',
+        '--podman-pull-args=--pull=missing',
+        '--project-name=joplin',
+        '--env-file=' + str(env_fp),
+        '--file=-',
+        'up',
+    )
+    sp.run(cmd, input=yaml.dump(CON_COMPOSE), text=True, check=True)
+
+sys.exit(0)

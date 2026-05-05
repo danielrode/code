@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose
+# dependencies: podman, podman-compose, ~/.nunyuh
 # created: 04 may 2026
 # updated: 05 may 2026
 
@@ -79,7 +79,7 @@ CON_COMPOSE = {'services': {
 PODMAN_CMD = (
     'podman-compose',
     '--no-ansi',
-    '--podman-pull-args=--pull=policy',
+    '--podman-pull-args=--pull=missing',
     '--project-name=' + EXE_NAME,
     '--file=-',
     'up',

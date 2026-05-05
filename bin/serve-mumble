@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 16 apr 2026
+
+
+# TODO
+exit 1
+
+
+# sudo ufw allow in 64738/tcp
+# sudo ufw allow in 64738/udp
+
+# podman run --name mumble-server --replace --publish 64738:64738/tcp --publish 64738:64738/udp -v mumble-server:/data:z --restart on-failure -e MUMBLE_CONFIG_SERVER_PASSWORD=123 docker.io/mumblevoip/mumble-server:latest
+# # replace `-e MUMBLE_CONFIG_SERVER_PASSWORD=123` with use of podman secrets (see https://github.com/mumble-voip/mumble-docker?tab=readme-ov-file#example-running-the-container-with-secrets-using-podman)
