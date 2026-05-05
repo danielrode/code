@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman, podman-compose
+# created: 04 may 2026
+
+# TODO
+
+
+# Run cmintey's containerized "wishlist" app.
+
+
+import sys
+import tomllib
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import yaml
+
+
+EXE_NAME = Path(__file__).name
+
+HOME = Path.home()
+DATA_DIR = Path(
+    HOME,
+    '.local',
+    'share',
+    'com.github.danielrode',
+    'wishlist',
+)
+
+NUNYUH = tomllib.loads(Path(HOME, '.nunyuh').read_text())
+
+CON_COMPOSE = {'services': {
+    'wishlist': {
+        'container_name': 'wishlist',
+        'image': 'ghcr.io/cmintey/wishlist:latest',
+        'volumes': [
+            # Where user image uploads get stored
+            '{}/uploads:/usr/src/app/uploads'.format(DATA_DIR),
+            # Where the sqlite database gets stored
+            '{}/data:/usr/src/app/data'.format(DATA_DIR),
+        ],
+        'environment': {
+            'ORIGIN': NUNYUH['SERVES']['wishlist_origin'],
+            # TOKEN_TIME: 72 # hours until signup and password reset tokens
+            # expire
+            'TOKEN_TIME': 72,
+        },
+        'cap_drop': ['ALL'],
+        'security_opt': ['no-new-privileges'],
+        'read_only': True,
+        'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+        'restart': 'always',
+        'deploy': {'resources': {'limits': {
+            'mem_limit': '256m',  # Limit memory to 256MB
+            'cpus': 0.5,  # Limit CPU usage to 50% of a single core
+        }}},
+        'depends_on': ['rathole'],
+    },
+    'rathole': {
+        'image': 'docker.io/rapiz1/rathole:latest',
+        'volumes': [
+            '{RH_TOML_FP}:/rh.toml:ro,U,Z',
+        ],
+        'command': '/rh.toml',
+        'cap_drop': ['ALL'],
+        'cap_add': ['NET_BIND_SERVICE'],
+        'security_opt': ['no-new-privileges'],
+        'read_only': True,
+        'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+        'restart': 'always',
+        'deploy': {'resources': {'limits': {
+            'mem_limit': '256m',  # Limit memory to 256MB
+            'cpus': 0.5,  # Limit CPU usage to 50% of a single core
+        }}}
+    }
+}}
+
+PODMAN_CMD = (
+    'podman-compose',
+    '--no-ansi',
+    '--podman-pull-args=--pull=policy',
+    '--project-name=' + EXE_NAME,
+    '--file=-',
+    'up',
+)
+
+RH_TOML = '''
+[client]
+remote_addr = "{RH_ADDR}"
+[client.services.cmintey_wishlist]
+type = "tcp"
+token = "{TOKEN}"
+local_addr = "wishlist:3280"
+'''.format(
+    RH_ADDR=NUNYUH['SERVES']['wishlist_rh_addr'],
+    TOKEN=NUNYUH['SERVES']['wishlist_rh_token'],
+)
+
+
+# Main
+DATA_DIR.mkdir(exist_ok=True, parents=True, mode=0o700)
+with TemporaryDirectory(ignore_cleanup_errors=True) as td:
+    fp = Path(td, 'rathole.toml')
+    fp.touch(mode=0o600)
+    fp.write_text(RH_TOML)
+
+    CON_COMPOSE['services']['rathole']['volumes'][0] = (
+        CON_COMPOSE['services']['rathole']['volumes'][0].format(RH_TOML_FP=fp)
+    )
+
+    sp.run(PODMAN_CMD, input=yaml.dump(CON_COMPOSE), text=True, check=True)
+
+sys.exit(0)

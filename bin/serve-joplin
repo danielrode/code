@@ -111,7 +111,7 @@ def gen_compose_env(fp):
 
 
 # Main
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR.mkdir(parents=True, exist_ok=True, 0o700)
 
 if not CON_ENV_PATH.exists():
     gen_compose_env(CON_ENV_PATH)

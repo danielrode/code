@@ -3,3 +3,10 @@ https://stackoverflow.com/questions/40091541/can-git-be-told-to-use-spaces-in-gi
 make 'ax' binding in lf extract .tar.gz fully, rather than just to .tar
 
 file preview in lf should use `strings` instead of `cat`
+
+
+git switch master
+git fetch ally
+git cherry-pick ally/dev~0
+git add .
+git cherry-pick --continue
