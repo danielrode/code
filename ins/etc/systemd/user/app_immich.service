@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/local/bin/serve-immich
+ExecStart=%h/code/bin/serve-immich
 
 [Install]
 WantedBy=default.target

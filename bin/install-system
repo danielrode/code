@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 10 apr 2026
+# updated: 07 may 2026
 
 
 # Install system files.
@@ -74,9 +74,13 @@ sp.run(args, check=True)
 if DRYRUN:
     sys.exit(0)
 for perms in (
+    # 4 = read, 2 = write, 1 = execute
     ['0700', '/etc/ssh/sshd_config.d/'],
     ['0600', '/etc/ssh/sshd_config.d/99-harden.conf'],
     ['0755', '/etc/sv/cgroup1000/run'],
     ['0755', '/etc/sv/cgroup1000/log/run'],
+    ['0755', '/usr/local/bin/serve-joplin'],
+    ['0755', '/usr/local/bin/serve-mumble'],
+    ['0755', '/usr/local/bin/serve-wishlist'],
 ):
     sp.run(['chmod', '--changes', *perms], check=True)
