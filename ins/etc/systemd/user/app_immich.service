@@ -1,13 +1,12 @@
 [Unit]
-Description=Open WebUI
+Description=Immich
 After=network.target
 
 [Service]
 Type=simple
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/bin/podman start -a open-webui
-ExecStop=/usr/bin/podman stop open-webui
+ExecStart=/usr/local/bin/serve-immich
 
 [Install]
 WantedBy=default.target

@@ -6,8 +6,7 @@ After=network.target
 Type=simple
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/bin/podman start -a thelounge
-ExecStop=/usr/bin/podman stop thelounge
+ExecStart=/usr/local/bin/serve-thelounge
 
 [Install]
 WantedBy=default.target

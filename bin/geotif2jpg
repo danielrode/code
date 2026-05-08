@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 07 may 2026
+
+
+# Convert a GeoTIFF raster into a JPEG image.
+
+
+src_tif="$1"
+dst_jpg="$2"
+gdal_translate -ot Byte -scale -of JPEG "$src_tif" "$dst_jpg"

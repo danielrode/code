@@ -202,10 +202,11 @@ def main() -> None:
     def worker(job):
         return job**3
 
-    jobs = [10,20,30,40]
-    for job, result in dispatch(jobs, worker):
-        # Results are ordered by which finish first
-        print(job, result)
+    if __name__ == '__main__':
+        jobs = [10,20,30,40]
+        for job, result in dispatch(jobs, worker):
+            # Results are ordered by which finish first
+            print(job, result)
 
     # Style: Chain method calls
     result = (

@@ -65,7 +65,7 @@ args = [
 if DRYRUN:
     args += ['--dry-run']
 args += [
-    str(CODE_REPO / 'ins/system') + '/',  # Source
+    str(CODE_REPO / 'ins') + '/',  # Source
     '/',  # Destination
 ]
 sp.run(args, check=True)

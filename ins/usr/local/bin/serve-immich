@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 08 apr 2025
+# updated: 06 may 2026
+
+
+# Server Immich.
+
+
+import sys
+import tomllib
+import subprocess as sp
+from pathlib import Path
+
+import yaml
+
+
+EXE_NAME = Path(__file__).name
+
+HOME = Path.home()
+NUNYUH = tomllib.loads(Path(HOME, '.nunyuh').read_text())
+IMG_DIR = HOME / 'media/immich'
+
+IMMICH_VER = 'release'
+
+CON_SERVICES = {
+    'redis': {
+        'image': 'docker.io/redis:6.2-alpine',
+        'restart': 'always',
+    },
+    'database': {
+        'image': 'docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0',
+        'restart': 'always',
+        'environment': [
+            'POSTGRES_PASSWORD=' + NUNYUH['SERVES']['immich_db_pw'],
+            'POSTGRES_USER=postgres',
+            'POSTGRES_DB=immich',
+            'POSTGRES_INITDB_ARGS=--data-checksums',
+        ],
+        'volume': [
+            'immich_postgres:/var/lib/postgresql/data',
+        ],
+        'cmd': [
+            'postgres',
+            '-c', 'shared_preload_libraries=vectors.so',
+            '-c', 'search_path="$$user", public, vectors',
+            '-c', 'logging_collector=on',
+            '-c', 'max_wal_size=2GB',
+            '-c', 'shared_buffers=512MB',
+            '-c', 'wal_compression=on',
+        ],
+    },
+    'immich-machine-learning': {
+        'image': 'ghcr.io/immich-app/immich-machine-learning:' + IMMICH_VER,
+        'restart': 'always',
+        'environment': [
+            'UPLOAD_LOCATION=' + str(IMG_DIR),
+            'DB_DATA_LOCATION=./postgres',
+            'TZ=America/Denver',
+            'IMMICH_VERSION=' + IMMICH_VER,
+            'DB_PASSWORD=' + NUNYUH['SERVES']['immich_db_pw'],
+            'DB_USERNAME=postgres',
+            'DB_DATABASE_NAME=immich',
+        ],
+        'volumes': [
+            'immich_model_cache:/cache',
+        ],
+    },
+    'immich': {
+        'image': 'ghcr.io/immich-app/immich-server:' + IMMICH_VER,
+        'restart': 'always',
+        'requires': ['redis', 'database'],
+        'ports': ['2283:2283'],
+        'environment': [
+            'DB_PASSWORD=' + NUNYUH['SERVES']['immich_db_pw'],
+            'DB_USERNAME=postgres',
+            'DB_DATABASE_NAME=immich',
+        ],
+        'volumes': [
+            '{}:/usr/src/app/upload:z'.format(IMG_DIR),
+            '/etc/localtime:/etc/localtime:ro',
+        ],
+    },
+}
+CON_COMPOSE = {
+    'services': CON_SERVICES,
+    'volumes': {v: {} for v in [
+        'immich_postgres',
+        'immich_model_cache',
+    ]},
+}
+
+
+# Main
+IMG_DIR.mkdir(parents=True, exist_ok=True)
+print("Access Immich at http://localhost:2283/")
+
+cmd = (
+    'podman-compose',
+    '--no-ansi',
+    '--podman-pull-args=--pull=missing',
+    '--project-name=' + EXE_NAME,
+    '--file=-',
+    'up',
+)
+sp.run(cmd, check=True, text=True, input=yaml.dump(CON_COMPOSE))
+
+sys.exit(0)
+
+
+# TODO look into podman secrets

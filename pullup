@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# created: 25 apr 2026
+# updated: 06 may 2026
+
+
+set -e
+
+
+remote_host=USER@CUSTOMIZED_REMOTE_HOST
+remote_git=GIT_REMOTE
+exit
+
+# Save remote changes to upstream as a tagged commit
+ssh "$remote_host" bash <<EOF
+set -e
+git -C code checkout b_patch
+git -C code add .
+git -C code commit -m various
+git -C code tag -f send_upstream
+EOF
+
+# Pull those remote changes
+cd ~/code
+git checkout master
+git fetch "$remote_git"
+git cherry-pick send_upstream
+git push
+
+# Reorganize remote repo so these new changes reside in the master branch
+ssh "$remote_host" bash <<EOF
+set -e
+git -C code checkout b_patch
+git -C code worktree add ../tmp_git_dir1 master
+git -C tmp_git_dir1 fetch
+git -C tmp_git_dir1 reset --hard origin/master
+git -C code worktree remove ../tmp_git_dir1
+git -C code branch -D tmp_git_dir1
+
+git -C code branch b_patch_tmp master
+git -C code worktree add ../tmp_git_dir2 b_patch_tmp
+git -C tmp_git_dir2 cherry-pick t_patch
+git -C code worktree remove ../tmp_git_dir2
+git -C code switch b_patch_tmp
+git -C code branch -D b_patch
+git -C code branch -m b_patch_tmp b_patch
+git -C code tag -f t_patch
+EOF

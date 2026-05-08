@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 27 apr 2026
+# updated: 07 may 2026
 
 
 # Setup and configure Linux system to be how I like it.
@@ -177,7 +177,7 @@ EOF
 
     # Give users access to create and modify new cgroups within their own
     # hierarchy
-    # TODO make this user agnostic (not hardcoded to 'daniel'; will need to change files under ~/code/ins/system/etc/sv/cgroup1000)
+    # TODO make this user agnostic (not hardcoded to 'daniel'; will need to change files under ~/code/ins/etc/sv/cgroup1000?)
     uid=1000
     ln -sf /etc/sv/cgroup"$uid" /var/service/
 fi

@@ -61,10 +61,6 @@ LINK_MAP = {
         '.config/sway',
     'systemd-globus.service':
         '.config/systemd/user/globus.service',
-    'systemd-immich.service':
-        '.config/systemd/user/immich.service',
-    'systemd-thelounge-irc.service':
-        '.config/systemd/user/thelounge-irc.service',
     'user-dirs.dirs':
         '.config/user-dirs.dirs',
     'waybar':

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 25 apr 2026
+# updated: 07 may 2026
 
 
 # Setup and configure Linux system to be how I like it.
@@ -41,7 +41,7 @@ sudo ~/code/bin/setup-system "$(id -un)"
 [[ $HOSTNAME == bigpan ]] && mkdir -p ~/logs
 
 # Install user config files
-~/code/bin/install-home-config
+~/code/bin/install-dotfiles
 cmd_exists systemctl && systemctl --user daemon-reload
 
 # Configure settings for this git repo
@@ -61,19 +61,14 @@ then
         systemctl --user enable --now globus.service 
     else
         # Syncthing
-        systemctl --user enable syncthing
-        systemctl --user start syncthing
+        systemctl --user enable --now syncthing
     fi
 
     if [[ $HOSTNAME == bigpan ]]
     then
-        # Immich
-        systemctl --user enable immich
-        systemctl --user start immich
-
-        # IRC client
-        systemctl --user enable thelounge-irc
-        systemctl --user start thelounge-irc
+        # Immich, IRC, 
+        systemctl --user enable --now app_immich
+        systemctl --user enable --now app_thelounge
     fi
 fi
 
@@ -90,12 +85,5 @@ gsettings set org.gnome.desktop.wm.preferences focus-mode sloppy
 
 
 
-
-
 # TODO
-# Create a script called change-scenery then take the wallpaper updating code
-# above and put it in there. Add code that changes the color palette of
-# fuzzel and waybar to match the color palette of the newly set wallpaper. Call
-# change`scenery script from (setup.sh).
-#
 # todo firewall (ufw; see `sudo ufw status verbose` to get current list of rules)

@@ -2,11 +2,26 @@ https://stackoverflow.com/questions/40091541/can-git-be-told-to-use-spaces-in-gi
 
 make 'ax' binding in lf extract .tar.gz fully, rather than just to .tar
 
-file preview in lf should use `strings` instead of `cat`
+https://radicale.org/v3.html
+https://handy.computer/
+https://www.n16f.net/blog/gmail-backups-using-isync/
+searxng
 
+podman secret
 
-git switch master
-git fetch ally
-git cherry-pick ally/dev~0
-git add .
-git cherry-pick --continue
+life360 alt:
+https://www.mygrid.app/
+https://owntracks.org/
+
+create desktop files for the /opt programs below and place them under
+~/code/ins/usr/local/share/applications/
+The install script should only install a desktop file if it detects the
+executable is available on the system.
+-- the opt programs:
+speedcrunch  # Calculator
+darktable  # Virtual lighttable and darkroom for photos
+doublecmd  # File Manager
+ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
+foot bluetuith  # Bluetooth Manager
+keymapp  # Moonlander Keyboard
+googleearth  # Maps, GIS
