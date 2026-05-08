@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 10 may 2025
-# updated: 29 jan 2026
+# updated: 07 may 2026
 
 
+# Run IRC client.
+
+
+# DOC (setup):
 # sudo loginctl enable-linger $(whoami)
 
 
-DATA_DIR="$HOME/.appdata/thelounge"
+DATA_DIR="$HOME/.appdata/loungeirc"
 
 
 mkdir -p "$DATA_DIR"
 podman run \
-    --name thelounge --replace \
+    --name loungeirc --replace \
     --publish 9000:9000 \
     --volume "$DATA_DIR":/var/opt/thelounge:z \
     --restart always \
     ghcr.io/thelounge/thelounge:latest \
 ;
-# podman exec --user node -it thelounge thelounge add MrLiDAR
+
+# DOC (add IRC user):
+# podman exec --user node -it loungeirc thelounge add MrLiDAR

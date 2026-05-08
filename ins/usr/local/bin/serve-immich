@@ -4,7 +4,7 @@
 # updated: 06 may 2026
 
 
-# Server Immich.
+# Run Immich server.
 
 
 import sys
