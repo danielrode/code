@@ -34,3 +34,6 @@ fi
 
 # Main
 pdftoppm -png "$1" > "$out_pth"
+
+
+# TODO rename to pdf2pngs?

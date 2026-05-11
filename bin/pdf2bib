@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
 # author: daniel rode
+# dependencies: ghostscript, podman
 # created: 11 may 2026
 
 
 # Get and print BibTeX entry for a given PDF article.
 
 
+import os
 import sys
-import shutil
 import subprocess as sp
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
+
+from collections.abc import Iterator
+from collections.abc import Callable
+from typing import Any
 
 
 # Constants
 CON_IMG = 'ghcr.io/danielrode/pdf2bib:latest'
 PY_PAYLOAD = r'''
-import pdf2bib
-pdf2bib.config.set("verbose", False)
-[
-    print(i["bibtex"] + "\n")
-    for i in pdf2bib.pdf2bib("/in/")
-]
+import sys, pdf2bib
+# pdf2bib.config.set("verbose", False)
+out = pdf2bib.pdf2bib("/in/000.pdf")['bibtex']
+if out is None:
+  sys.exit(1)
+print(out)
 '''
 
 
@@ -29,42 +36,76 @@ pdf2bib.config.set("verbose", False)
 def print2(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
+def dispatch(
+    jobs: iter, worker: Callable, max_workers=os.cpu_count(),
+) -> Iterator[(Any, Any)]:
+    """Run jobs in parallel.
 
-# Parse command line arguments
-src_pdfs = [Path(i) for i in sys.argv[1:]]
-for i in src_pdfs:
-    if not i.exists():
-        print2("error: Path not found:", i)
+    Parallel apply dispatching function: Run a list of jobs with a given
+    worker function, in parallel. Yield worker results in order they
+    finish.
+    """
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures_jobs = {executor.submit(worker, j): j for j in jobs}
+        for f in as_completed(futures_jobs):
+            yield (futures_jobs[f], f.result())
+
+def pdf2bib_worker(src_pdf):
+    # Setup tempdir and run container
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        td.chmod(0o755)
+
+        dst = Path(td, "000.pdf")
+        dst.touch()
+        dst.chmod(0o644)
+        cmd = (
+            'gs',
+            '-o', str(dst),
+            '-sDEVICE=pdfwrite',
+            '-dNoOutputAttributes',
+            str(src_pdf),
+        )
+        sp.run(cmd, check=True, capture_output=True)
+
+        cmd = [
+            'podman', 'run',
+            '--rm',
+            '--user=1111:1111',  # Non-root
+            '--read-only',
+            '--security-opt=no-new-privileges:true',
+            '--cap-drop=ALL',
+            '--privileged=false',
+            '--entrypoint=python3',
+            '--volume={}:/in:ro'.format(td),
+            CON_IMG,
+            '-c', PY_PAYLOAD,
+        ]
+        p = sp.run(cmd, text=True, capture_output=True)
+
+    return p
+
+
+if __name__ == '__main__':
+    # Parse command line arguments
+    src_pdfs = [Path(i) for i in sys.argv[1:]]
+    for i in src_pdfs:
+        if not i.exists():
+            print2("error: Path not found:", i)
+            sys.exit(1)
+
+    if not src_pdfs:
+        print2("error: No path provided")
         sys.exit(1)
 
-if not src_pdfs:
-    print2("error: No path provided")
-    sys.exit(1)
-
-# Setup tempdir and run container
-with TemporaryDirectory() as td:
-    td = Path(td)
-
-    for i, fp in enumerate(src_pdfs):
-        dst = Path(td, "{}.pdf".format(i))
-        shutil.copy(fp, dst)
-        dst.chmod(0o0644)
-
-    p = sp.run([
-        'podman', 'run',
-        '--rm',
-        '--user=1111:1111',
-        '--read-only',
-        '--security-opt=no-new-privileges:true',
-        '--cap-drop=ALL',
-        '--privileged=false',
-        '--entrypoint=python3',
-        *(
-            f'--volume={fp}:/in/{fp.name}:ro'
-            for fp in td.iterdir()
-        ),
-        CON_IMG,
-        '-c', PY_PAYLOAD,
-    ])
-
-sys.exit(p.returncode)
+    # Get PDFs' BibTeX
+    for job, result in dispatch(src_pdfs, pdf2bib_worker):
+        print(result) # todo
+        if result.returncode == 0:
+            print(result.stdout)
+            print()
+        else:
+            print2("JOB FAILED:", job)
+            print2(result.stdout)
+            print2(result.stderr)
