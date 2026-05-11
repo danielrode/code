@@ -101,8 +101,18 @@ CON_SERVICES = {
     },
 }
 CON_COMPOSE = {
-    'services': CON_SERVICES,
     'name': EXE_NAME,
+    'services': CON_SERVICES,
+    'volumes': {
+        'immich_postgres': {
+            'external': True,
+            'name': 'immich_postgres',
+        },
+        'immich_model_cache': {
+            'external': True,
+            'name': 'immich_model_cache',
+        },
+    },
 }
 
 
