@@ -54,7 +54,7 @@ CON_SERVICES = {
             'POSTGRES_INITDB_ARGS=--data-checksums',
         ],
         'volume': [
-            '{}/postgres:/var/lib/postgresql/data:U,Z'.format(DATA_HOME),
+            'immich_postgres:/var/lib/postgresql/data',
         ],
         'cmd': [
             'postgres',
@@ -80,7 +80,7 @@ CON_SERVICES = {
             'DB_DATABASE_NAME=immich',
         ],
         'volumes': [
-            '{}/immich_model_cache:/cache:U,Z'.format(CACHE_HOME),
+            'immich_model_cache:/cache',
         ],
     },
     'server': {  # immich
