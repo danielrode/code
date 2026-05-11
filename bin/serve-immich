@@ -40,10 +40,12 @@ IMMICH_VER = 'release'
 CON_SERVICES = {
     'redis': {
         'image': 'docker.io/redis:6.2-alpine',
+        'container_name': 'immich_redis',
         'restart': 'always',
     },
-    'database': {
+    'postgres': {  # database
         'image': 'docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0',
+        'container_name': 'immich_postgres',
         'restart': 'always',
         'environment': [
             'POSTGRES_PASSWORD=' + NUNYUH['SERVES']['immich_db_pw'],
@@ -64,8 +66,9 @@ CON_SERVICES = {
             '-c', 'wal_compression=on',
         ],
     },
-    'immich-machine-learning': {
+    'ml': {  # immich-machine-learning
         'image': 'ghcr.io/immich-app/immich-machine-learning:' + IMMICH_VER,
+        'container_name': 'immich_ml',
         'restart': 'always',
         'environment': [
             'UPLOAD_LOCATION=' + str(IMG_DIR),
@@ -80,10 +83,11 @@ CON_SERVICES = {
             '{}/immich_model_cache:/cache:U,Z'.format(CACHE_HOME),
         ],
     },
-    'immich': {
+    'server': {  # immich
         'image': 'ghcr.io/immich-app/immich-server:' + IMMICH_VER,
+        'container_name': 'immich_server',
         'restart': 'always',
-        'requires': ['redis', 'database'],
+        'depends_on': ['redis', 'postgres'],
         'ports': ['2283:2283'],
         'environment': [
             'DB_PASSWORD=' + NUNYUH['SERVES']['immich_db_pw'],
@@ -98,6 +102,7 @@ CON_SERVICES = {
 }
 CON_COMPOSE = {
     'services': CON_SERVICES,
+    'name': EXE_NAME,
 }
 
 
@@ -111,7 +116,6 @@ cmd = (
     'podman-compose',
     '--no-ansi',
     '--podman-pull-args=--pull=missing',
-    '--project-name=' + EXE_NAME,
     '--file=-',
     'up',
 )
