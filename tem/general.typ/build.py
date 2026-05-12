@@ -6,24 +6,50 @@
 
 
 import os
+import re
 import sys
 import subprocess as sp
 from pathlib import Path
 
 
+os.chdir(Path(__file__).parent)
+
+
+PWD = Path.cwd()
 SRC_PATH = Path("./doc.typ")
 OUT_PATH = Path("./export.pdf")
+SPELLING_EXCEPTIONS = set(i.strip() for i in """
+abiotic
+abiotically
+blindspots
+biotic
+metacommunity
+CSU
+ChatGPT
+overfishing
+invasives
+""".strip().splitlines())
 
 
 # Functions
-def cd0() -> None:
-    """Set working directory to the same location as the running script."""
+def pandoc(args):
+    cmd = (
+        'podman',
+        'run',
+        '--rm',
+        '--interactive',
+        '--volume={}:{}:ro'.format(PWD, PWD),
+        '--workdir={}'.format(PWD),
+        'docker.io/pandoc/typst:latest',
+        *(str(a) for a in args),
+    )
+    return sp.run(
+        cmd,
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout
 
-    os.chdir(Path(__file__).resolve().parent)
-
-
-# Set working directory
-cd0()
 
 # If watch mode, keep rendering PDF each time Typst document is updated
 watch_mode = False
@@ -45,22 +71,26 @@ if watch_mode:
 
 # Spell check
 print("Spell check...")
-cmd = (
-    'podman',
-    'run',
-    '--rm',
-    '--interactive',
-    'docker.io/pandoc/typst:latest',
+
+bib_words = set((
+    re.sub('[^A-Za-z-]', '', i)  # Remove non-alpha chars
+    for i in pandoc((
+        '--bibliography=citations.bib',
+        '--citeproc',
+        '--to=plain',
+        'citations.bib',
+    )).replace('\n', ' ').strip().split(' ')
+    if not re.search('[0-9]', i)  # "Word" must not contain numbers
+))
+
+src_plain = ' '.join(pandoc((
+    '--bibliography=citations.bib',
+    '--citeproc',
     '--from=typst',
     '--to=plain',
-)
-src_plain = sp.run(
-    cmd,
-    check=True,
-    text=True,
-    input=SRC_PATH.read_text(),
-    capture_output=True,
-).stdout
+    str(SRC_PATH),
+)).replace('’s', '').split('-'*72)[:-1])
+print(src_plain)
 
 spelling_errs = sp.run(
     ('hunspell', '-l'),
@@ -72,7 +102,8 @@ spelling_errs = sp.run(
 spelling_errs = set(spelling_errs)
 
 for i in sorted(spelling_errs):
-    print(i)
+    if i not in (SPELLING_EXCEPTIONS | bib_words):
+        print('-', i)
 
 # Compile to PDF
 print("Generating PDF...")
@@ -106,3 +137,8 @@ cmd = (
     '--to=docx',
 )
 sp.run(cmd, check=True, text=True, input=SRC_PATH.read_text())
+
+
+
+# TODO look at /home/daniel/union/edu/.../spell.py
+
