@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: fzf
+# created: 12 may 2026
+# updated: -
+
+
+# List available templates, and then copy to destination.
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+PWD = Path.cwd()
+HOME = Path.home()
+
+
+# Parse command line arguments
+try:
+    dst = Path(sys.argv[1])
+except IndexError:
+    dst = PWD
+dst = str(dst) + '/'
+
+# Find available templates
+tems = [str(i) for i in Path(HOME, 'code', 'tem').iterdir()]
+
+# User select template of interest
+cmd = (
+    'fzf',
+    '--delimiter=/',
+    '--with-nth=-1',
+    '--preview=tree {}',
+    '--preview-window=up,50%',
+)
+p = sp.run(
+    cmd,
+    text=True,
+    input='\n'.join(tems),
+    stdout=sp.PIPE,
+)
+try:
+    sel = p.stdout.strip()
+except IndexError:
+    print("No selection made")
+    sys.exit(0)
+
+# Clone selected template
+cmd = (
+    'rsync',
+    '--verbose',
+    '--human-readable',
+    '--itemize-changes',
+    '--recursive',
+    '--copy-links',
+    '--keep-dirlinks',
+    '--perms',
+    '--executability',
+    '--ignore-existing',
+    '--partial',
+    '--mkpath',
+    str(sel),
+    str(dst),
+)
+sp.run(cmd, check=True)

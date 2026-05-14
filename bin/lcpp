@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, aria2
 # created: 07 feb 2026
-# updated: 27 apr 2026
+# updated: 13 may 2026
 
 
 # Run LLMs (AI chat) locally via llama.cpp.
@@ -17,7 +17,15 @@ from pathlib import Path
 import yaml
 
 
-DEFAULT_MODEL = 'gemma-3-1b-it-BF16'
+HOME = Path.home()
+CACHE_DIR = HOME / ".cache"
+GGUF_MODEL_DIR = CACHE_DIR / "com.github.danielrode/lcpp/gguf"
+
+DEFAULT_MODELS = (
+    'gemma-3-1b-it-BF16',
+    'Falcon3-3B-Instruct-q4_0',
+    'Qwen2.5-Coder-3B-Instruct-Q4_0',
+)
 MODEL_LIST = [
     # Useful model lists:
     # - https://huggingface.co/bartowski
@@ -40,91 +48,99 @@ MODEL_MAP = {
 }
 
 CON_IMG = 'ghcr.io/ggml-org/llama.cpp:server-vulkan'
+CON_PORT = 5001
+CON_SERVICES = {
+    'llamacpp': {
+        'image': CON_IMG,
+        'devices': [
+            '/dev/dri',
+        ],
+        'volumes': [
+            str(GGUF_MODEL_DIR) + ':/models:ro,z',
+        ],
+        'environment': [
+            # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
 
-HOME = Path.home()
-CACHE_DIR = HOME / ".cache"
-GGUF_MODEL_DIR = CACHE_DIR / "com.github.danielrode/lcpp/gguf"
+            'LLAMA_ARG_WEBUI=true',
+            'LLAMA_ARG_HOST=0.0.0.0',
+            'LLAMA_ARG_PORT={}'.format(CON_PORT),
 
+            # Router mode settings
+            'LLAMA_ARG_MODELS_DIR=/models/',
+            # 'LLAMA_ARG_MODELS_PRESET=PATH', # TODO
+            'LLAMA_ARG_MODELS_MAX=1',
+            'LLAMA_ARG_MODELS_AUTOLOAD=enabled',
+            # 'LLAMA_ARG_MODELS_MAX=2',
+            # 'LLAMA_ARG_MODELS_AUTOLOAD=disabled',
 
-def get_con_yaml(model_filename, port=5001):
-    return yaml.dump({
-        'version': 3.2,
-        'services': {
-            'llamacpp': {
-                'image': CON_IMG,
-                'devices': [
-                    '/dev/dri',
-                ],
-                'volumes': [
-                    str(GGUF_MODEL_DIR) + ':/models:ro,z',
-                ],
-                'environment': [
-                    # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+            # Number of tokens to predict (-1 = inf)
+            'LLAMA_ARG_N_PREDICT=-1',
 
-                    'LLAMA_ARG_WEBUI=true',
-                    'LLAMA_ARG_HOST=0.0.0.0',
-                    'LLAMA_ARG_PORT=' + str(port),
-                    'LLAMA_ARG_MODEL=/models/' + str(model_filename),
-
-                    # Number of tokens to predict (-1 = inf)
-                    'LLAMA_ARG_N_PREDICT=-1',
-
-                    # Max number of layers to store in VRAM
-                    # 'LLAMA_ARG_N_GPU_LAYERS=64',
-                    # 'LLAMA_ARG_N_GPU_LAYERS=99',
-                    'LLAMA_ARG_N_GPU_LAYERS=auto',
-                ],
-                'ports': [
-                    f'127.0.0.1:{port}:{port}',
-                ],
-                'restart': 'unless-stopped',
-            },
-        },
-    })
+            # Max number of layers to store in VRAM
+            # 'LLAMA_ARG_N_GPU_LAYERS=64',
+            # 'LLAMA_ARG_N_GPU_LAYERS=99',
+            'LLAMA_ARG_N_GPU_LAYERS=auto',
+        ],
+        'ports': [
+            f'127.0.0.1:{CON_PORT}:{CON_PORT}',
+        ],
+        'restart': 'unless-stopped',
+    },
+}
+CON_COMPOSE = {
+    'version': 3.2,
+    'services': CON_SERVICES,
+}
 
 
 # Parse command line input
-try:
-    model = sys.argv[1].removesuffix(".gguf")
-except IndexError:
-    model = DEFAULT_MODEL
+models = [i.removesuffix(".gguf") for i in sys.argv[1:]]
+if not models:
+    models = DEFAULT_MODELS
 
-if model not in MODEL_MAP:
-    print("error: Model not found:", model)
-    sys.exit(1)
+for m in models:
+    if m not in MODEL_MAP:
+        print("error: Model not found:", m)
+        sys.exit(1)
 
-# Download model, if needed
-fname = model + '.gguf'
-if any((
-    not (GGUF_MODEL_DIR / fname).exists(),
-    Path(GGUF_MODEL_DIR, "{}.aria2".format(fname)).exists(),
-)):
-    print("Model not found in cache; downloading...")
-    GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
-    url = '/'.join((
-        'https://huggingface.co',
-        MODEL_MAP[model],
-        'resolve',
-        'main',
-        fname,
-    ))
-    cmd = (
-        'aria2c',
-        '--dir', str(GGUF_MODEL_DIR),
-        '--out', str(fname),
-        url,
-    )
-    sp.run(cmd, check=True)
+# Download model(s), if needed
+for m in models:
+    fname = m + '.gguf'
+    if any((
+        not (GGUF_MODEL_DIR / fname).exists(),
+        Path(GGUF_MODEL_DIR, "{}.aria2".format(fname)).exists(),
+    )):
+        print("Model not found in cache; downloading...")
+        GGUF_MODEL_DIR.mkdir(exist_ok=True, parents=True)
+        url = '/'.join((
+            'https://huggingface.co',
+            MODEL_MAP[m],
+            'resolve',
+            'main',
+            fname,
+        ))
+        cmd = (
+            'aria2c',
+            '--dir', str(GGUF_MODEL_DIR),
+            '--out', str(fname),
+            url,
+        )
+        sp.run(cmd, check=True)
 
 # Update llama.cpp, if needed
 cmd = ('podman', 'pull', '--policy=newer', CON_IMG)
 sp.run(cmd, check=True)
 
 # Run llama.cpp
-cmd = (
+cmd = [
     'podman-compose',
     '--file', '-',
-    'up',
-)
-con_yaml = get_con_yaml(fname)
-sp.run(cmd, input=con_yaml, text=True)
+]
+con_yaml = yaml.dump(CON_COMPOSE)
+try:
+    sp.run([*cmd, 'up'], input=con_yaml, text=True)
+except KeyboardInterrupt:
+    sp.run([*cmd, 'down'], input=con_yaml, text=True)
+
+
+# todo https://huggingface.co/blog/ggml-org/model-management-in-llamacpp
