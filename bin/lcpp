@@ -7,13 +7,10 @@
 
 # Run LLMs (AI chat) locally via llama.cpp.
 #
-# ssh -tL 5001:localhost:5001 REMOTE_IP ~/code/bin/lcpp Qwen2.5-7B-Instruct-Q4_0
+# ssh -tL 5001:localhost:5001 REMOTE_IP ~/code/bin/lcpp [MODEL...]
 
 
 import sys
-import shutil
-import socket
-import hashlib
 import subprocess as sp
 from os import sysconf
 from pathlib import Path
@@ -23,11 +20,9 @@ import yaml
 
 
 HOME = Path.home()
-RAM_GB = (sysconf('SC_PAGE_SIZE') * sysconf('SC_PHYS_PAGES')) / (1024.**3)
-HOSTNAME = socket.gethostname()
-
 CACHE_DIR = HOME / ".cache"
 GGUF_MODEL_DIR = CACHE_DIR / "com.github.danielrode/lcpp/gguf"
+RAM_GB = (sysconf('SC_PAGE_SIZE') * sysconf('SC_PHYS_PAGES')) / (1024.**3)
 
 DEFAULT_MODELS = [
     'gemma-3-1b-it-BF16',
@@ -115,12 +110,6 @@ CON_COMPOSE = {
 }
 
 
-def sha1(text: str) -> str:
-    """Return SHA1 hash of string."""
-
-    return hashlib.sha1(bytes(text, 'utf8')).hexdigest()
-
-
 # Parse command line input
 models = [i.removesuffix(".gguf") for i in sys.argv[1:]]
 if not models:
@@ -132,40 +121,37 @@ for m in models:
         sys.exit(1)
 
 # Download model(s), if needed
-urls = []
-for m in models:
-    repo = MODEL_MAP[m]
-    fname = m + ".gguf"
-
-    if not (GGUF_MODEL_DIR / fname).exists():
-        u = f'https://huggingface.co/{repo}/resolve/main/{fname}'
-        hash = sha1(u)
-        dst = Path(GGUF_MODEL_DIR, '.tmp_aria', hash)
-        dst.mkdir(parents=True, exist_ok=True)
-        urls += [{
-            'repo': repo,
-            'fname': fname,
-            'url': u,
-            'hash': hash,
-            'tmp_dst_dir': dst,
-        }]
-
+urls = [
+    f'https://huggingface.co/{MODEL_MAP[m]}/resolve/main/{m}.gguf'
+    for m in models
+    if not Path(GGUF_MODEL_DIR, f"{m}.gguf").exists()
+]
 if urls:
-    aria_input = '\n'.join([
-        f"{i['url']}\n\tdir={i['tmp_dst_dir']}"
-        for i in urls
-    ])
-    cmd = (
-        'aria2c',
-        '--force-sequential=true',
-        '--input-file=-',
-    )
-    sp.run(cmd, check=True, text=True, input=aria_input)
+    GGUF_MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-    for i in urls:
-        next(i['tmp_dst_dir'].glob('*')).rename(GGUF_MODEL_DIR / i['fname'])
+    # Aria does not respect name requests for files from Hugging Face last I
+    # checked, so this temp dir workaround is needed to ensure model files
+    # get proper names
+    with TemporaryDirectory(prefix='.tmp_', dir=GGUF_MODEL_DIR) as td:
+        td = Path(td)
+        for i in range(len(urls)):
+            Path(td, str(i)).mkdir()
 
-    shutil.rmtree(GGUF_MODEL_DIR / '.tmp_aria')
+        aria_input = '\n'.join([
+            f"{u}\n\tdir={Path(td, str(i))}"
+            for i, u in enumerate(urls)
+        ])
+        cmd = (
+            'aria2c',
+            '--force-sequential=true',
+            '--input-file=-',
+        )
+        sp.run(cmd, check=True, text=True, input=aria_input)
+
+        for i, u in enumerate(urls):
+            model_fname = u.split('/')[-1]
+            model_tmp_fp = next(Path(td, str(i)).glob('*'))
+            model_tmp_fp.rename(GGUF_MODEL_DIR / model_fname)
 
 # Update llama.cpp, if needed
 cmd = ('podman', 'pull', '--policy=newer', CON_IMG)
