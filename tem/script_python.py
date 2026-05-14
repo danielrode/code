@@ -16,6 +16,7 @@ import os
 import sys
 import socket
 import subprocess as sp
+from os import sysconf
 from pathlib import Path
 from shutil import which
 
@@ -28,6 +29,7 @@ import dbus
 PWD = Path.cwd()
 HOME = Path.home()
 HOSTNAME = socket.gethostname()
+RAM_GB = (sysconf('SC_PAGE_SIZE') * sysconf('SC_PHYS_PAGES')) / (1024.**3)  # System memory in GB
 
 PROGRAM_NAME = "[Unique Name of Program]"
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
