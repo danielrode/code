@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 07 may 2026
+# updated: 15 may 2026
 
 
 # Install system files.
@@ -14,11 +14,32 @@ from pathlib import Path
 
 
 HOME = Path.home()
-DRYRUN = False
 try:
     CODE_REPO = Path(os.environ['CODE_REPO'])
 except KeyError:
     CODE_REPO = HOME / "code"
+
+# 4 = read, 2 = write, 1 = execute
+DEFAULT_D_CHMOD = '0755'
+DEFAULT_F_CHMOD = '0644'
+PERMS = {
+    Path('/etc/ssh/sshd_config.d/'):               '0700',
+    Path('/etc/ssh/sshd_config.d/99-harden.conf'): '0600',
+    Path('/etc/sv/cgroup1000/run'):                '0755',
+    Path('/etc/sv/cgroup1000/log/run'):            '0755',
+    Path('/usr/local/bin/serve-joplin'):           '0755',
+    Path('/usr/local/bin/serve-mumble'):           '0755',
+    Path('/usr/local/bin/serve-wishlist'):         '0755',
+}
+
+
+def get_perms(fp):
+    try:
+        return PERMS[fp]
+    except KeyError:
+        if fp.is_dir():
+            return DEFAULT_D_CHMOD
+        return DEFAULT_F_CHMOD
 
 
 # Verify script is being run as root
@@ -26,61 +47,22 @@ if os.geteuid() != 0:
     print("This script must be run as root")
     sys.exit(1)
 
-# Determine whether to make actual changes, or just simulate them
-try:
-    if os.environ['dryrun'] == "true":
-        DRYRUN = True
-except KeyError:
-    pass
-
-# Install config files
-args = [
-    'rsync',
-
-    # Configure rsync information verbosity and format
-    '--verbose',
-    '--human-readable',
-    '--itemize-changes',
-
-    # Configure rsync data transfer method
-    '--fsync',
-    '--recursive',  # Copy source recursively
-
-    # Set permissions
-    # "...to give destination files (both old and new) the source
-    # permissions, use --perms.  To give new files the destination-default
-    # permissions (while leaving existing files unchanged), make sure that
-    # the --perms option is off and use --chmod..."
-    '--perms', '--chmod=D755,F644',
-    # '--chmod=D755,F644',
-    '--chown=root:root',
-
-    '--links',  # Copy symlinks as symlinks
-    '--backup-dir=/etc/.trash',  # Keep backup of existing dest file
-    '--mkpath',  # Create destination if it does not exist
-    '--checksum',  # Copy file again even if size and times match dest
-    '--omit-dir-times',
-    '--omit-link-times',
-]
-if DRYRUN:
-    args += ['--dry-run']
-args += [
-    str(CODE_REPO / 'ins') + '/',  # Source
-    '/',  # Destination
-]
-sp.run(args, check=True)
-
-# Fix permissions
-if DRYRUN:
-    sys.exit(0)
-for perms in (
-    # 4 = read, 2 = write, 1 = execute
-    ['0700', '/etc/ssh/sshd_config.d/'],
-    ['0600', '/etc/ssh/sshd_config.d/99-harden.conf'],
-    ['0755', '/etc/sv/cgroup1000/run'],
-    ['0755', '/etc/sv/cgroup1000/log/run'],
-    ['0755', '/usr/local/bin/serve-joplin'],
-    ['0755', '/usr/local/bin/serve-mumble'],
-    ['0755', '/usr/local/bin/serve-wishlist'],
-):
-    sp.run(['chmod', '--changes', *perms], check=True)
+# Install files
+os.chdir(CODE_REPO / 'ins')
+for fp in Path('.').rglob('*'):
+    dst = Path('/', fp)
+    cmd = [
+        'install',
+        '--verbose',
+        '--compare',
+        '--backup=existing',
+        '--owner=root',
+        '--group=root',
+        '--mode={}'.format(get_perms(dst)),
+    ]
+    if fp.is_dir():
+        cmd += ['--directory']
+    else:
+        cmd += [str(fp)]
+    cmd += [str(dst)]
+    sp.run([*cmd], check=True)

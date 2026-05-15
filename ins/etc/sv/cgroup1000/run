@@ -3,6 +3,7 @@
 import os
 import sys
 import pwd
+import time
 import signal
 import subprocess as sp
 from pathlib import Path
@@ -47,6 +48,12 @@ def get_pid_ruid_euid(pid):
 target_uid = 1000  # TODO make this user agnostic (not hardcoded to 'daniel')
 assert pwd.getpwuid(target_uid).pw_name == 'daniel'
 
+# If Sway session is already in its own cgroup, mission accomplished
+if Path(f"/sys/fs/cgroup/1/user{target_uid}/swaywm/cgroup.controllers").exists():
+    print("Sway session already has its own cgroup")
+    signal.pause()
+    sys.exit(0)
+
 # Setup cgroups hierarchy
 clear_cg_procs("/sys/fs/cgroup")
 clear_cg_procs("/sys/fs/cgroup/1")
@@ -64,7 +71,6 @@ for p in (
         f.write("+memory +pids +cpu +io")
 
 # Watch for Sway init script, then move it to user controlled cgroup
-# TODO add check to see if sway has already been placed in its own cgroup (so the service does not error if it gets restarted later)
 cmd = (
     'pgrep',
     '-fx',
@@ -78,7 +84,7 @@ while True:
         assert len(result) == 1
         sway_init_pid = int(result[0])
         break
-    os.sleep(0.01)
+    time.sleep(0.1)
 Path(f"/sys/fs/cgroup/1/user{target_uid}/swaywm/cgroup.procs").write_text(
     str(sway_init_pid)
 )
