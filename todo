@@ -25,3 +25,6 @@ ELECTRON_OZONE_PLATFORM_HINT=auto codium  # MS Visual Studio Code
 foot bluetuith  # Bluetooth Manager
 keymapp  # Moonlander Keyboard
 googleearth  # Maps, GIS
+
+update ./tem with
+.../edu/.../presentation.typ
