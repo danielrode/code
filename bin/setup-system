@@ -53,7 +53,7 @@ pkgs=(
     mako
     meld
     mpv
-    opendoas
+    # opendoas
     openssh
     pavucontrol
     pspg

@@ -7,7 +7,7 @@
 
 # Run LLMs (AI chat) locally via llama.cpp.
 #
-# ssh -tL 5001:localhost:5001 REMOTE_IP ~/code/bin/lcpp [MODEL...]
+# ssh -tL 5001:localhost:5001 REMOTE_USER@REMOTE_IP sh -c '~/code/bin/lcpp'
 
 
 import sys
