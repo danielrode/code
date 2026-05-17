@@ -1,0 +1,15 @@
+[Unit]
+Description=Serve Wishlist
+Requires=dbus.socket
+After=dbus.socket
+After=network-online.target
+
+[Service]
+Type=simple
+User=serve_wishlist
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/local/bin/serve-wishlist
+
+[Install]
+WantedBy=default.target

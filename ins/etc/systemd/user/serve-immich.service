@@ -1,12 +1,12 @@
 [Unit]
-Description=Copy Party
+Description=Serve Immich
 After=network.target
 
 [Service]
 Type=simple
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/local/bin/serve-copyparty
+ExecStart=%h/code/bin/serve-immich
 
 [Install]
 WantedBy=default.target
