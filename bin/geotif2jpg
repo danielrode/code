@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 07 may 2026
+# updated: 15 may 2026
 
 
 # Convert a GeoTIFF raster into a JPEG image.
 
 
 src_tif="$1"
+if [[ ! -f "$src_tif" ]]
+then
+    echo "error: File not found: $src_tif"
+    exit 1
+fi
+
 dst_jpg="$2"
+if [[ -z $dst_jpg ]]
+then
+    dst_jpg="./$(basename -s .tif "$src_tif").jpg"
+fi
+
 gdal_translate -ot Byte -scale -of JPEG "$src_tif" "$dst_jpg"

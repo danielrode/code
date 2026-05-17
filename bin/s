@@ -3,9 +3,9 @@
 # dependencies:
 #   sshfs (local)
 #   dtach (on remote host)
-#   ~/.crypt/private_code_vars.toml (local)
+#   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 29 mar 2026
+# updated: 15 may 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -75,14 +75,13 @@ match alias:
         sys.exit(1)
 
 # Import alias to host map and set remote host values
-with Path(HOME, ".crypt", "private_code_vars.toml").open('rb') as f:
-    private_code_vars = tomllib.load(f)
+ny = tomllib.loads(Path(HOME, ".nunyuh").read_text())[host]
 
-title = private_code_vars[host]['title']
-ip = private_code_vars[host]['ip']
+title = ny['title']
+ip = ny['ip']
 
 try:
-    user = private_code_vars[host]['user']
+    user = ny['user']
 except KeyError:
     user = getpass.getuser()
 

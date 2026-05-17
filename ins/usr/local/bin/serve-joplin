@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 05 may 2026
+# updated: 15 may 2026
 
 
 # TODO
@@ -23,7 +23,7 @@ import yaml
 
 HOME = Path.home()
 
-NUNYUH = tomllib.loads(Path(HOME, '.nunyuh').read_text())
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S']['joplin']
 
 DATA_DIR = Path(
     HOME,
@@ -92,22 +92,18 @@ type = "tcp"
 token = "{TOKEN}"
 local_addr = "joplin:3280"
 '''.format(
-    RH_ADDR=NUNYUH['SERVES']['joplin_rh_addr'],
-    TOKEN=NUNYUH['SERVES']['joplin_rh_token'],
+    RH_ADDR=NY['rh_addr'],
+    TOKEN=NY['rh_token'],
 )
 
 
 def gen_compose_env(fp):
-    # Import secrets
-    with open(HOME / '.nunyuh', 'rb') as f:
-        crypt_vars = tomllib.load(f)
-
     # Compile and save podman compose variables file
     os.umask(0)
     fp.touch(mode=0o600)
     fp.write_text('\n'.join((
         f"DB_PW={gen_secret()}",
-        f"APP_BASE_URL={crypt_vars['SERVES']['joplin_url']}",
+        f"APP_BASE_URL={NY['url']}",
     )))
 
 
@@ -121,8 +117,8 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     env_fp = Path(td, 'compose.env')
     env_fp.touch(mode=0o600)
     env_fp.write_text('\n'.join((
-        'DB_PW=' + NUNYUH['SERVES']['joplin_db_pw'],
-        'APP_BASE_URL' + NUNYUH['SERVES']['joplin_origin'],
+        'DB_PW=' + NY['db_pw'],
+        'APP_BASE_URL' + NY['origin'],
     ))
 
     cmd = (

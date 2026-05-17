@@ -30,6 +30,7 @@ PERMS = {
     Path('/usr/local/bin/serve-joplin'):           '0755',
     Path('/usr/local/bin/serve-mumble'):           '0755',
     Path('/usr/local/bin/serve-wishlist'):         '0755',
+    Path('/usr/local/bin/serve-copyparty'):        '0755',
 }
 
 
