@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 15 may 2026
+# updated: 18 may 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -45,6 +45,7 @@ SSH_CMD = (
         dtach -c "$tmpdir/dtach.sock" -zE fish
     '''
 )
+NY = tomllib.loads(Path(HOME, ".nunyuh").read_text())['H']
 
 
 def set_term_win_title(title):
@@ -54,34 +55,47 @@ def set_term_win_title(title):
 
 # Parse command line arguments
 try:
-    alias = sys.argv[1]
+    remote = sys.argv[1]
 except IndexError:
     print("error: SSH remote host alias not provided")
     sys.exit(1)
 
 # Set values for remote host
+for k in NY:
+    try:
+        a = NY[k]['alias']
+    except KeyError:
+        a = None
+
+    if (remote == k.lower()) or (remote == a):
+        host = NY[k]
+        break
+else:
+    print("error: Unknown alias:", remote)
+    sys.exit(1)
+
+del NY
+
 use_sock = False
-match alias:
-    case 's':
-        host = "HOME_SERVER"
-    case 'm':
-        host = "WORK1"
+match remote:
     case 'h':
-        host = "WORK2"
         use_sock = True
         SSH_CMD = ( 'bash', '--login' )
-    case _:
-        print("error: SSH remote host alias not defined")
-        sys.exit(1)
-
-# Import alias to host map and set remote host values
-ny = tomllib.loads(Path(HOME, ".nunyuh").read_text())[host]
-
-title = ny['title']
-ip = ny['ip']
+    case 'p':
+        SSH_CMD = ( 'bash', '--login', '-c', 'fish' )
 
 try:
-    user = ny['user']
+    ip = host['ip']
+except KeyError:
+    print("error: No address found for host:", remote)
+
+try:
+    title = host['title']
+except KeyError:
+    title = k.lower()
+
+try:
+    user = host['user']
 except KeyError:
     user = getpass.getuser()
 
@@ -95,7 +109,6 @@ if use_sock:
         # -N  # Do not execute a remote command
         '-C'  # Compress all data
     ]
-
 
 # Set terminal window title
 set_term_win_title(title)
