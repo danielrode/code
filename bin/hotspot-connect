@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
 # dependencies:
 #   ~/code/bin/wconnect
+#   ~/.nunyuh
 # created: 01 apr 2026
-# updated: -
+# updated: 18 may 2026
 
 
 """Connect to mobile hotspot.
@@ -17,12 +17,12 @@ from pathlib import Path
 
 
 HOME = Path.home()
-VARS_PATH = Path(HOME, '.crypt', 'private_code_vars.toml')
-VARS = tomllib.loads(VARS_PATH.read_text())
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['H']['PHONE']
 
 
 cmd = (
     str(HOME / 'code/bin/wconnect'),
-    'w', VARS['PHONE']['hotspot_name']
+    'w',
+    NY['hotspot_name'],
 )
 sp.run(cmd, check=True)

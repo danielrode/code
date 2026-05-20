@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 07 may 2026
+# updated: 18 may 2026
 
 
 # Setup and configure Linux system to be how I like it.
 #
 # DOC: Also see (for system setup/config)
 # - ~/.ssh/config
-# - ~/.crypt/private_code_vars.toml
+# - ~/.nunyuh
 # - crontab -e
 # - sudo crontab -e
 # - /etc/fstab

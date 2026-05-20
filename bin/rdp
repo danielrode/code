@@ -2,9 +2,9 @@
 # author: daniel rode
 # dependencies:
 #   freerdp
-#   ~/.crypt/private_code_vars.toml
+#   ~/.nunyuh
 # created: 15 jul 2025
-# updated: 06 apr 2026
+# updated: 18 may 2026
 
 
 # Alias/shortcuts for starting RDP (remote desktop) sessions.
@@ -21,43 +21,40 @@ from pathlib import Path
 from getpass import getpass
 
 
-HOSTNAME = socket.gethostname()
 HOME = Path.home()
+HOSTNAME = socket.gethostname()
 FREERDP_ARGS = [
     '/clipboard',
 ]
+NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
 
 
 # Parse command line arguments
 try:
-    alias = sys.argv[1]
+    remote = sys.argv[1]
 except IndexError:
     print("Provide host alias")
     sys.exit(1)
 
-# Import and set remote host connection attributes
-with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
-    private_code_vars = tomllib.load(f)
+# Set values for remote host
+for k in NY:
+    try:
+        a = NY[k]['alias']
+    except KeyError:
+        a = None
 
-match alias:
-    case 'a':
-        host = "WORK3"
-    case 'w':
-        host = "WORK4"
-    case _:
-        print("error: Unknown host alias")
-        sys.exit(1)
+    if (remote == k.lower()) or (remote == a):
+        host = NY[k]
+        break
+else:
+    print("error: Unknown alias:", remote)
+    sys.exit(1)
 
-domain = private_code_vars[host]["domain"]
-user = private_code_vars[host]["user"]
-try:
-    ip = private_code_vars[host]["ip"]
-except KeyError:
-    ip = ''.join((
-        private_code_vars[host]['ip_part1'],
-        sys.argv[2],
-        private_code_vars[host]["ip_part2"],
-    ))
+del NY
+
+domain = host["domain"]
+user = host["user"]
+ip = host["ip"]
 
 # Determine Sway output (screen) resolution
 sway = i3ipc.Connection()

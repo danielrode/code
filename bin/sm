@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # author: daniel rode
+# dependencies: ~/.nunyuh
 # created: 25 jul 2024
-# updated: 26 mar 2026
+# updated: 18 may 2026
 
 
 # Alias/shortcuts for mounting remote directories via SSH.
@@ -17,8 +18,10 @@ from pathlib import Path
 
 
 # Constants
-HOSTNAME = socket.gethostname()
 HOME = Path.home()
+HOSTNAME = socket.gethostname()
+
+NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
 
 SSHFS_ARGS = (
     '-o', 'delay_connect',
@@ -34,9 +37,6 @@ SSHFS_ARGS = (
     '-o', 'ServerAliveCountMax=4',
     '-o', 'ServerAliveInterval=11',
 )
-
-with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
-    VARS = tomllib.load(f)
 
 
 # Functions
@@ -71,44 +71,43 @@ def sshfs(
 
 # Parse command line input
 try:
-    alias = sys.argv[1]
+    remote = sys.argv[1]
 except IndexError:
     print("Enter mount point")
     sys.exit(1)
 
-# Import and set remote host connection attributes
-with open(HOME / '.crypt/private_code_vars.toml', 'rb') as f:
-    private_code_vars = tomllib.load(f)
+# Set values for remote host
+for k in NY:
+    try:
+        a = NY[k]['alias']
+    except KeyError:
+        a = None
+
+    if (remote == k.lower()) or (remote == a):
+        host = NY[k]
+        break
+else:
+    print("error: Unknown alias:", remote)
+    sys.exit(1)
+
+del NY
 
 mnt_list = None
 use_sock = False
-match alias:
-    case 's':
-        host = "HOME_SERVER"
-        mnt_list = (('/', '/mnt/s'),)
-    case 'm':
-        host = "WORK1"
+match remote:
     case 'h':
-        host = "WORK2"
         use_sock = True
         SSH_CMD = ( 'bash', '--login' )
-    case _:
-        print("error: Unknown mount alias:", alias)
-        sys.exit(1)
 
-if mnt_list is None:
-    mnt_list = private_code_vars[host]['mounts']
+mnt_list = host['mounts']
+ip = host['ip']
 
 try:
-    user = private_code_vars[host]['user']
+    user = host['user']
 except KeyError:
     user = getpass.getuser()
 
-try:
-    ip = VARS[host]["ip"]
-except KeyError:
-    ip = VARS[host]['ip_part1'] + sys.argv[2] + VARS[host]["ip_part2"]
-
+# Setup master SSH connection (if requested)
 if use_sock:
     sock_path = HOME / f'.ssh/{user}@{ip}.sock'
     SSHFS_ARGS += (
