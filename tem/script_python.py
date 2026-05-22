@@ -19,6 +19,7 @@ import subprocess as sp
 from os import sysconf
 from pathlib import Path
 from shutil import which
+from datetime import datetime
 
 from collections.abc import Iterable
 
@@ -72,7 +73,15 @@ def cd0() -> None:
 
 
 def print2(*args, **kwargs) -> None:
+    """Print message to stderr."""
+
     print(*args, **kwargs, file=sys.stderr)
+
+
+def timestamp() -> str:
+    """Return current time as formatted string."""
+
+    return datetime.now().strftime("%Y-%m-%d %H:%M")
 
 
 def run_iter(cmd: list[str]) -> Iterable:

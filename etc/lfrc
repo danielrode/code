@@ -74,11 +74,12 @@ set wrapscroll true
 cmd switch_to_shell ${{
 	# If ~/code/bin/ccarousel is active, switch back to it; otherwise, spawn
 	# sub-shell directly.
-	if [ -n "${CCAROUSEL_SOCK_FP+x}" ] && [ -e "$CCAROUSEL_SOCK_FP" ]; then
+	if [ -n "${CCAROUSEL_SOCK_FP:-}" ] && [ -e "$CCAROUSEL_SOCK_FP" ]; then
 		echo -n "$PWD" > "$CCAROUSEL_SOCK_FP"
 	    lf -remote "send $id :quit"
+	else
+		bash
 	fi
-	bash
 }}
 cmd quit_original_wd %{{
     # CD back to original working directory, then quit LF instance

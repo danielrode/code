@@ -7,9 +7,8 @@
 #   python 3.10+
 #   dtach
 #   fzf
-#   pgrep
 # created: 12 apr 2025
-# updated: 03 mar 2026
+# updated: 22 may 2026
 
 
 # List active dtach sessions in a menu and then connect to the
@@ -20,6 +19,9 @@ import sys
 import shlex
 import subprocess as sp
 from pathlib import Path
+
+
+DTACH_SOCK_FLAGS = ('-a', '-A', '-c', '-n', '-N', '-p')
 
 
 def pgrep(query: str) -> list[list[str]]:
@@ -34,19 +36,95 @@ def pgrep(query: str) -> list[list[str]]:
         raise Exception("pgrep failed: " + str(p))
 
 
+def get_proc_table():  # Returns iterator
+    """Get process table.
+
+    Format and cache a snapshot of information about the current process
+    table from the /proc filesystem.
+    """
+
+    for p in Path('/proc').iterdir():
+        if not p.is_dir():
+            continue
+        if not p.name.isdigit():
+            continue
+
+        status = {
+            k.strip(): v.strip()
+            for line in Path(p, 'status').read_text().strip().splitlines()
+            for k, v in [line.split(':', maxsplit=1)]
+        }
+
+        yield {
+            'pid': int(p.name),
+            'exe': Path(p, 'exe').resolve(),
+            'cmd0': Path(p, 'comm').read_text().strip(),
+            'cmdline': Path(p, 'cmdline').read_text(),
+            'threads': [int(i.name) for i in Path(p, 'task').iterdir()],
+            'ppid': int(status['PPid']),
+            'state': status['State'].split(' ')[0]
+        }
+
+
+def get_pid_children(pid, ptable):
+    return [
+        c_pid
+        for c_pid in ptable
+        if ptable[c_pid]['ppid'] == pid
+    ]
+
+
+def dtach_is_abandoned(pid, ptable):
+    child_pids = get_pid_children(pid, ptable)
+
+    if len(child_pids) > 1:
+        return False
+    elif len(child_pids) == 0:
+        return True
+    elif len(child_pids) == 1:
+        c_pid = child_pids[0]
+    else:
+        raise Exception("Negative number of processes? {}".format(child_pids))
+
+    # If dtach only has an inactive shell as a child process, it is abandoned
+    if all((
+        # Is child process fish shell?
+        ptable[c_pid]['exe'].name == 'fish',
+        # Is fish childless?
+        len(get_pid_children(c_pid, ptable)) == 0,
+        # Does fish have any thread workers?
+        len(ptable[c_pid]['threads']) == 1,
+        # Is fish idle?
+        ptable[c_pid]['state'] == 'S',
+    )):
+        return True
+    return False
+
+
+# Get current process table
+ptable = {
+    i['pid']: i
+    for i in get_proc_table()
+}
+
 # Find active dtach sessions
 dtach_socks = dict()
-sock_flags = ('-a', '-A', '-c', '-n', '-N', '-p')
-for proc in pgrep('dtach'):
-    args = shlex.split(proc)
-    pid, _, flag, sock_path = args[:4]
-    if not Path(sock_path).exists():
-        # TODO
-        # # Remove phandom dtach processes
-        # sp.run(["kill", str(pid)], check=True)
+for pid in ptable:
+    if ptable[pid]['cmd0'] != 'dtach':
         continue
-    if flag in sock_flags:
-        dtach_socks[sock_path] = proc
+
+    flag, sock_path = ptable[pid]['cmdline'].strip('\0').split('\0')[1:3]
+
+    if not Path(sock_path).exists():
+        continue
+
+    if dtach_is_abandoned(pid, ptable):
+        continue
+
+    if flag not in DTACH_SOCK_FLAGS:
+        continue
+
+    dtach_socks[sock_path] = pid
 
 if not dtach_socks:
     sys.exit()
@@ -54,18 +132,22 @@ if not dtach_socks:
 # Display menu of active dtach sessions
 cmd = (
     'fzf',
-    '--delimiter= ',
+    '--delimiter=\t',
     '--preview=pstree -aps {1}',
-    '--preview-window=up,80%',
+    '--preview-window=up,70%',
 )
 p = sp.run(
     cmd,
     text=True,
-    input='\n'.join(list(dtach_socks.values())),
+    input='\n'.join(
+        # '\t'.join((str(pid), sock, ptable[pid]['cmdline'].replace('\0', ' ')))
+        '\t'.join((str(pid), sock))
+        for sock, pid in dtach_socks.items()
+    ),
     stdout=sp.PIPE,
 )
 try:
-    sock_path = shlex.split(p.stdout)[3]
+    sock_path = p.stdout.strip().split('\t')[1]
 except IndexError:
     print("No selection made")
     sys.exit()
@@ -76,3 +158,4 @@ sp.run(['dtach', '-a', sock_path])
 
 # TODO
 # - omit self from menu (if running inside dtach)
+# - remove/kill phandom dtach processes
