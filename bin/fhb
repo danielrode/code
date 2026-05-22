@@ -6,8 +6,9 @@
 # dependencies:
 #   btrfs
 #   lf
+#   ~/code/bin/ccarousel
 # created: 22 sep 2025
-# updated: 27 apr 2026
+# updated: 22 may 2026
 
 
 # Given some file path, assuming the file is included in some BTRFS
@@ -16,6 +17,7 @@
 # file manager (lf).
 
 
+import os
 import sys
 import subprocess as sp
 from pathlib import Path
@@ -26,6 +28,7 @@ from tempfile import TemporaryDirectory
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME} FILE_PATH"
 HOME = Path.home()
+CCAROUSEL_FP = Path(HOME, "code", "bin", "ccarousel")
 
 
 # Functions
@@ -63,8 +66,8 @@ if not snapshots_dir.exists():
     sys.exit(2)
 
 # Create temp directory with links to old snapshot versions
-with TemporaryDirectory() as tmpdir:
-    tmpdir = Path(tmpdir)
+with TemporaryDirectory() as td:
+    td = Path(td)
     for snapshot in snapshots_dir.glob("@*"):
         file_snapshot_path = snapshot / (
             str(file_path)
@@ -77,9 +80,16 @@ with TemporaryDirectory() as tmpdir:
         cmd = [
             'ln', '-s',
             str(file_snapshot_path),
-            str(tmpdir / snapshot.name.removeprefix("@snapshot-")),
+            str(td / snapshot.name.removeprefix("@snapshot-")),
         ]
         sp.run(cmd)
 
     # Open file manager to temp directory where the cached file versions are
-    sp.run(["lf", tmpdir], check=True)
+    cmd = (
+        'env',
+        '--chdir={}'.format(td),
+        CCAROUSEL_FP,
+        'lf',
+        os.environ['SHELL'],
+    )
+    sp.run(cmd, check=True)

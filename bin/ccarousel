@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 22 may 2026
+
+
+# Command carousel. Call a given set of commands one after the other,
+# indefinately. If a command communicates a path over the socket, cd there.
+
+
+import os
+import sys
+import shlex
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+CMD_CAROUSEL = sys.argv[1:]
+SOCK_FP_VAR_NAME = 'CCAROUSEL_SOCK_FP'
+BASH_STUB = '''
+{cmd};
+rc=$?;
+[[ -e {sock_fp} ]] && echo -n ///$rc > {sock_fp};
+exit $rc;
+'''
+
+
+while True:
+    for cmd in CMD_CAROUSEL:
+        with TemporaryDirectory() as td:
+            sock_fp = Path(td, 'sock')
+            os.mkfifo(sock_fp)
+
+            bash_stub = BASH_STUB.format(
+                cmd=cmd,
+                sock_fp=shlex.quote(str(sock_fp)),
+            )
+            p = sp.Popen(
+                ['bash', '-c', bash_stub],
+                env={**os.environ, SOCK_FP_VAR_NAME: str(sock_fp)},
+            )
+            ipc = sock_fp.read_text()
+
+        if ipc.startswith('///'):
+            rc = int(ipc[3:])
+            sys.exit(rc)
+
+        p.wait()
+        if p.returncode != 0:
+            print("EXIT CODE:", p.returncode)
+
+        os.chdir(ipc)

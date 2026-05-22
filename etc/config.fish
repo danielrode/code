@@ -7,6 +7,7 @@
 #   lm_sensors
 #   nvtop
 #   lf
+#   ~/code/bin/ccarousel
 
 # USER TIPS:
 # You can navigate forward and back throgh 'cd' history via the use of the
@@ -31,7 +32,12 @@ umask 027
 
 # Change shell's working dir to last dir in lf on exit
 function lf
-    cd (command lf -print-last-dir -command 'map w quit' $argv)
+    # cd (command lf -print-last-dir -command 'map w quit' $argv)
+    if test -e "$CCAROUSEL_SOCK_FP"
+        echo -n "$PWD" >"$CCAROUSEL_SOCK_FP"
+        exit
+    end
+    exec ccarousel lf fish
 end
 
 # PROFILE #####################################################################
