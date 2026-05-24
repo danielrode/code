@@ -1,0 +1,18 @@
+#!/usr/bin/env dash
+# author: daniel rode
+# dependencies: lf, ~/code/bin/rme
+# created: 23 may 2026
+# updated: -
+
+
+# Open cursory notes directory in file manager.
+
+
+NOTES_DIR="$HOME/union/notes/cursory"
+
+
+mkdir -p "$NOTES_DIR"
+cd "$NOTES_DIR"
+printf "\033]7;file://$HOSTNAME$PWD\033\\"  # Notify terminal of cd
+~/code/bin/rme "$NOTES_DIR"
+lf "$NOTES_DIR"

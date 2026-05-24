@@ -1,32 +1,23 @@
-#!/usr/bin/env dash
-# Author: Daniel Rode
-# Name: Remove Empty Files
-# Type: file management
-# Dependencies:
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies:
 #   fd (fd-find)
 #   xxd
-# Init: 11 Aug 2023
-# Updated: 16 May 2024
+# created: 11 aug 2023
+# updated: 23 may 2026
 
 
-# Description: Delete all empty files in the given directory. If no directory
-# is specified, the current directory is processed.
+# Remove empty files. Delete all empty files in the given directory. If no
+# directory is specified, the current directory is processed. Files that merely
+# consist of one newline character are also considered "empty" (and thus
+# removed).
 
 
-fd --exact-depth 1 --type file . "$1" |
-  while read path
-  do
-    # Only consider file if is 0 or 1 bytes in length (size)
-    file_size="$(wc --bytes "$path" | cut -d ' ' -f 1)"
-    if [ "$file_size" = 0 -o "$file_size" = 1 ]
-    then
-      # Delete file if it only contains one newline (and no other characters)
-      # or contains nothing
-      file_contents_hex="$(head --bytes 1 "$path" | xxd -p)"
-      if [ "$file_contents_hex" = "0a" -o "$file_contents_hex" = "" ]
-      then
-        echo "Deleting $path"
-        rm "$path"
-      fi
-    fi
-  done
+# Delete empty files
+fd --print0 --exact-depth=1 --type=empty . "$1" \
+| xargs --null --no-run-if-empty rm --verbose
+
+# Delete files only containing one newline character
+fd --exact-depth=1 --type=file --size=-1b . "$1" | while read path; do
+    [[ "$(xxd --plain <"$path")" == "0a" ]] && rm -v "$path"
+done

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=lfnn - Browse Notes
+Comment=Browse notes using lf file manager
+Exec=lfnn
+Terminal=true

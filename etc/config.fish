@@ -141,7 +141,6 @@ abbr --add rsynca rsync \
     --compress \
     --progress \
     --backup
-abbr --add xargs xargs -d '\n'
 abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b
 abbr --add pstree pstree -aps
