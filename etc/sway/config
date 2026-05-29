@@ -923,8 +923,6 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
         fullscreen
 
     # QGIS
-    for_window [app_id="org.qgis.qgis" title="QGIS - *"] move scratchpad
-    for_window [app_id="org.qgis.qgis" title=".* — QGIS"] move scratchpad
     for_window [app_id="org.qgis.qgis" title="Edit Vector Join"] floating enable
     for_window [app_id="org.qgis.qgis" title="Add Vector Join"] floating enable
 

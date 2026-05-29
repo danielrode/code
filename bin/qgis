@@ -1,34 +1,94 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # created: 20 oct 2023
-# updated: 20 mar 2026
+# updated: 28 may 2026
 
 
-# Save current workspace name
-jq_query='.[] | select(.focused==true) | .name'
-launch_workspace="$(swaymsg -t get_workspaces | jq -r "$jq_query")"
+import sys
+import shlex
+import subprocess as sp
+
+from i3ipc import Connection
+from i3ipc import Event
+
+
+QGIS_CMD = [
+    'exec',
+    'flatpak',
+    'run',
+    'org.qgis.qgis',
+    '--nologo',
+    '--noversioncheck',
+]
+
+
+def run(cmd):
+    sp.run(cmd, check=True)
+
+
+def get_active_workspace(i3):
+    return next(filter(
+        lambda x: x.focused,
+        i3.get_workspaces(),
+    )).name
+
+
+def arrange_window(i3, e) -> None:
+    """New window hook."""
+
+    # Ensure the window is the new QGIS before interacting with it
+    if e.container.app_id != "org.qgis.qgis":
+        return
+    # if all((
+    #     not e.container.???.startswith('QGIS - '),
+    #     not e.container.???.endswith(' — QGIS'),
+    # )):
+    #     return
+    
+    # Arrange window
+    global ACTIVE_WS
+    e.container.command(f"move workspace {ACTIVE_WS}")
+    e.container.command("floating disable")
+
+    # Now that arrangement is done, exit
+    i3.off(arrange_window)
+    i3.main_quit()
+    sys.exit()
+
+
+# Initialize Sway IPC connection
+i3 = Connection()
+i3.on(Event.WINDOW_NEW, arrange_window)
+
+# Take note of which workspace is currently focused
+ACTIVE_WS = get_active_workspace(i3)
 
 # Ensure QGIS is installed
-flatpak install --noninteractive --assumeyes app/org.qgis.qgis/x86_64/stable
+run((
+    'flatpak',
+    'install',
+    '--noninteractive',
+    '--assumeyes',
+    'app/org.qgis.qgis/x86_64/stable',
+))
 
 # Grant QGIS Flatpak access to more paths
-flatpak override --user org.qgis.qgis --filesystem=/home
-flatpak override --user org.qgis.qgis --filesystem=/tmp
-flatpak override --user org.qgis.qgis --filesystem=/mnt
+for dp in (
+    '/home',
+    '/tmp',
+    '/mnt',
+):
+    run((
+        'flatpak',
+        'override',
+        '--user',
+        'org.qgis.qgis',
+        '--filesystem={}'.format(dp)
+    ))
 
-# Watch for QGIS window to spawn, then move it to the workspace QGIS was
-# launched from
-{
-    while read line
-    do
-        qgis_pid="$(pgrep --newest qgis)"
-        [[ $line == $qgis_pid ]] && break
-    done < <(swaymsg --type subscribe --monitor '[ "window" ]' \
-        | jq --raw-output --unbuffered '.container.pid')
+# Launch QGIS
+cmd_str = ' '.join(QGIS_CMD + [shlex.quote(a) for a in sys.argv[1:]])
+i3.command(cmd_str)
 
-    swaymsg [pid=\""$qgis_pid"\"] move workspace "$launch_workspace" \; \
-        [pid=\""$qgis_pid"\"] floating disable
-} &
-
-# Run QGIS
-flatpak run org.qgis.qgis --nologo --noversioncheck "$@"
+# Run IPC event loop
+i3.main()
