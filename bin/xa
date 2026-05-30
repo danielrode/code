@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 07 may 2026
-# updated: 23 may 2026
+# updated: 29 may 2026
 
 
 # Run xargs on stdin lines. If '@' is provided in command string in the
@@ -13,13 +13,31 @@ import sys
 import subprocess as sp
 
 
+# Setup xargs command arguments
 cmd = [
     'xargs',
-    '--no-run-if-empty', # not work?
-    '--delimiter=\n',
+    '--null',
 ]
 if any('@' in i for i in sys.argv[1:]):
     cmd += ['--replace=@']
 cmd += sys.argv[1:]
 
-sp.run(cmd, check=True, stdin=sys.stdin)
+# Start xargs
+p = sp.Popen(cmd, stdin=sp.PIPE, text=True)
+
+# Pass stdin to xargs line-by-line, replacing newline with null character along
+# the way and omitting empty lines
+for line in sys.stdin.readlines():
+    line = line[:-1]
+    if not line:
+        continue
+
+    p.stdin.write(line)
+    p.stdin.write('\0')
+    p.stdin.flush()
+
+if p.stdin:
+    p.stdin.close()
+p.wait()
+
+sys.exit(p.returncode)

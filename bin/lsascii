@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# created: 28 may 2026
+
+
+# Show what order printable ASCII characters (in filenames) are listed in
+# by `ls`.
+
+
+import string
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+# List of printable ASCII characters that are also usable in file/dir names on
+# Linux
+ASCII_CHARS = ' ' + (
+    string.printable
+    .replace('\v', '')
+    .replace('\f', '')
+    .replace('\r', '')
+    .replace('/', '')
+    .replace('.', '')
+)
+
+
+with TemporaryDirectory() as td:
+    td = Path(td)
+
+    for i in ASCII_CHARS:
+        match i:
+            case ' ':
+                i += ' (space)'
+            case '\t':
+                i += ' (tab)'
+            case '\n':
+                i += ' (newline)'
+        Path(td, i).touch()
+
+    sp.run(['ls', '-1', str(td)], check=True)

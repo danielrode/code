@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
 # name: dtach menu
 # tags: processes, menu
 # dependencies:
-#   python 3.10+
 #   dtach
 #   fzf
 # created: 12 apr 2025
-# updated: 22 may 2026
+# updated: 30 may 2026
 
 
 # List active dtach sessions in a menu and then connect to the
@@ -16,7 +14,6 @@
 
 
 import sys
-import shlex
 import subprocess as sp
 from pathlib import Path
 

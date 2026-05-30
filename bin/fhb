@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
-# name: file history git
 # tags: file management, backup, history
 # dependencies:
 #   btrfs
 #   lf
 #   ~/code/bin/ccarousel
 # created: 22 sep 2025
-# updated: 22 may 2026
+# updated: 29 may 2026
 
 
-# Given some file path, assuming the file is included in some BTRFS
-# snapshot(s), create a read-only cache of all committed revisions of said
-# file as a temporary filesystem directory and open that directory in a
-# file manager (lf).
+# File History BTRFS. Given some file path, assuming the file is included
+# in some BTRFS snapshot(s), create a read-only cache of all committed
+# revisions of said file as a temporary filesystem directory and open that
+# directory in a file manager (lf).
 
 
 import os
@@ -25,7 +23,7 @@ from tempfile import TemporaryDirectory
 
 
 # Constants
-EXE_NAME = Path(sys.argv[0]).name  # This script's filename
+EXE_NAME = Path(__file__).name  # This script's filename
 HELP_TEXT = f"Usage: {EXE_NAME} FILE_PATH"
 HOME = Path.home()
 CCAROUSEL_FP = Path(HOME, "code", "bin", "ccarousel")
@@ -80,7 +78,11 @@ with TemporaryDirectory() as td:
         cmd = [
             'ln', '-s',
             str(file_snapshot_path),
-            str(td / snapshot.name.removeprefix("@snapshot-")),
+            '{}/{}_{}'.format(
+                td,
+                snapshot.name.removeprefix("@snapshot-"),
+                file_path.name,
+            ),
         ]
         sp.run(cmd)
 

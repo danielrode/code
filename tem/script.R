@@ -18,6 +18,12 @@
 # Print each code line as it get's executed
 options(echo = TRUE)
 
+# Treat warnings as errors
+options(warn = 2)
+
+# Drop into debugger on error
+options(error=recover)
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

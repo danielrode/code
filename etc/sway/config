@@ -383,6 +383,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
     bindsym $mod+a focus parent
 
     # Move focus to most recently focused child container
+    bindsym $mod+Shift+a focus child
     bindsym $mod+Escape focus child
 
 

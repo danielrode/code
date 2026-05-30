@@ -78,6 +78,12 @@ def print2(*args, **kwargs) -> None:
     print(*args, **kwargs, file=sys.stderr)
 
 
+def printu(*args, **kwargs) -> None:
+    """Print message immediately."""
+
+    print(*args, **kwargs, flush=True)
+
+
 def timestamp() -> str:
     """Return current time as formatted string."""
 
@@ -209,6 +215,60 @@ def main() -> None:
             futures_jobs = {executor.submit(worker, j): j for j in jobs}
             for f in as_completed(futures_jobs):
                 yield (futures_jobs[f], f.result())
+
+    def worker(job):
+        return job**3
+
+    if __name__ == '__main__':
+        jobs = [10,20,30,40]
+        for job, result in dispatch(jobs, worker):
+            # Results are ordered by which finish first
+            print(job, result)
+
+    # Use concurrency to run several tasks in parallel in the background, but
+    # with threads instead of processes (requires Python 3.14+). Submits jobs
+    # from iterator in batches (rather than all at once).
+    import os
+    from itertools import islice
+    from concurrent.futures import InterpreterPoolExecutor
+    from concurrent.futures import as_completed
+
+    from collections.abc import Iterator
+    from collections.abc import Callable
+    from typing import Any
+
+    def dispatch(
+        jobs: iter, worker: Callable, max_workers=os.cpu_count(),
+    ) -> Iterator[(Any, Any)]:
+        """Run jobs in parallel.
+
+        Parallel apply dispatching function: Run a list of jobs with a given
+        worker function, in parallel. Yield worker results in order they
+        finish.
+        """
+
+        jobs = iter(jobs)
+        batch_size = max_workers * 8
+
+        with InterpreterPoolExecutor(max_workers=max_workers) as executor:
+            futures_jobs = {
+                executor.submit(worker, j): j
+                for j in islice(jobs, batch_size)
+            }
+            while futures_jobs:
+                done_job = next(as_completed(futures_jobs))
+                yield (futures_jobs[done_job], done_job.result())
+
+                del futures_jobs[done_job]
+
+                try:
+                    next_job = next(jobs)
+                except StopIteration:
+                    continue
+                futures_jobs = {
+                    **futures_jobs,
+                    executor.submit(worker, next_job): next_job,
+                }
 
     def worker(job):
         return job**3
