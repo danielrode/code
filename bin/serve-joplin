@@ -85,7 +85,7 @@ CON_COMPOSE = {
 
 
 # Main
-DATA_DIR.mkdir(parents=True, exist_ok=True, 0o700)
+DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
 with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     env_fp = Path(td, 'compose.env')
     env_fp.touch(mode=0o600)
