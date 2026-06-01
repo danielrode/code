@@ -33,6 +33,9 @@ umask 027
 # Change shell's working dir to last dir in lf on exit
 function lf
     # cd (command lf -print-last-dir -command 'map w quit' $argv)
+    if test -n "$argv"
+        cd $argv || return 1
+    end
     if test -e "$CCAROUSEL_SOCK_FP"
         echo -n "$PWD" >"$CCAROUSEL_SOCK_FP"
         exit
@@ -143,7 +146,7 @@ abbr --add rsynca rsync \
     --backup
 abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b
-abbr --add pstree pstree -aps
+abbr --add pstree pstree -aps "$fish_pid"
 
 # One-liners
 abbr --add lswifi nmcli device wifi list

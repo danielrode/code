@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: podman, podman-compose, ~/.nunyuh
+# created: 12 apr 2026
+# updated: 31 may 2026
+
+
+# Run containerized Joplin (notes) server.
+
+# NOTE:
+# Joplin server's default username and pw: "admin@localhost", "admin"
+# Change these first thing!
+
+
+import os
+import tomllib
+import subprocess as sp
+from pathlib import Path
+
+import yaml
+
+
+HOME = Path.home()
+
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S']['joplin']
+
+DATA_DIR = Path(
+    HOME,
+    '.local',
+    'share',
+    'com.github.danielrode',
+    'joplin',
+)
+CON_ENV_PATH = DATA_DIR / 'compose.env'
+
+CON_COMPOSE = {
+    'version': '3',
+    'services': {
+    'db': {
+        'image': 'docker.io/postgres:16',
+        'volumes': [
+            f'{DATA_DIR}/postgres:/var/lib/postgresql/data',
+        ],
+        'environment': [
+            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_USER=joplin0',
+            'POSTGRES_DB=joplindb',
+        ],
+        'restart': 'always',
+        'security_opt': ['no-new-privileges'],
+        'deploy': { 'resources': { 'limits': {
+            # Limit memory usage
+            'mem_limit': '128m',
+            # Limit CPU usage to 50% of a single core
+            'cpus': 0.5,
+        }}},
+    },
+    'joplin': {
+        'image': 'docker.io/joplin/server:latest',
+        'container_name': 'joplin-server',
+        'depends_on': ['db'],
+        'ports': [
+            "127.0.0.1:22300:22300",
+        ],
+        'environment': [
+            'APP_PORT=22300',
+            'APP_BASE_URL=${APP_BASE_URL}',
+            'DB_CLIENT=pg',
+            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_DATABASE=joplindb',
+            'POSTGRES_USER=joplin0',
+            'POSTGRES_PORT=5432',
+            'POSTGRES_HOST=db',
+        ],
+        'restart': 'always',
+        'security_opt': ['no-new-privileges'],
+        'deploy': { 'resources': { 'limits': {
+            # Limit memory usage
+            'mem_limit': '128m',
+            # Limit CPU usage to 50% of a single core
+            'cpus': 0.5,
+        }}},
+    },
+}}
+
+
+# Main
+DATA_DIR.mkdir(parents=True, exist_ok=True, 0o700)
+with TemporaryDirectory(ignore_cleanup_errors=True) as td:
+    env_fp = Path(td, 'compose.env')
+    env_fp.touch(mode=0o600)
+    env_fp.write_text('\n'.join((
+        'DB_PW=' + NY['db_pw'],
+        'APP_BASE_URL' + NY['origin'],
+    ))
+
+    cmd = (
+        'podman-compose',
+        '--no-ansi',
+        '--podman-pull-args=--pull=missing',
+        '--project-name=joplin',
+        '--env-file=' + str(env_fp),
+        '--file=-',
+        'up',
+    )
+    sp.run(cmd, input=yaml.dump(CON_COMPOSE), text=True, check=True)
+
+sys.exit(0)

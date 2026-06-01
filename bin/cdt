@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: fish
+# created: 31 may 2026
+
+
+# Start a shell in a unique temp directory. Once the shell exits, destroy that
+# temp directory.
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+SHELL_EXE = 'fish'
+
+
+print("Entering shell with ephemeral working directory...")
+with TemporaryDirectory() as td:
+    td = Path(td)
+    p = sp.run(
+        [SHELL_EXE],
+        cwd=td,
+    )
+
+print("Purged ephemeral working directory")
+sys.exit(p.returncode)
+
+# TODO add visual indicator that the user is in a temp dir that will be destroyed on exit
