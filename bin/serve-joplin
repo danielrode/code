@@ -12,10 +12,11 @@
 # Change these first thing!
 
 
-import os
+import sys
 import tomllib
 import subprocess as sp
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import yaml
 
@@ -92,7 +93,7 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     env_fp.write_text('\n'.join((
         'DB_PW=' + NY['db_pw'],
         'APP_BASE_URL' + NY['origin'],
-    ))
+    )))
 
     cmd = (
         'podman-compose',
@@ -103,6 +104,6 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as td:
         '--file=-',
         'up',
     )
-    sp.run(cmd, input=yaml.dump(CON_COMPOSE), text=True, check=True)
+    p = sp.run(cmd, input=yaml.dump(CON_COMPOSE), text=True, check=True)
 
-sys.exit(0)
+sys.exit(p.returncode)
