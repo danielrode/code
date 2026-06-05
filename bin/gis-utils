@@ -2,14 +2,14 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 09 apr 2026
+# updated: 04 jun 2026
 
 
 import sys
 import subprocess as sp
 from pathlib import Path
 
-# TODO error if mount mounted with 'readonly' flag has sub-mounts (as podman will make them rw by default)
+# TODO make podman error if mount mounted with 'readonly' flag has sub-mounts (as podman will make them rw by default)
 
 
 HELP_TEXT = "Usage: gis-utils UTILITY_NAME [ARGS...]"
@@ -19,6 +19,7 @@ CON_ARGS = (
     '--rm',
     '--tty',
     '--interactive',
+    # '--oom-score-adj=999',
     '--mount=type=bind,source=/tmp,target=/tmp',
     '--mount=type=bind,source=/home,target=/home,readonly',
     *[
