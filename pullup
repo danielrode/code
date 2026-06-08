@@ -58,4 +58,5 @@ git commit -m merge
 # Clean-up
 ssh "$REMOTE_ADDR" bash <<'EOF'
 git -C ~/code worktree remove ../tmp_git_wt
+git -C ~/code branch -D tmp_new_sans_patch
 EOF
