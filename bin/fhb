@@ -6,7 +6,7 @@
 #   lf
 #   ~/code/bin/ccarousel
 # created: 22 sep 2025
-# updated: 29 may 2026
+# updated: 07 jun 2026
 
 
 # File History BTRFS. Given some file path, assuming the file is included
@@ -75,16 +75,11 @@ with TemporaryDirectory() as td:
         if not file_snapshot_path.exists():
             continue
 
-        cmd = [
-            'ln', '-s',
-            str(file_snapshot_path),
-            '{}/{}_{}'.format(
-                td,
-                snapshot.name.removeprefix("@snapshot-"),
-                file_path.name,
-            ),
-        ]
-        sp.run(cmd)
+        link = Path(td, '__'.join((
+            snapshot.name.removeprefix("@snapshot-"),
+            file_path.name,
+        )))
+        link.symlink_to(file_snapshot_path)
 
     # Open file manager to temp directory where the cached file versions are
     cmd = (
