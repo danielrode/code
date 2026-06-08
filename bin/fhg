@@ -4,6 +4,7 @@
 # dependencies:
 #   git
 #   lf
+#   tmux
 # created: 25 mar 2025
 # updated: 08 jun 2026
 
@@ -121,8 +122,7 @@ with TemporaryDirectory() as td:
 
     # Open file manager to temp directory where the cached file versions are
     cmd = (
-        'lf',
-        '-command', 'map w $fish',
-        str(td),
+        'tmux', 'new-session', '--',
+        'lf', '-command', 'map w &{{tmux popup -E -w 90% -h 90% fish}}',
     )
-    sp.run(cmd)
+    sp.run(cmd, cwd=td)

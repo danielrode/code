@@ -5,6 +5,7 @@
 #   btrfs
 #   lf
 #   fish
+#   tmux
 # created: 22 sep 2025
 # updated: 08 jun 2026
 
@@ -62,7 +63,8 @@ if not snapshots_dir.exists():
     sys.exit(2)
 
 # Create temp directory with links to old snapshot versions
-fname = file_path.resolve().name
+file_path_abs = file_path.resolve()
+fname = file_path_abs.name
 with TemporaryDirectory() as td:
     td = Path(td)
     for snapshot in snapshots_dir.glob("@*"):
@@ -80,10 +82,11 @@ with TemporaryDirectory() as td:
         )))
         link.symlink_to(file_snapshot_path)
 
+    Path(td, 'now').symlink_to(file_path_abs)
+
     # Open file manager to temp directory where the cached file versions are
     cmd = (
-        'lf',
-        '-command', 'map w $fish',
-        str(td),
+        'tmux', 'new-session', '--',
+        'lf', '-command', 'map w &{{tmux popup -E -w 90% -h 90% fish}}',
     )
-    sp.run(cmd)
+    sp.run(cmd, cwd=td)
