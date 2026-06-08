@@ -9,7 +9,7 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 26 feb 2026
+# updated: 08 jun 2026
 
 
 # Description: Create backup of my data online using restic.
@@ -42,8 +42,11 @@ HOSTNAME = os.environ['HOSTNAME']
 USER = getuser()
 
 UNIVERSAL_EXCLUDE_PATTERNS = [
-    str(Path(HOME_PATH, i)) for i in [
-
+    '.trash',
+    '.Trash',
+    '.dontbackup',
+]
+UNIVERSAL_EXCLUDE_PATTERNS += [str(Path(HOME_PATH, i)) for i in [
     # Directories
     '.AndroidStudio3.0/',
     '.appdata/android-studio/sdk/',
