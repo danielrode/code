@@ -1,48 +1,61 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 25 apr 2026
-# updated: 06 may 2026
+# updated: 07 jun 2026
+
+
+echo "NOT TESTED YET"
+exit 1
+
+
+REMOTE_ADDR=USER@PATCHED_REMOTE  # Linux host's IP address and user name
+REMOTE_NAME=GIT_REMOTE_NAME      # Name of git remote according to local repo
 
 
 set -e
+set -x
 
 
-remote_host=USER@CUSTOMIZED_REMOTE_HOST
-remote_git=GIT_REMOTE
-exit
-
-# Save remote changes to upstream as a tagged commit
-ssh "$remote_host" bash <<EOF
-set -e
-git -C code checkout b_patch
-git -C code add .
-git -C code commit -m various
-git -C code tag -f send_upstream
+# On remove, create temp branch with new changes, minus local-specific patches
+ssh "$REMOTE_ADDR" bash <<'EOF'
+git -C ~/code checkout b_patch
+git -C ~/code branch tmp_new_sans_patch
+git -C ~/code worktree add ../tmp_git_wt tmp_new_sans_patch
+git -C ~/tmp_git_wt revert t_patch -m unpatch
 EOF
 
-# Pull those remote changes
+# Fetch remote changes
 cd ~/code
-git checkout master
-git fetch "$remote_git"
-git cherry-pick send_upstream
-git push
+git fetch "$REMOTE_NAME"
 
-# Reorganize remote repo so these new changes reside in the master branch
-ssh "$remote_host" bash <<EOF
-set -e
-git -C code checkout b_patch
-git -C code worktree add ../tmp_git_dir1 master
-git -C tmp_git_dir1 fetch
-git -C tmp_git_dir1 reset --hard origin/master
-git -C code worktree remove ../tmp_git_dir1
-git -C code branch -D tmp_git_dir1
+# Screen fetch for potential shenanigans (ideally, this will output nothing)
+{
+    # Scan git repo guts
+    grep -rP '\x1b' .git/ --exclude-dir=objects --exclude=index && exit 1
 
-git -C code branch b_patch_tmp master
-git -C code worktree add ../tmp_git_dir2 b_patch_tmp
-git -C tmp_git_dir2 cherry-pick t_patch
-git -C code worktree remove ../tmp_git_dir2
-git -C code switch b_patch_tmp
-git -C code branch -D b_patch
-git -C code branch -m b_patch_tmp b_patch
-git -C code tag -f t_patch
+    # Scan checked out branch file contents
+    # grep --exclude-dir=.git -rP '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]' && exit 1
+
+    # Scan (of branch to merge) commit messages and commit metadata
+    git log --format='%s%n%b%n%ae' "$REMOTE_NAME"/tmp_new_sans_patch \
+        | grep -P '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]' && exit 1
+    # Scan (of branch to merge) filenames
+    git ls-tree -zr --name-only "$REMOTE_NAME"/b_patch \
+    | grep -P '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]' && exit 1
+
+    # Scan (of branch to merge) file contents
+    git ls-tree -r "$REMOTE_NAME"/tmp_new_sans_patch | awk '{print $3}' \
+    | while read hash; do
+        git cat-file blob "$hash" \
+        | grep -P '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]' && exit 1
+    done
+} | /usr/bin/cat -v
+
+# Merge changes from remote
+git checkout "$REMOTE_NAME"/tmp_new_sans_patch -p
+git commit -m merge
+
+# Clean-up
+ssh "$REMOTE_ADDR" bash <<'EOF'
+git -C ~/code worktree remove ../tmp_git_wt
 EOF
