@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: ~/.nunyuh
 # created: 25 jul 2024
-# updated: 18 may 2026
+# updated: 07 jun 2026
 
 
 # Alias/shortcuts for mounting remote directories via SSH.
@@ -40,16 +40,6 @@ SSHFS_ARGS = (
 
 
 # Functions
-def mountpoint(pth: Path) -> bool:
-    pth = Path(pth)
-    p = sp.run(['mountpoint', pth])
-    if p.returncode == 0:
-        return True  # pth is a mount point
-    elif p.returncode == 32:
-        return False  # pth is not a mount point
-    else:
-        raise Exception("mountpoint gave unexpected exit code:", p.returncode)
-
 def sshfs(
     mnt_point: Path,
     sshfs_args: list,
@@ -57,14 +47,16 @@ def sshfs(
     remote_addr: str,
     remote_dir: Path
 ) -> None:
-    if mountpoint(mnt_point):
+    mnt_point = Path(mnt_point)
+
+    if mnt_point.is_mount():
         print("Already mounted:", mnt_point)
         return
 
     cmd = (
         'sshfs', *sshfs_args,
         f"{remote_user}@{remote_addr}:{remote_dir}",
-        mnt_point,
+        str(mnt_point),
     )
     sp.run(cmd, check=True)
 
@@ -107,6 +99,11 @@ try:
 except KeyError:
     user = getpass.getuser()
 
+try:
+    port = host['ssh_port']
+except KeyError:
+    port = 22
+
 # Setup master SSH connection (if requested)
 if use_sock:
     sock_path = HOME / f'.ssh/{user}@{ip}.sock'
@@ -121,4 +118,4 @@ if use_sock:
 
 # Mount
 for remote_dir, mount_point in mnt_list:
-    sshfs(mount_point, SSHFS_ARGS, user, ip, remote_dir)
+    sshfs(mount_point, SSHFS_ARGS, '-p', str(port), user, ip, remote_dir)

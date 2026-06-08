@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # dependencies: bash 4.3+, pv
-# created: 11 apr 2026
+# created: 06 jun 2026
 # updated: -
 
 
 # Description.
 
+
+set -e  # Exit on error
+set -x  # Echo script lines as they are executed
+set -o pipefail  # Prevent tee from swallowing upstream exit code
+
+# Set working directory to where this script is
+cd "$(dirname "$0")"
+
+# Log output
+exec > >(tee "$(basename "$0").log") 2>&1
 
 # Setup temp directory and set it to be removed on exit
 umask 077

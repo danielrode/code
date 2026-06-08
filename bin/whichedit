@@ -1,18 +1,52 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # dependencies:
 #   helix
 # created: 23 feb 2025
-# updated: 30 mar 2026
+# updated: 07 jun 2026
 
 
-exe_path="$(which "$1" | head -1)"
+import sys
+import shutil
+import subprocess as sp
+from pathlib import Path
 
-if ! file --brief --mime --dereference "$exe_path" \
-    | grep -E --silent '\bcharset=(us-ascii|utf-8)$'
-then
-    echo "Not a text file: $exe_path"
-    exit 1
-fi
 
-hx "$exe_path"
+def print2(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
+
+fp_list = [Path(i) for i in sys.argv[1:]]
+
+if not fp_list:
+    print("Specify script name(s)")
+    sys.exit(1)
+
+exes_fps = []
+for fp in fp_list:
+    efp = shutil.which(fp)
+    if efp is None:
+        print2("error: Script not found in PATH:", fp)
+        sys.exit(1)
+
+    exes_fps += [efp]
+
+    cmd = (
+        'file',
+        '--brief',
+        '--mime',
+        '--dereference',
+        efp,
+    )
+    p = sp.run(cmd, check=True, text=True, capture_output=True)
+    p_out = p.stdout.strip()
+
+    if all((
+        not p_out.endswith('charset=us-ascii'),
+        not p_out.endswith('charset=utf-8'),
+    )):
+        print2("error: Not a text file:", efp)
+        sys.exit(1)
+
+p = sp.run(('hx', *exes_fps))
+sys.exit(p.returncode)
