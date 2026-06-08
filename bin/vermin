@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: bash 4+
+# created: 26 may 2026
+# updated: -
+
+
+# Run vermin via container.
+
+
+IMG=ghcr.io/danielrode/vermin:latest
+CON_RUN_ARGS=(
+    --rm
+    --interactive
+    --pull=never
+    --read-only-tmpfs=true
+    # --read-only=true
+    # --read-only-tmpfs=false
+    # --tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700
+    --cap-drop=ALL
+    --security-opt=no-new-privileges
+    --systemd=false
+    --network=none
+    --tz=local
+    --user="$(id -u):$(id -g)"
+    --userns=keep-id
+    --volume="$PWD:$PWD:ro"
+    --workdir="$PWD"
+)
+
+
+podman run "${CON_RUN_ARGS[@]}" "$IMG" "$@"

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
 # created: 10 oct 2025
-# updated: 05 apr 2025
+# updated: 27 may 2026
 
 
 # Create BTRFS snapshots.
@@ -35,49 +34,50 @@
 
 
 import os
-# import json
+import json
 import subprocess as sp
 from pathlib import Path
 from datetime import datetime
 
 
-DEFAULT_SET = [Path(i) for i in [
+INCLUDE_DIRS = [
     Path.home(),
-    '/home',
-    '/mnt/d',
-]]
+    Path('/home/'),
+]
+
+BTRFS_RO_ERR = 'ERROR: Could not create subvolume: Read-only file system'
 
 
 def timestamp() -> str:
     return datetime.now().strftime('%Y-%m-%d-%H%M%S')
 
 
-# def ls_btrfs(exclusions=['/', '/home']) -> list[Path]:
-#     cmd = (
-#         'findmnt',
-#         '--list',
-#         '--noheadings',
-#         '--types', 'btrfs',
-#         '--output', 'TARGET',
-#         '--json',
-#     )
-#     p = sp.run(cmd, check=True, text=True, capture_output=True)
+def ls_btrfs(exclusions=['/', '/home']) -> list[Path]:
+    cmd = (
+        'findmnt',
+        '--list',
+        '--noheadings',
+        '--types', 'btrfs',
+        '--output', 'TARGET',
+        '--json',
+    )
+    p = sp.run(cmd, check=True, text=True, capture_output=True)
 
-#     return [
-#         Path(i['target'])
-#         for i in json.loads(p.stdout)['filesystems']
-#         if i['target'] not in exclusions
-#     ]
+    return [
+        Path(i['target'])
+        for i in json.loads(p.stdout)['filesystems']
+        if i['target'] not in exclusions
+    ]
 
 
 # Create read-only BTRFS snapshots
-for btrfs_subvol in DEFAULT_SET:
+for btrfs_subvol in (INCLUDE_DIRS + ls_btrfs()):
     if not btrfs_subvol.exists():
         continue
 
     snapshot_dir = btrfs_subvol / '.snapshots'
     if not snapshot_dir.exists():
-        print("Snapshot directory not found (skipping):", btrfs_subvol)
+        print("No snapshot directory found (skipping):", btrfs_subvol)
         continue
 
     cmd = []
@@ -92,4 +92,9 @@ for btrfs_subvol in DEFAULT_SET:
         str(btrfs_subvol),
         str(Path(btrfs_subvol, '.snapshots', f"@snapshot-{timestamp()}")),
     ]
-    sp.run(cmd, check=True)
+    p = sp.run(cmd, text=True, stdout=sp.PIPE, stderr=sp.STDOUT)
+
+    if p.stdout.strip() == BTRFS_RO_ERR:
+        print("Read-only filesystem (skipping):", btrfs_subvol)
+    else:
+        print(p.stdout, end='')

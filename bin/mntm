@@ -5,10 +5,11 @@
 #   udisks2
 #   lf
 # created: 12 apr 2020
-# updated: 27 apr 2026
+# updated: 22 may 2026
 
 
 import io
+import sys
 import csv
 import json
 import subprocess as sp
@@ -16,6 +17,10 @@ from pathlib import Path
 
 
 HOME = Path.home()
+
+
+def print2(*args, **kwargs) -> None:
+    print(*args, **kwargs, file=sys.stderr)
 
 
 def lsblk() -> None:
@@ -46,7 +51,7 @@ def lsblk_json2csv(lsblk_json: list[dict]) -> str:
 
 
 def csv2fixed(csv: str) -> str:
-    """Convert a CSV to fixed-width text format"""
+    """Convert a CSV to fixed-width text format."""
     cmd = (
         'column',
         '--table',
@@ -57,13 +62,16 @@ def csv2fixed(csv: str) -> str:
     return p.stdout
 
 
-def udisksctl(part_path: Path) -> (str, str):
-    cmd = (
+def udisksctl(part_path: Path, ro=False) -> (str, str):
+    cmd = [
         'udisksctl', 'mount',
-        '--block-device', str(part_path),
-    )
+    ]
+    if ro:
+        cmd += ['--options=ro']
+    cmd += ['--block-device', str(part_path)]
+
     p = sp.run(cmd, check=True, capture_output=True, text=True)
-    print(p.stdout)
+    print2(p.stdout)
 
     blk_dev, mnt_point, = (
         p
@@ -75,6 +83,19 @@ def udisksctl(part_path: Path) -> (str, str):
 
     return blk_dev, mnt_point
 
+
+# Parse command line arguments
+read_only_mode = False
+for a in iter(sys.argv[1:]):
+    match sys.argv[1]:
+        case '--ro' | 'ro' | '-r':
+            read_only_mode = True
+        case _:
+            print2("error: Invalid option:", a)
+            sys.exit(1)
+
+if read_only_mode:
+    print2("Read-only mode ACTIVE!")
 
 # Get list of partitions
 parts = lsblk()
@@ -95,15 +116,19 @@ cmd = (
     '--bind', 'f5:become(mntm)',
     '--header', 'Press F5 to refresh the list',
 )
-p = sp.run(cmd, check=True, text=True, stdout=sp.PIPE, input=parts_fw)
+p = sp.run(cmd, text=True, stdout=sp.PIPE, input=parts_fw)
+
+if not p.stdout:
+    print2("No selection made")
+    sys.exit(0)
 
 # Mount partition
 part_path = [i.split(' ')[0] for i in p.stdout.strip().split('\n')][0]
-_, mnt_point = udisksctl(part_path)
+_, mnt_point = udisksctl(part_path, ro=read_only_mode)
 
 # Open mounted partition in file manager
-sp.run(["lf", mnt_point], check=True)
+sp.run(["lf", mnt_point])  # todo use ccarousel
 
 # Unmount partition
 sp.run(['umount', mnt_point], check=True)
-print("Unmounted:", mnt_point)
+print2("Unmounted:", mnt_point)

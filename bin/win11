@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 23 dec 2025
-# updated: 13 jan 2026
+# updated: 01 jun 2026
 
 
 # Windows 11 running in Docker
@@ -15,7 +15,7 @@
 args=(
 	--replace --name win11
 	--interactive --tty
-	--publish 3389:3389  # RDP
+	--publish 127.0.0.1:3389:3389  # RDP
 	# --publish 8006:8006  # Web GUI
 	--device=/dev/kvm
 	--device=/dev/net/tun
@@ -43,7 +43,6 @@ then
 fi
 
 podman run "${args[@]}"
-
 
 
 # TODO

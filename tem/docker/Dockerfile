@@ -45,5 +45,6 @@ ENV PATH="/usr/local/bin:$PATH"
 # Install Python libraries using requirements.txt in cwd
 RUN --mount=type=bind,source=requirements.txt,target=/tmp/deps.txt <<EOF
     # NOTE: The bind mount only persists for this step
-    python3 -m pip install --no-cache-dir -r /tmp/deps.txt
+    python3 -m pip install --root-user-action=ignore --no-cache-dir \
+        -r /tmp/deps.txt
 EOF

@@ -163,4 +163,5 @@ abbr --add reboot sudo /usr/bin/reboot
 
 # COMPLETIONS #################################################################
 
-complete -c we -x -a '(lscmd -b)'
+complete -c we -a '(__fish_complete_subcommand)' -d Command
+complete -c xa -a '(__fish_complete_subcommand)' -d Command

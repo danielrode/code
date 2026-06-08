@@ -59,6 +59,7 @@ pkgs=(
     pspg
     python3-pykeepass
     qalculate
+    qt6ct  # verify package is also in void repos (not just fedora's)
     restic
     ripgrep
     smartmontools

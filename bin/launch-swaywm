@@ -4,7 +4,7 @@
 #   syncthing
 #   dbus
 #   ~/code/setup.sh
-# updated: 18 mar 2026
+# updated: 18 may 2026
 
 
 # Wait for cgroup assignment on Void (see ~/code/setup.sh for details)
@@ -30,6 +30,7 @@ export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export MOZ_ENABLE_WAYLAND=1
 export XDG_SESSION_TYPE=wayland
 export XDG_CURRENT_DESKTOP=sway
+export QT_QPA_PLATFORMTHEME=qt6ct
 
 
 # Launch Sway

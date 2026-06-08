@@ -7,7 +7,7 @@
 #   lf
 #   ~/code/bin/rs
 # created: 27 jan 2022
-# updated: 27 apr 2026
+# updated: 18 may 2026
 
 
 # Given some file path, this script will iterate over whatever restic
@@ -72,6 +72,8 @@ do
 		ln -s "$target" "$link_name"
 	fi
 done
+
+ln -s "$INPUT_PATH" "$LINK_BUCKET/now"
 
 
 lf "$LINK_BUCKET"

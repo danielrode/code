@@ -89,28 +89,35 @@ git_hist = run_iter((
     '--name-only',
     '--pretty=format:%H %cd',
     '--date=format:%Y-%m-%d_%H:%M',
-    '--', str(fpath),
+    '--', str(fp0),
 ))
-with TemporaryDirectory() as tmpdir:
+with TemporaryDirectory() as td:
+    td = Path(td)
+
     # Write each committed revision of file to a temp file with the commit date
     # as the name
+    fp0 = None
     for line1, line2 in lines2blocks(git_hist):
         commit, date = line1.split(' ')
-        fpath = line2
-        cmd = ('git', 'show', f"{commit}:{fpath}")
+        fp = Path(line2)
+        if not fp0:
+            fp0 = fp
+        cmd = ('git', 'show', f"{commit}:{fp}")
         try:
             p = sp.run(cmd, text=True, check=True, capture_output=True)
         except sp.CalledProcessError as e:
             benign_err = (
-                f"fatal: path '{fpath}' does not exist in '{commit}'"
+                f"fatal: path '{fp}' does not exist in '{commit}'"
             )
             if e.stderr.strip() == benign_err:
                 continue
             else:
                 raise e
-        tmpf = Path(tmpdir, date + ' - ' + Path(fpath).name)
+        tmpf = Path(td, f"{date}__{commit[:8]}__{fp.name}")
         with tmpf.open('w') as f:
             f.write(p.stdout)
 
+    sp.run(['ln', '-s', str(fp0.resolve()), str(td / 'now')], check=True)
+
     # Open file manager to temp directory where the cached file versions are
-    sp.run(['lf', tmpdir], check=True)
+    sp.run(['lf', str(td)], check=True)
