@@ -69,7 +69,7 @@ with TemporaryDirectory() as td:
     td = Path(td)
     for snapshot in snapshots_dir.glob("@*"):
         file_snapshot_path = snapshot / (
-            str(file_path)
+            str(file_path_abs)
             .removeprefix(str(subvol_path))
             .lstrip('/')
         )

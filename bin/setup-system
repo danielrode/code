@@ -75,6 +75,7 @@ then
     ;
     dnf install -y \
         "${pkgs[@]}" \
+        archivemount \
         fd-find \
         git-delta \
         golang \
@@ -86,6 +87,7 @@ then
         "${pkgs[@]}" \
         delta \
         fd \
+        fuse-archivemount \
         go \
         lf \
         liberation-fonts-ttf \
