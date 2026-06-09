@@ -6,6 +6,7 @@
 #   ov
 #   wl-clipboard
 #   foot
+#   fuse-archivemount
 
 
 # DOCUMENTATION:
@@ -242,4 +243,10 @@ map ap !{{
 }}
 map ax !{{
 	7z x -o"${f%.*}" $f
+}}
+map am ${{
+    mntdir="$f.mnt"
+    mkdir -p -- "$mntdir"
+    archivemount "$f" "$mntdir"
+    lf -remote "send $id cd \"$(printf '%s' "$mntdir" | sed 's/\\/\\\\/g;s/"/\\"/g')\""
 }}

@@ -2,19 +2,30 @@
 # author: daniel rode
 # dependencies: fzf
 # created: 12 may 2026
-# updated: -
+# updated: 08 jun 2026
 
 
 # List available templates, and then copy to destination.
 
 
 import sys
+import shlex
 import subprocess as sp
 from pathlib import Path
 
 
 PWD = Path.cwd()
 HOME = Path.home()
+PY_PREVIEW_CODE_PAYLOAD = """
+from sys import argv
+from subprocess import run
+from pathlib import Path
+fp = Path(argv[1])
+if fp.is_dir():
+    run(['tree', str(fp)])
+else:
+    run(['cat', str(fp)])
+"""
 
 
 # Parse command line arguments
@@ -32,7 +43,7 @@ cmd = (
     'fzf',
     '--delimiter=/',
     '--with-nth=-1',
-    '--preview=tree {}',
+    f'--preview=python3 -c {shlex.quote(PY_PREVIEW_CODE_PAYLOAD)} {{}}',
     '--preview-window=up,50%',
 )
 p = sp.run(
@@ -41,9 +52,8 @@ p = sp.run(
     input='\n'.join(tems),
     stdout=sp.PIPE,
 )
-try:
-    sel = p.stdout.strip()
-except IndexError:
+sel = p.stdout.strip()
+if not sel:
     print("No selection made")
     sys.exit(0)
 

@@ -87,6 +87,7 @@ with TemporaryDirectory() as td:
     # Open file manager to temp directory where the cached file versions are
     cmd = (
         'tmux', 'new-session', '--',
-        'lf', '-command', 'map w &{{tmux popup -E -w 90% -h 90% fish}}',
+        'lf', '-command',
+        'map w &{{ tmux popup -E -w 90% -h 90% env -C "$PWD" fish; }}',
     )
     sp.run(cmd, cwd=td)

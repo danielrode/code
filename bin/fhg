@@ -78,7 +78,7 @@ def lines2blocks(line_list: Iterable) -> Iterable:
 
 # Process command line arguments
 try:
-    fp0 = sys.argv[1]
+    fp0 = Path(sys.argv[1])
 except IndexError:
     print2(HELP_TEXT)
     sys.exit(1)
@@ -97,12 +97,9 @@ with TemporaryDirectory() as td:
 
     # Write each committed revision of file to a temp file with the commit date
     # as the name
-    fp0 = None
     for line1, line2 in lines2blocks(git_hist):
         commit, date = line1.split(' ')
         fp = Path(line2)
-        if not fp0:
-            fp0 = fp
         cmd = ('git', 'show', f"{commit}:{fp}")
         try:
             p = sp.run(cmd, text=True, check=True, capture_output=True)
@@ -118,11 +115,13 @@ with TemporaryDirectory() as td:
         with tmpf.open('w') as f:
             f.write(p.stdout)
 
-    sp.run(['ln', '-s', str(fp0.resolve()), str(td / 'now')], check=True)
+    (td / 'now').symlink_to(fp0.resolve())
 
     # Open file manager to temp directory where the cached file versions are
     cmd = (
         'tmux', 'new-session', '--',
-        'lf', '-command', 'map w &{{tmux popup -E -w 90% -h 90% fish}}',
+        'lf', '-command',
+        'map w &{{ tmux popup -E -w 90% -h 90% env -C "$PWD" fish; }}',
     )
+    print(cmd)
     sp.run(cmd, cwd=td)
