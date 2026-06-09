@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # author: daniel rode
 # created: 28 mar 2026
-# updated: -
+# updated: 08 jun 2026
 
 
 """Search and replace stdin using Python regex syntax.
@@ -17,5 +17,12 @@ query = sys.argv[1]
 replace = sys.argv[2]
 
 # Modify stdin text and print it
-for line in sys.stdin.readlines():
-    print(re.sub(query, replace, line), end='')
+def main():
+    for line in sys.stdin.readlines():
+        print(re.sub(query, replace, line), end='')
+
+if __name__ == '__main__':
+    try:
+        main()
+    except BrokenPipeError:
+        sys.exit(2)
