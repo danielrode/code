@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# name: dtach menu
 # tags: processes, menu
 # dependencies:
 #   dtach
 #   fzf
 # created: 12 apr 2025
-# updated: 30 may 2026
+# updated: 10 jun 2026
 
 
-# List active dtach sessions in a menu and then connect to the
+# dtach menu. List active dtach sessions in a menu and then connect to the
 # selected one.
 
 
+import os
+import re
 import sys
 import subprocess as sp
 from pathlib import Path
 
 
 DTACH_SOCK_FLAGS = ('-a', '-A', '-c', '-n', '-N', '-p')
+
+PID = os.getpid()
 
 
 def pgrep(query: str) -> list[list[str]]:
@@ -71,6 +74,17 @@ def get_pid_children(pid, ptable):
     ]
 
 
+def get_dtach_child_cmd(pid, ptable):
+    c_pid_list = get_pid_children(pid, ptable)
+
+    assert len(c_pid_list) == 1
+
+    child_pid = c_pid_list[0]
+    child_cmd = ptable[child_pid]['cmdline'].replace('\0', ' ')
+
+    return child_cmd
+
+
 def dtach_is_abandoned(pid, ptable):
     child_pids = get_pid_children(pid, ptable)
 
@@ -96,6 +110,19 @@ def dtach_is_abandoned(pid, ptable):
     )):
         return True
     return False
+
+
+def count_sock_connnections(sock_path):
+    """Return number of active connections the given socket has."""
+
+    cmd = ('lsof', str(sock_path))
+    p = sp.run(cmd, text=True, capture_output=True, check=True)
+
+    return len([
+        None
+        for i in p.stdout.strip().splitlines()
+        if re.match(r'.* \(CONNECTED\)$', i)
+    ])
 
 
 # Get current process table
@@ -130,21 +157,26 @@ if not dtach_socks:
 cmd = (
     'fzf',
     '--delimiter=\t',
-    '--preview=pstree -aps {1}',
+    '--preview=pstree -aps {2}',
     '--preview-window=up,70%',
+)
+menu = '\n'.join(
+    '\t'.join((
+        f"[{count_sock_connnections(sock)}]",  # Number of active connections
+        str(pid),  # dtach process ID
+        sock,  # dtach session socket
+        get_dtach_child_cmd(pid, ptable),  # dtach session command
+    ))
+    for sock, pid in dtach_socks.items()
 )
 p = sp.run(
     cmd,
     text=True,
-    input='\n'.join(
-        # '\t'.join((str(pid), sock, ptable[pid]['cmdline'].replace('\0', ' ')))
-        '\t'.join((str(pid), sock))
-        for sock, pid in dtach_socks.items()
-    ),
+    input=menu,
     stdout=sp.PIPE,
 )
 try:
-    sock_path = p.stdout.strip().split('\t')[1]
+    sock_path = p.stdout.strip().split('\t')[2]
 except IndexError:
     print("No selection made")
     sys.exit()
@@ -154,5 +186,6 @@ sp.run(['dtach', '-a', sock_path])
 
 
 # TODO
-# - omit self from menu (if running inside dtach)
 # - remove/kill phandom dtach processes
+# - include dtach session's working directory in session list/menu
+# - omit self from list

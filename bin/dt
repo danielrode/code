@@ -3,7 +3,7 @@
 # dependencies:
 #   dtach
 # created: 19 feb 2026
-# updated: 26 mar 2026
+# updated: 10 jun 2026
 
 
 # Start a new dtach session.
@@ -17,4 +17,4 @@ tmpdir="$(mktemp -d)"
 # function cleanup { rm -rf -- "$tmpdir"; }
 # trap cleanup EXIT
 
-dtach -c "$tmpdir/dtach.sock" -Ez fish
+dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE fish

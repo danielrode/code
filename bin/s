@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 07 jun 2026
+# updated: 10 jun 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -42,7 +42,7 @@ SSH_CMD = (
         # function cleanup {{ rm -fr -- "$tmpdir"; }}
         # trap cleanup EXIT
         [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
-        dtach -c "$tmpdir/dtach.sock" -zE fish
+        dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE fish
     '''
 )
 NY = tomllib.loads(Path(HOME, ".nunyuh").read_text())['H']
@@ -80,9 +80,9 @@ use_sock = False
 match remote:
     case 'h':
         use_sock = True
-        SSH_CMD = ( 'bash', '--login', '-c', 'fish' )
+        SSH_CMD = ('bash', '--login', '-c', 'fish')
     case 'p':
-        SSH_CMD = ( 'bash', '--login', '-c', 'fish' )
+        SSH_CMD = ('bash', '--login', '-c', 'fish')
 
 try:
     ip = host['ip']
@@ -102,7 +102,7 @@ except KeyError:
 if use_sock:
     sock_path = Path(HOME, '.ssh', f"{user}@{ip}.sock")
     if not sock_path.exists():
-        SSH_ARGS += [ '-M' ]  # Use "master" mode
+        SSH_ARGS += ['-M']  # Use "master" mode
     SSH_ARGS += [
         '-S', str(sock_path),
         # -f  # Authenticate, then run in background

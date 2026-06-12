@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 04 jun 2026
+# updated: 10 jun 2026
 
 
 import sys
@@ -12,7 +12,7 @@ from pathlib import Path
 # TODO make podman error if mount mounted with 'readonly' flag has sub-mounts (as podman will make them rw by default)
 
 
-HELP_TEXT = "Usage: gis-utils UTILITY_NAME [ARGS...]"
+HELP = "Usage: gis-utils UTILITY_NAME [ARGS...]"
 PWD = Path.cwd()
 CON_IMG = 'ghcr.io/danielrode/gis-utils:dev'
 CON_ARGS = (
@@ -29,28 +29,34 @@ CON_ARGS = (
     ],
     '--mount=type=bind,source={},target={}'.format(PWD, PWD),
     '--workdir={}'.format(PWD),
-    CON_IMG,
 )
 
 
+def print2(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
+
 # Parse command line arguments
-exe = Path(sys.argv[0]).name
-if exe in ('git-utils', 'gu'):
-    try:
-        exe = Path(sys.argv[1]).name
-    except IndexError:
-        print(HELP_TEXT)
-        exit(1)
-    args = sys.argv[2:]
+if len(sys.argv) < 2:
+    print2(HELP)
+    sys.exit(1)
+
+args = iter(sys.argv[1:])
+exe = next(args)
+if exe.startswith('/') or exe.startswith('./'):
+    exe = Path(sys.argv[1])
 else:
-    args = sys.argv[1:]
+    exe = Path(sys.argv[1]).name
+
+exe_args = [*args]
 
 # Run container
 cmd = (
     'podman', 'run',
     *CON_ARGS,
-    exe,
-    *args,
+    '--entrypoint={}'.format(exe),
+    CON_IMG,
+    *exe_args,
 )
 p = sp.run(cmd)
 sys.exit(p.returncode)
