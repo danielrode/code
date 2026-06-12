@@ -41,7 +41,7 @@ library(digest)
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-HELP_TEXT = "Usage: this.R [OPTIONS] IN_DIR OUT_DIR\n"
+HELP = "Usage: this.R [OPTIONS] IN_DIR OUT_DIR\n"
 
 
 # -----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ while (TRUE) {
 }
 
 if (length(pos_args) != 6) {
-    cat(HELP_TEXT)
+    cat(HELP)
     quit(1)
 }
 ctg_pth = pos_args[1]

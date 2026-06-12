@@ -34,7 +34,7 @@ RAM_GB = (sysconf('SC_PAGE_SIZE') * sysconf('SC_PHYS_PAGES')) / (1024.**3)  # Sy
 
 PROGRAM_NAME = "[Unique Name of Program]"
 EXE_NAME = Path(sys.argv[0]).name  # This script's filename
-HELP_TEXT = f"Usage: {EXE_NAME} [OPTION]... ARG"
+HELP = f"Usage: {EXE_NAME} [OPTION]... ARG"
 DST = Path(
     "dir",
     "dir",
@@ -162,7 +162,7 @@ def main() -> None:
     try:
         main_arg1, main_arg2 = pos_args
     except ValueError:
-        print(HELP_TEXT)
+        print(HELP)
         sys.exit(1)
 
     # Read content from file if path is provided, otherwise, read from stdin

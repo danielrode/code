@@ -21,7 +21,7 @@ ssh "$REMOTE_ADDR" bash <<'EOF'
 git -C ~/code checkout b_patch
 git -C ~/code branch tmp_new_sans_patch
 git -C ~/code worktree add ../tmp_git_wt tmp_new_sans_patch
-git -C ~/tmp_git_wt revert t_patch -m unpatch
+git -C ~/tmp_git_wt revert t_patch
 EOF
 
 # Fetch remote changes

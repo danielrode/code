@@ -1,6 +1,5 @@
 #!/usr/bin/env dash
 # author: daniel rode
-# name:
 # tags:
 # dependencies:
 #   dep1
@@ -15,7 +14,7 @@
 
 
 # Variables
-help_text="Usage: ${0##*/} PATH"
+HELP="Usage: ${0##*/} PATH"
 
 
 # http://redsymbol.net/articles/bash-exit-traps/  not sure if this works in dash
