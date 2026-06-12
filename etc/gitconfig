@@ -11,6 +11,7 @@
 	lgs = log --graph --abbrev-commit --pretty=format:'%C(blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an [%GK %G?]%C(reset)%C(bold yellow)%d%C(reset)' --simplify-by-decoration
 	wd = diff --word-diff=color --word-diff-regex='\\w+|.'
 	wdiff = wd
+	s = status
 [core]
 	pager = delta
 [credential]
