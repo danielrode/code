@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 12 jun 2026
+# updated: 14 jun 2026
 
 
 # TODO
@@ -25,54 +25,75 @@ from tempfile import TemporaryDirectory
 import yaml
 
 
+APP_NAME = 'joplin'
+
 HOME = Path.home()
 
-NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S']['joplin']
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
-DATA_DIR = Path(
-    HOME,
-    '.local',
-    'share',
-    'com.github.danielrode',
-    'joplin',
-)
-CON_ENV_PATH = DATA_DIR / 'compose.env'
-
-CON_RUNTIME = '/usr/bin/krun'
-CON_COMPOSE = {
-    'version': '3',
-    'services': {
-    'db': {
-        'image': 'docker.io/postgres:16',
-        # todo
+CON_HARDENED_DEFAULTS = {
+    'runtime': '/usr/bin/krun',
+    'cap_drop': ['ALL'],
+    'security_opt': ['no-new-privileges'],
+    'read_only': True,
+    'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+    
+}
+CON_SERVICES = {
+    'rathole': {
+        **CON_HARDENED_DEFAULTS,
+        'image': 'docker.io/rapiz1/rathole:latest',
+        'container_name': f'{APP_NAME}_rathole',
         # 'volumes': [
-        #     f'{DATA_DIR}/postgres:/var/lib/postgresql/data',
+        #     '~/rathole.toml:/rh.toml:ro,U,Z', # todo
         # ],
+        'command': '/rh.toml',  # todo use podman secrets?
+        'restart': 'always',
+        'deploy': { 'resources': { 'limits': {
+            # Limit memory usage
+            'mem_limit': '128m',
+            # Limit CPU usage to 50% of a single core
+            'cpus': 0.5,
+        }}},
+        'user': '1111:1111',
+    },
+    'db': {
+        **CON_HARDENED_DEFAULTS,
+        'image': 'docker.io/postgres:16',
+        'container_name': f'{APP_NAME}_db',
+        'volumes': [
+            {
+                'type': 'volume',
+                'source': 'postgres',
+                'target': '/var/lib/postgresql/data',
+                'volume': {
+                    'U': True,
+                    'mode': 0o700,
+                },
+            },
+            # 'postgres:/var/lib/postgresql/data:U',
+        ],
         'environment': [
             'POSTGRES_PASSWORD=${DB_PW}',
             'POSTGRES_USER=joplin0',
             'POSTGRES_DB=joplindb',
         ],
         'restart': 'always',
-        'runtime': CON_RUNTIME,
-        'security_opt': ['no-new-privileges'],
         'deploy': { 'resources': { 'limits': {
             # Limit memory usage
             'mem_limit': '256m',
             # Limit CPU usage to 50% of a single core
             'cpus': 0.5,
         }}},
+        'user': '999:999',
     },
     'joplin': {
+        **CON_HARDENED_DEFAULTS,
         'image': 'docker.io/joplin/server:latest',
-        'container_name': 'joplin-server',
+        'container_name': f'{APP_NAME}_server',
         'depends_on': ['db'],
-        'ports': [
-            # todo
-            "127.0.0.1:22300:22300",
-        ],
         'environment': [
-            'APP_PORT=22300',
+            'APP_PORT=22300',  #todo
             'APP_BASE_URL=${APP_BASE_URL}',
             'DB_CLIENT=pg',
             'POSTGRES_PASSWORD=${DB_PW}',
@@ -82,20 +103,35 @@ CON_COMPOSE = {
             'POSTGRES_HOST=db',
         ],
         'restart': 'always',
-        'runtime': CON_RUNTIME,
-        'security_opt': ['no-new-privileges'],
         'deploy': { 'resources': { 'limits': {
             # Limit memory usage
             'mem_limit': '256m',
             # Limit CPU usage to 50% of a single core
             'cpus': 0.5,
         }}},
+        'user': '1111:1111',
     },
-}}
+}
+CON_COMPOSE = {
+    'name': APP_NAME,
+    'services': CON_SERVICES,
+    'volumes': {
+        'postgres': {
+            'name': f'{APP_NAME}_postgres',
+        },
+    },
+    'version': '3',
+}
+
+PODMAN_CMD = (
+    'podman-compose',
+    '--no-ansi',
+    '--podman-pull-args=--pull=missing',
+    '--project-name=' + APP_NAME,
+)
 
 
 # Main
-DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
 with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     env_fp = Path(td, 'compose.env')
     env_fp.touch(mode=0o600)
@@ -105,10 +141,7 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     )))
 
     cmd = (
-        'podman-compose',
-        '--no-ansi',
-        '--podman-pull-args=--pull=missing',
-        '--project-name=joplin',
+        *PODMAN_CMD,
         '--env-file=' + str(env_fp),
         '--file=-',
         'up',
