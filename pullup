@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 25 apr 2026
-# updated: 12 jun 2026
+# updated: 16 jun 2026
 
 
 REMOTE_ADDR=USER@PATCHED_REMOTE  # Linux host's IP address and user name
@@ -52,7 +52,7 @@ git fetch "$REMOTE_NAME"
 } | /usr/bin/cat -v
 
 # Merge changes from remote
-git checkout "$REMOTE_NAME"/tmp_new_sans_patch -p
+git merge mesa/tmp_new_sans_patch --squash
 git commit -m merge
 
 # Clean-up
