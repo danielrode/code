@@ -189,3 +189,4 @@ sp.run(['dtach', '-a', sock_path])
 # - remove/kill phandom dtach processes
 # - include dtach session's working directory in session list/menu
 # - omit self from list
+# - avoid recursion (if already in dtach, replace existing session with the selected one)

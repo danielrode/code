@@ -1,0 +1,22 @@
+
+[lint]
+
+# NOTE: If your editor keep highlighting any of the ignored items, you may need
+# to also set them to be ignored in other Python linter (flake8, pycodestyle,
+# etc...) config files.
+ignore = [
+  # "expected x blank lines"
+  "E302",
+  "E303",
+  "E305",
+  # "module level import not at top of file"
+  "E402",
+  # "line too long"
+  "E501",
+  # "missing whitespace around bitwise or shift operator"
+  "E227",
+  # "missing whitespace around parameter equals"
+  "E252",
+  # "E251 unexpected spaces around keyword / parameter equals"
+  "E251",
+]
