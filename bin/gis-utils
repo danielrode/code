@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 10 jun 2026
+# updated: 16 jun 2026
 
 
 import sys
@@ -14,6 +14,8 @@ from pathlib import Path
 
 HELP = "Usage: gis-utils UTILITY_NAME [ARGS...]"
 PWD = Path.cwd()
+HOME = Path.home()
+GIT_REPO_PATH = HOME / 'union/github/gis-utils'
 CON_IMG = 'ghcr.io/danielrode/gis-utils:dev'
 CON_ARGS = (
     '--rm',
@@ -29,6 +31,10 @@ CON_ARGS = (
     ],
     '--mount=type=bind,source={},target={}'.format(PWD, PWD),
     '--workdir={}'.format(PWD),
+
+    # Override image scripts with local bleeding edge ones
+    f'--mount=type=bind,src={GIT_REPO_PATH/'bin'},dst=/vogeler/bin',
+    f'--mount=type=bind,src={GIT_REPO_PATH/'lib'},dst=/vogeler/lib',
 )
 
 
