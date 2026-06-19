@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # created: 19 jul 2025
-# updated: 07 jun 2026
+# updated: 19 jun 2026
 
 
 # Setup and configure Linux system to be how I like it.
@@ -59,12 +59,12 @@ pkgs=(
     pspg
     python3-pykeepass
     qalculate
-    qt6ct  # todo verify package is also in void repos (not just fedora's)
     restic
     ripgrep
     smartmontools
     swaylock
     syncthing
+    xdg-desktop-portal
     zathura
     zathura-pdf-mupdf
 )
