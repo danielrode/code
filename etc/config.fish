@@ -145,7 +145,7 @@ abbr --add rsynca rsync \
     --progress \
     --backup
 abbr --add pkill pkill -e
-abbr --add pspg pspg -X -b
+abbr --add pspg pspg -X -b --csv
 abbr --add pstree pstree -aps "$fish_pid"
 
 # One-liners
