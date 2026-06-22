@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: yt-dlp, lf
 # created: 26 mar 2026
-# updated: 27 apr 2026
+# updated: 21 jun 2026
 
 
 # Download internet video.
@@ -17,8 +17,8 @@ from tempfile import TemporaryDirectory
 
 HOME = Path.home()
 YTDLP_ARGS = (
-    '--no-playlist',
-    '--format', '[height<721][fps<31]',
+    # '--no-playlist',
+    # '--format', '[height<721][fps<31]',
 )
 
 
@@ -34,7 +34,9 @@ with TemporaryDirectory() as tdir:
     os.chdir(tdir)
 
     # Download video
-    sp.run(['yt-dlp', *YTDLP_ARGS, url], check=True)
+    p = sp.run(['yt-dlp', *YTDLP_ARGS, url])
+    if p.returncode != 0:
+        sys.exit(p.returncode)
 
     # Browse video directory
     sp.run(['lf'])
