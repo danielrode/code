@@ -33,7 +33,7 @@ HOSTNAME = socket.gethostname()
 RAM_GB = (sysconf('SC_PAGE_SIZE') * sysconf('SC_PHYS_PAGES')) / (1024.**3)  # System memory in GB
 
 PROGRAM_NAME = "[Unique Name of Program]"
-EXE_NAME = Path(sys.argv[0]).name  # This script's filename
+EXE_NAME = Path(__file__).name  # This script's filename
 HELP = f"Usage: {EXE_NAME} [OPTION]... ARG"
 DST = Path(
     "dir",
