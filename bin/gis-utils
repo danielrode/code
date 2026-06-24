@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 16 jun 2026
+# updated: 17 jun 2026
 
 
 import sys
@@ -22,10 +22,11 @@ CON_ARGS = (
     '--tty',
     '--interactive',
     # '--oom-score-adj=999',
+    '--mount=type=bind,source=/etc/localtime,target=/etc/localtime',
     '--mount=type=bind,source=/tmp,target=/tmp',
-    '--mount=type=bind,source=/home,target=/home,readonly',
+    '--mount=type=bind,source=/home,target=/home,ro',
     *[
-        '--mount=type=bind,source={},target={},readonly'.format(d, d)
+        '--mount=type=bind,source={},target={},ro'.format(d, d)
         for d in Path('/mnt').iterdir()
         if d.is_dir()
     ],

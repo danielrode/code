@@ -19,4 +19,6 @@ ignore = [
   "E252",
   # "E251 unexpected spaces around keyword / parameter equals"
   "E251",
+  # "E226 missing whitespace around arithmetic operator"
+  "E226",
 ]
