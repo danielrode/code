@@ -45,45 +45,19 @@ end
 
 # PROFILE #####################################################################
 
-set -gx VISUAL hx
-set -gx EDITOR $VISUAL
-set -gx PAGER less
-set -gx LESS "--RAW-CONTROL-CHARS --ignore-case --jump-target=.3 --mouse -XF"
-set -gx LESSEDIT "%E < %f"
-set -gx DEFAULT_TERM foot
-set -gx LS_COLORS $LS_COLORS":ow=01;33" # Color 777 orange
 set -gx HOSTNAME (hostname)
 
-# Daniel's Constant Variables
-set -gx DCV_CODE_PATH $HOME"/code"
-set -gx DCV_HOME_OPT $HOME"/.local/opt"
-
-# XDG
-set -gx XDG_CONFIG_HOME $HOME"/.config"
-set -gx XDG_CACHE_HOME $HOME"/.cache"
-set -gx XDG_DATA_HOME $HOME"/.local/share"
-set -gx XDG_DESKTOP_DIR $HOME"/working"
-set -gx XDG_DOCUMENTS_DIR $HOME"/progeny"
-set -gx XDG_DOWNLOAD_DIR $HOME"/downloads"
-set -gx XDG_MUSIC_DIR $HOME"/store/music"
-set -gx XDG_PICTURES_DIR $HOME"/media"
-set -gx XDG_VIDEOS_DIR $HOME"/media"
-set -gx XDG_TEMPLATES_DIR $HOME"/code/tem"
-set -gx XDG_PUBLICSHARE_DIR $HOME"/union/public"
-set -gx XDG_SCREENSHOTS_DIR $XDG_PICTURES_DIR"/screencaptures/current"
-
-# Program Config
-set -gx BAT_PAGER $PAGER
-set -gx GOPATH $HOME"/.appdata/go"
-set -gx R_LIBS_USER $HOME"/.local/lib/R"
-
-# Path
-fish_add_path /opt/bin
-fish_add_path $HOME"/.local/bin"
-fish_add_path $DCV_CODE_PATH"/bin"
-fish_add_path $DCV_HOME_OPT"/bin"
-fish_add_path $HOME"/.cargo/bin"
-fish_add_path $GOPATH"/bin"
+# Load and set env vars from profile.env
+set -f env_var_fp "$HOME/.config/environment.d/profile.conf"
+if test -f "$env_var_fp"
+    while read line
+        if string match -qr '^#|^$' "$line"
+            continue
+        end
+        set item (string split -m 1 '=' $line)
+        set -gx $item[1] $item[2]
+    end <"$env_var_fp"
+end
 
 # ALIASES & FUNCTIONS #########################################################
 
@@ -103,7 +77,7 @@ abbr --add cp cp -v
 abbr --add mv mv -v
 abbr --add rm rm -v
 abbr --add rmdir rmdir -v
-abbr --add cat strings -aw -n 1 -U x
+# abbr --add cat strings -aw -n 1 -U x
 
 # Abbreviations
 abbr --add c wl-copy

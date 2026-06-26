@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 11 jan 2026
-# updated: 12 jun 2026
+# updated: 26 jun 2026
 
 
-"""Install links to home config dotfiles.
-"""
+"""Install links to home config dotfiles."""
 
 
 from pathlib import Path
@@ -23,6 +22,8 @@ LINK_MAP = {
             '.bash_profile',
         'bashrc':
             '.bashrc',
+        'bat.conf':
+            '.config/bat/config',
         'config.fish':
             '.config/fish/config.fish',
         'desktops':
@@ -55,12 +56,10 @@ LINK_MAP = {
             '.config/ov/config.yaml',
         'profile':
             '.profile',
-        'profile-environmentd.conf':
+        'profile.env':
             '.config/environment.d/profile.conf',
         'pycodestyle.ini':
             '.config/pycodestyle',
-        'rc.elv':
-            '.config/elvish/rc.elv',
         'ruff.toml':
             '.config/ruff/ruff.toml',
         'starship.toml':

@@ -13,49 +13,17 @@ umask 027
 # Disable "searching for cmd" on command typos
 unset -f command_not_found_handle
 
-# Misc variables
-export VISUAL=hx
-export EDITOR="$VISUAL"
-export PAGER=less
-export LESS='--RAW-CONTROL-CHARS --ignore-case --jump-target=.3 --mouse -XF'
-export LESSEDIT="%E < %f"
-export DEFAULT_TERM=foot
-export STARSHIP_LOG=error  # Disable Starship warning messages
-export LS_COLORS="$LS_COLORS"':ow=01;33'  # Color 777 orange
-export DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
-export HOSTNAME=`hostname`
+# Set and export profile env vars
+DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
+HOSTNAME="$(hostname)"
 
-# Daniel's Constant Variables
-export DCV_CODE_PATH="$HOME"/code
-export DCV_HOME_OPT="$HOME"/.local/opt
-
-# XDG
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_CACHE_HOME="$HOME/.cache"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_DESKTOP_DIR="$HOME/working"
-export XDG_DOCUMENTS_DIR="$HOME/progeny"
-export XDG_DOWNLOAD_DIR="$HOME/downloads"
-export XDG_MUSIC_DIR="$HOME/store/music"
-export XDG_PICTURES_DIR="$HOME/media"
-export XDG_VIDEOS_DIR="$HOME/media"
-export XDG_TEMPLATES_DIR="$HOME/code/tem"
-export XDG_PUBLICSHARE_DIR="$HOME/union/public"
-export XDG_SCREENSHOTS_DIR="$XDG_PICTURES_DIR/screencaptures/current"
-
-# Program Config
-export BAT_PAGER="$PAGER"
-export GOPATH="$HOME/.appdata/go"
-export R_LIBS_USER="$HOME/.local/lib/R"
-export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
-
-# Path
-export PATH="$PATH":/opt/bin
-export PATH="$PATH":"$HOME/.local/bin"
-export PATH="$PATH":"$DCV_CODE_PATH/bin"
-export PATH="$PATH":"$DCV_HOME_OPT/bin"
-export PATH="$PATH":"$HOME/.cargo/bin"
-export PATH="$PATH":"$GOPATH/bin"
+env_var_fp="$HOME/.config/environment.d/profile.conf"
+if [ -f "$env_var_fp" ]
+then
+	set -a
+	source "$env_var_fp"
+	set +a
+fi
 
 # Initialize session
 
