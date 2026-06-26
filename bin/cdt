@@ -2,6 +2,7 @@
 # author: daniel rode
 # dependencies: fish
 # created: 31 may 2026
+# updated: 25 jun 2026
 
 
 # Start a shell in a unique temp directory. Once the shell exits, destroy that
@@ -9,6 +10,7 @@
 
 
 import sys
+import signal
 import subprocess as sp
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -17,6 +19,15 @@ from tempfile import TemporaryDirectory
 SHELL_EXE = 'fish'
 
 
+# Ensure cleanup still happens if Python receives termination signal
+def signal_handler(signum, frame):
+    sys.exit(128 + signum)
+
+signal.signal(signal.SIGTERM, signal_handler)  # Termination
+signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C interrupt
+signal.signal(signal.SIGHUP, signal_handler)   # Terminal closed
+
+# Spawn shell with temp dir as working directory
 print("Entering shell with ephemeral working directory...")
 with TemporaryDirectory() as td:
     td = Path(td)

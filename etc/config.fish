@@ -160,6 +160,7 @@ abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set sty
 abbr --add hoff fish --private
 
 abbr --add reboot sudo /usr/bin/reboot
+abbr --add poweroff sudo /usr/bin/poweroff
 
 # COMPLETIONS #################################################################
 
