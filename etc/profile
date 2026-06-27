@@ -22,37 +22,39 @@ export DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
 env_var_fp="$HOME/.config/environment.d/profile.conf"
 if [ -f "$env_var_fp" ]
 then
-	set -a
-	. "$env_var_fp"
-	set +a
+    set -a
+    . "$env_var_fp"
+    set +a
 fi
 
 # Initialize session
 
 # Initialize session: Termux (Android) Void Linux proot
-if [ "$HOSTNAME" = "andtermuxd-void" ]
-then
-	exec fish
+[ "$HOSTNAME" = "andtermuxd-void" ] && exec fish
 
 # Initialize session: Run Sway on gramvoidd if logging in from certain TTY
-elif [ "$HOSTNAME" = gramvoidd ] && [ "$(tty)" = /dev/tty1 ] && \
-	[ -z "$XDG_SESSION_TYPE" ] || [ "$XDG_SESSION_TYPE" = tty ]
+if [ -z "$XDG_SESSION_TYPE" ] \
+	|| [ "$XDG_SESSION_TYPE" = tty ] \
+	&& [ "$HOSTNAME" = gramvoidd ] \
+	&& [ "$(tty)" = /dev/tty1 ]
 then
-	echo "Initializing session..."
+    echo "Initializing session..."
 
-	# Mount encrypted vault
-	while ! mountpoint --quiet ~/.crypt
-	do
-	    gocryptfs ~/union/gocryptfs/dotcrypt/ ~/.crypt/
-	done
+    # Mount encrypted vault
+    while ! mountpoint --quiet ~/.crypt
+    do
+        gocryptfs ~/union/gocryptfs/dotcrypt/ ~/.crypt/
+    done
 
-	# Start Sway
-	[ ! -f "$HOME/.sway-session-stdout.log" ] || mv \
-		"$HOME/.sway-session-stdout.log" "$HOME/.sway-session-stdout.log.old"
-	[ ! -f "$HOME/.sway-session-stderr.log" ] || mv \
-		"$HOME/.sway-session-stderr.log" "$HOME/.sway-session-stderr.log.old"
-	exec "$HOME/code/bin/launch-swaywm" \
-		> "$HOME/.sway-session-stdout.log" \
-		2> "$HOME/.sway-session-stderr.log" \
-	;
+    # Start Sway
+    [ ! -f "$HOME/.sway-session-stdout.log" ] || mv \
+        "$HOME/.sway-session-stdout.log" "$HOME/.sway-session-stdout.log.old"
+
+    [ ! -f "$HOME/.sway-session-stderr.log" ] || mv \
+        "$HOME/.sway-session-stderr.log" "$HOME/.sway-session-stderr.log.old"
+
+    exec "$HOME/code/bin/launch-swaywm" \
+        > "$HOME/.sway-session-stdout.log" \
+        2> "$HOME/.sway-session-stderr.log" \
+    ;
 fi
