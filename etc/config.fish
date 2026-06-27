@@ -54,7 +54,7 @@ if test -f "$env_var_fp"
         if string match -qr '^#|^$' "$line"
             continue
         end
-        set item (string split -m 1 '=' $line)
+        set -l item (string split -m 1 = -- $line)
         set -gx $item[1] $item[2]
     end <"$env_var_fp"
 end
