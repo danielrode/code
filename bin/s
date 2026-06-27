@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 10 jun 2026
+# updated: 26 jun 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -33,7 +33,7 @@ SSH_ARGS = [
 SSH_CMD = (
     # By using dtach, the user can simply close the terminal and it will
     # leave any program in the remote SSH shell running without killing it.
-    'bash', '--login', '-c', f''':
+    'bash', '-c', f''':
         tmpdir="$(mktemp -d)"
         # Commenting out for now because Bash would remove socket file before
         # dtach was done with it if terminal closed, making it impossible to
@@ -42,7 +42,8 @@ SSH_CMD = (
         # function cleanup {{ rm -fr -- "$tmpdir"; }}
         # trap cleanup EXIT
         [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
-        dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE fish
+        dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE \\
+            bash -l -c 'exec fish'
     '''
 )
 NY = tomllib.loads(Path(HOME, ".nunyuh").read_text())['H']
@@ -80,9 +81,9 @@ use_sock = False
 match remote:
     case 'h':
         use_sock = True
-        SSH_CMD = ('bash', '--login', '-c', 'fish')
+        SSH_CMD = ('bash', '--login', '-c', 'exec fish')
     case 'p':
-        SSH_CMD = ('bash', '--login', '-c', 'fish')
+        SSH_CMD = ('bash', '--login', '-c', 'exec fish')
 
 try:
     ip = host['ip']

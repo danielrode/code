@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+#
 # ~/.profile: executed by the command interpreter for login shells.
 # This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
 # exists.
@@ -14,14 +16,14 @@ umask 027
 unset -f command_not_found_handle
 
 # Set and export profile env vars
-DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
-HOSTNAME="$(hostname)"
+export HOSTNAME="$(hostname)"
+export DFLT_NET_IFACE="$(ip route | grep '^default ' | awk '{print $5}')"
 
 env_var_fp="$HOME/.config/environment.d/profile.conf"
 if [ -f "$env_var_fp" ]
 then
 	set -a
-	source "$env_var_fp"
+	. "$env_var_fp"
 	set +a
 fi
 
@@ -34,7 +36,7 @@ then
 
 # Initialize session: Run Sway on gramvoidd if logging in from certain TTY
 elif [ "$HOSTNAME" = gramvoidd ] && [ "$(tty)" = /dev/tty1 ] && \
-	[ -z "$XDG_SESSION_TYPE" -o "$XDG_SESSION_TYPE" = tty ]
+	[ -z "$XDG_SESSION_TYPE" ] || [ "$XDG_SESSION_TYPE" = tty ]
 then
 	echo "Initializing session..."
 

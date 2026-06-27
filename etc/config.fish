@@ -47,17 +47,8 @@ end
 
 set -gx HOSTNAME (hostname)
 
-# Load and set env vars from profile.env
-set -f env_var_fp "$HOME/.config/environment.d/profile.conf"
-if test -f "$env_var_fp"
-    while read line
-        if string match -qr '^#|^$' "$line"
-            continue
-        end
-        set -l item (string split -m 1 = -- $line)
-        set -gx $item[1] $item[2]
-    end <"$env_var_fp"
-end
+# NOTE: The remaining vars should be set by bash from ~/.profile, before
+# fish starts.
 
 # ALIASES & FUNCTIONS #########################################################
 
@@ -70,7 +61,7 @@ abbr --add ls eza
 abbr --add ll eza -l
 abbr --add lst eza -l --sort=modified
 abbr --add lss eza -l --sort=size
-abbr --add lsp eza --classify=never --color=never --icons=never # Plain
+abbr --add ls0 eza --classify=never --color=never --icons=never # Plain
 
 # Make default commands safer
 abbr --add cp cp -v
