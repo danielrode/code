@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 17 jun 2026
+# updated: 24 jun 2026
 
 
 import sys
@@ -44,16 +44,19 @@ def print2(*args, **kwargs):
 
 
 # Parse command line arguments
-if len(sys.argv) < 2:
-    print2(HELP)
-    sys.exit(1)
-
 args = iter(sys.argv[1:])
-exe = next(args)
-if exe.startswith('/') or exe.startswith('./'):
-    exe = Path(sys.argv[1])
+
+script_name = Path(__file__).name
+if script_name in ('gu', 'gis-utils'):
+    try:
+        exe = next(args)
+    except StopIteration:
+        print2(HELP)
+        sys.exit(1)
 else:
-    exe = Path(sys.argv[1]).name
+    # Assume filename of this script (symlink) is name of utility to call
+    # in gis-utils container
+    exe = script_name
 
 exe_args = [*args]
 

@@ -113,13 +113,16 @@ abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b --csv
 abbr --add pstree pstree -aps "$fish_pid"
 
-# One-liners
+# One-liners / utils
 abbr --add lswifi nmcli device wifi list
 abbr --add lsfont fc-list : family
 abbr --add fwatch inotifywait --monitor --event modify
 abbr --add page ps -p $fish_pid
 abbr --add protectf xargs chattr +i
 abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set style fill solid; plot '-' using 1 smooth frequency with boxes notitle"
+# Run a command that only has RW access to the current directory and /tmp
+# (everything else gets protected by read-only status)
+abbr --add rorun bwrap --ro-bind / / --bind /tmp /tmp --bind "$PWD" "$PWD" --dev /dev --proc /proc
 
 # Launch new session with history
 abbr --add hoff fish --private
