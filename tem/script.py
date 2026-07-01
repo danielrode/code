@@ -211,10 +211,33 @@ def main() -> None:
         finish.
         """
 
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            futures_jobs = {executor.submit(worker, j): j for j in jobs}
-            for f in as_completed(futures_jobs):
-                yield (futures_jobs[f], f.result())
+        # with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        #     futures_jobs = {executor.submit(worker, j): j for j in jobs}
+        #     for f in as_completed(futures_jobs):
+        #         yield (futures_jobs[f], f.result())
+
+        jobs = iter(jobs)
+        batch_size = max_workers * 8
+
+        with InterpreterPoolExecutor(max_workers=max_workers) as executor:
+            futures_jobs = {
+                executor.submit(worker, j): j
+                for j in islice(jobs, batch_size)
+            }
+            while futures_jobs:
+                done_job = next(as_completed(futures_jobs))
+                yield (futures_jobs[done_job], done_job.result())
+
+                del futures_jobs[done_job]
+
+                try:
+                    next_job = next(jobs)
+                except StopIteration:
+                    continue
+                futures_jobs = {
+                    **futures_jobs,
+                    executor.submit(worker, next_job): next_job,
+                }
 
     def worker(job):
         return job**3
@@ -223,7 +246,7 @@ def main() -> None:
         jobs = [10,20,30,40]
         for job, result in dispatch(jobs, worker):
             # Results are ordered by which finish first
-            print(job, result)
+            print(job, result, fush=True)
 
     # Use concurrency to run several tasks in parallel in the background, but
     # with threads instead of processes (requires Python 3.14+). Submits jobs
