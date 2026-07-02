@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 26 jun 2026
+# updated: 28 jun 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -81,7 +81,7 @@ use_sock = False
 match remote:
     case 'h':
         use_sock = True
-        SSH_CMD = ('bash', '--login', '-c', 'exec fish')
+        SSH_CMD = ('bash', '--login', '-c', 'fish')
     case 'p':
         SSH_CMD = ('bash', '--login', '-c', 'exec fish')
 

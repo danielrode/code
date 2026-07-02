@@ -102,6 +102,7 @@ abbr --add lsblk lsblk -o NAME,SIZE,FSSIZE,FSAVAIL,FSUSE%,MOUNTPOINTS,FSTYPE,\
 LABEL,PARTLABEL,MODEL,ROTA,TRAN
 abbr --add pg pgrep -fa
 abbr --add rg rg -u
+abbr --add fd fd -u
 abbr --add zyp sudo zypper
 abbr --add rsynca rsync \
     --archive \

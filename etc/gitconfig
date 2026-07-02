@@ -12,6 +12,7 @@
 	wd = diff --word-diff=color --word-diff-regex='\\w+|.'
 	wdiff = wd
 	s = status
+	br = branch
 [core]
 	pager = delta
 [credential]
