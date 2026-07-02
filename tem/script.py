@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies:
 #   python 3.10+
-# created:
+# created: 00 mth 2026
 # updated: -
 
 
@@ -246,7 +246,7 @@ def main() -> None:
         jobs = [10,20,30,40]
         for job, result in dispatch(jobs, worker):
             # Results are ordered by which finish first
-            print(job, result, fush=True)
+            print(job, result, flush=True)
 
     # Use concurrency to run several tasks in parallel in the background, but
     # with threads instead of processes (requires Python 3.14+). Submits jobs
