@@ -23,6 +23,10 @@ HOSTNAME = socket.gethostname()
 
 NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
 
+SSHFS_VER = sp.run(
+    ('sshfs', '--version'), check=True, text=True, capture_output=True,
+).stdout.splitlines()[0].split(' ')[-1] 
+
 SSHFS_ARGS = (
     '-o', 'delay_connect',
     '-o', 'reconnect',
@@ -39,8 +43,9 @@ SSHFS_ARGS = (
 
     # Gymnastics to prevent remote symlinks from appearing to dangle
     '-o', 'transform_symlinks',
-    '-o', 'no_contain_symlinks',
 )
+if SSHFS_VER != '3.7.5':
+    SSHFS_ARGS = (*SSHFS_ARGS, '-o', 'no_contain_symlinks')
 
 
 # Functions
