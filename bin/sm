@@ -2,10 +2,10 @@
 # author: daniel rode
 # dependencies: ~/.nunyuh
 # created: 25 jul 2024
-# updated: 08 jun 2026
+# updated: 02 jul 2026
 
 
-# Alias/shortcuts for mounting remote directories via SSH.
+"""Alias/shortcuts for mounting remote directories via SSH."""
 
 
 import sys
@@ -36,6 +36,10 @@ SSHFS_ARGS = (
     # Disconnect if server disappears for too long
     '-o', 'ServerAliveCountMax=4',
     '-o', 'ServerAliveInterval=11',
+
+    # Gymnastics to prevent remote symlinks from appearing to dangle
+    '-o', 'transform_symlinks',
+    '-o', 'no_contain_symlinks',
 )
 
 
@@ -89,7 +93,6 @@ use_sock = False
 match remote:
     case 'h':
         use_sock = True
-        SSH_CMD = ( 'bash', '--login' )
 
 mnt_list = host['mounts']
 ip = host['ip']

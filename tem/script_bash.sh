@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # dependencies: bash 4.3+, pv
-# created: 06 jun 2026
+# created: 00 mth 2026
 # updated: -
 
 

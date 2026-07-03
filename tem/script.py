@@ -78,6 +78,12 @@ def print2(*args, **kwargs) -> None:
     print(*args, **kwargs, file=sys.stderr)
 
 
+def printu2(*args, **kwargs):
+    """Print message to stderr immediately."""
+
+    print(*args, **kwargs, file=sys.stderr, flush=True)
+
+
 def printu(*args, **kwargs) -> None:
     """Print message immediately."""
 
