@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: ~/.nunyuh
+# dependencies: sshfs, ~/.nunyuh
 # created: 25 jul 2024
 # updated: 02 jul 2026
 
@@ -23,9 +23,9 @@ HOSTNAME = socket.gethostname()
 
 NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
 
-SSHFS_VER = sp.run(
+SSHFS_VER = next(filter(lambda x: x.startswith('SSHFS version '), sp.run(
     ('sshfs', '--version'), check=True, text=True, capture_output=True,
-).stdout.splitlines()[0].split(' ')[-1] 
+).stdout.splitlines())).split(' ')[-1]
 
 SSHFS_ARGS = (
     '-o', 'delay_connect',

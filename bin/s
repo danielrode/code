@@ -5,7 +5,7 @@
 #   dtach (on remote host)
 #   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 28 jun 2026
+# updated: 04 jul 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -13,6 +13,7 @@
 
 import sys
 import shlex
+import signal
 import tomllib
 import getpass
 import subprocess as sp
@@ -130,4 +131,11 @@ cmd = (
     ip,
     *SSH_CMD
 )
-sp.run(cmd)
+try:
+    sp.run(cmd)
+except KeyboardInterrupt:
+    sys.exit(1)
+
+
+# TODO
+# - pass on "$@"
