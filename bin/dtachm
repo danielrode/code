@@ -5,7 +5,7 @@
 #   dtach
 #   fzf
 # created: 12 apr 2025
-# updated: 10 jun 2026
+# updated: 07 jul 2026
 
 
 # dtach menu. List active dtach sessions in a menu and then connect to the
@@ -15,6 +15,7 @@
 import os
 import re
 import sys
+import signal
 import subprocess as sp
 from pathlib import Path
 
@@ -143,6 +144,7 @@ for pid in ptable:
         continue
 
     if dtach_is_abandoned(pid, ptable):
+        os.kill(pid, signal.SIGTERM)
         continue
 
     if flag not in DTACH_SOCK_FLAGS:
@@ -186,7 +188,6 @@ sp.run(['dtach', '-a', sock_path])
 
 
 # TODO
-# - remove/kill phandom dtach processes
 # - include dtach session's working directory in session list/menu
-# - omit self from list
+# - omit self (dtachm session) from list
 # - avoid recursion (if already in dtach, replace existing session with the selected one)
