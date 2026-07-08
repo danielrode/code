@@ -2,14 +2,13 @@
 # author: daniel rode
 # dependencies: sshfs, ~/.nunyuh
 # created: 25 jul 2024
-# updated: 02 jul 2026
+# updated: 08 jul 2026
 
 
 """Alias/shortcuts for mounting remote directories via SSH."""
 
 
 import sys
-import time
 import socket
 import tomllib
 import getpass
@@ -94,10 +93,6 @@ else:
 del NY
 
 mnt_list = None
-use_sock = False
-match remote:
-    case 'h':
-        use_sock = True
 
 mnt_list = host['mounts']
 ip = host['ip']
@@ -111,18 +106,6 @@ try:
     port = host['ssh_port']
 except KeyError:
     port = 22
-
-# Setup master SSH connection (if requested)
-if use_sock:
-    sock_path = HOME / f'.ssh/{user}@{ip}.sock'
-    SSHFS_ARGS += (
-        # TODO should I shlex.quote the sock_path here?
-        '-o', f'ssh_command=ssh -S {sock_path}',
-    )
-    # Wait for master SSH connection to be established by user
-    while not sock_path.exists():
-        print("Waiting for user to establish SSH session via `s`...")
-        time.sleep(5)
 
 # Mount
 SSHFS_ARGS += ('-p', str(port))

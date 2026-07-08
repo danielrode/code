@@ -3,9 +3,8 @@
 # dependencies:
 #   sshfs (local)
 #   dtach (on remote host)
-#   ~/.nunyuh
 # created: 23 feb 2025
-# updated: 04 jul 2026
+# updated: 08 jul 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -13,16 +12,16 @@
 
 import sys
 import shlex
-import signal
 import tomllib
-import getpass
 import subprocess as sp
 from pathlib import Path
 
 
 HOME = Path.home()
 PWD = Path.cwd()
-SSH_ARGS = [
+SSH_PREAMBLE = [
+    'ssh', '-t',
+
     # Give up trying to connect if it takes too long
     '-o', 'ConnectionAttempts=64',
     '-o', 'ConnectTimeout=5',
@@ -31,28 +30,7 @@ SSH_ARGS = [
     '-o', 'ServerAliveCountMax=4',
     '-o', 'ServerAliveInterval=11',
 ]
-SSH_CMD = (
-    # By using dtach, the user can simply close the terminal and it will
-    # leave any program in the remote SSH shell running without killing it.
-    'bash', '-c', f''':
-        tmpdir="$(mktemp -d)"
-        # Commenting out for now because Bash would remove socket file before
-        # dtach was done with it if terminal closed, making it impossible to
-        # connect to the socket later, even though the original dtach instance
-        # was still using it.
-        # function cleanup {{ rm -fr -- "$tmpdir"; }}
-        # trap cleanup EXIT
-        [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
-        dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE \\
-            bash -l -c 'exec fish'
-    '''
-)
 NY = tomllib.loads(Path(HOME, ".nunyuh").read_text())['H']
-
-
-def set_term_win_title(title):
-    sys.stdout.write(f"\x1b]2;{title}\x07")
-    sys.stdout.flush()
 
 
 # Parse command line arguments
@@ -62,74 +40,36 @@ except IndexError:
     print("error: SSH remote host alias not provided")
     sys.exit(1)
 
-# Set values for remote host
-for k in NY:
-    try:
-        a = NY[k]['alias']
-    except KeyError:
-        a = None
-
-    if (remote == k.lower()) or (remote == a):
-        host = NY[k]
-        break
-else:
-    print("error: Unknown alias:", remote)
-    sys.exit(1)
-
-del NY
-
-use_sock = False
+# Set special values for remote host
 match remote:
-    case 'h':
-        use_sock = True
-        SSH_CMD = ('bash', '--login', '-c', 'fish')
-    case 'p':
-        SSH_CMD = ('bash', '--login', '-c', 'exec fish')
-
-try:
-    ip = host['ip']
-except KeyError:
-    print("error: No address found for host:", remote)
-
-try:
-    title = host['title']
-except KeyError:
-    title = k.lower()
-
-try:
-    user = host['user']
-except KeyError:
-    user = getpass.getuser()
-
-if use_sock:
-    sock_path = Path(HOME, '.ssh', f"{user}@{ip}.sock")
-    if not sock_path.exists():
-        SSH_ARGS += ['-M']  # Use "master" mode
-    SSH_ARGS += [
-        '-S', str(sock_path),
-        # -f  # Authenticate, then run in background
-        # -N  # Do not execute a remote command
-        '-C'  # Compress all data
-    ]
-
-try:
-    port = host['ssh_port']
-except KeyError:
-    port = 22
-
-# Set terminal window title
-set_term_win_title(title)
+    case 'h'|'p':
+        ssh_cmd = ('bash', '--login', '-c', 'fish')
+    case _:
+        ssh_cmd = (
+            # By using dtach, the user can simply close the terminal and it
+            # will leave any program in the remote SSH shell running
+            # without killing it.
+            'bash', '-c', f''':
+                tmpdir="$(mktemp -d)"
+                # Commenting out for now because Bash would remove socket
+                # file before dtach was done with it if terminal closed,
+                # making it impossible to connect to the socket later, even
+                # though the original dtach instance was still using it.
+                # function cleanup {{ rm -fr -- "$tmpdir"; }}
+                # trap cleanup EXIT
+                [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
+                dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE \\
+                    bash -l -c 'exec fish'
+            '''
+        )
 
 # Connect to remote host via SSH
 print("Connecting...")
 cmd = (
     'env', 'TERM=xterm',
-    'ssh', '-t',
-    *SSH_ARGS,
-    '-p', str(port),
-    '-l', user,
-    ip,
-    *SSH_CMD
+    *SSH_PREAMBLE,
+    remote,
+    *ssh_cmd
 )
 try:
     sp.run(cmd)
