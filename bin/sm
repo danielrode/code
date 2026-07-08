@@ -9,16 +9,13 @@
 
 
 import sys
-import socket
 import tomllib
-import getpass
 import subprocess as sp
 from pathlib import Path
 
 
 # Constants
 HOME = Path.home()
-HOSTNAME = socket.gethostname()
 
 NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
 
@@ -26,7 +23,7 @@ SSHFS_VER = next(filter(lambda x: x.startswith('SSHFS version '), sp.run(
     ('sshfs', '--version'), check=True, text=True, capture_output=True,
 ).stdout.splitlines())).split(' ')[-1]
 
-SSHFS_ARGS = (
+SSHFS_OPTS = (
     '-o', 'delay_connect',
     '-o', 'reconnect',
     '-o', 'noatime',
@@ -44,16 +41,15 @@ SSHFS_ARGS = (
     '-o', 'transform_symlinks',
 )
 if SSHFS_VER != '3.7.5':
-    SSHFS_ARGS = (*SSHFS_ARGS, '-o', 'no_contain_symlinks')
+    SSHFS_OPTS = (*SSHFS_OPTS, '-o', 'no_contain_symlinks')
 
 
 # Functions
 def sshfs(
     mnt_point: Path,
     sshfs_args: list,
-    remote_user: str,
-    remote_addr: str,
-    remote_dir: Path
+    remote_host: str,
+    remote_dir: Path,
 ) -> None:
     mnt_point = Path(mnt_point)
 
@@ -63,7 +59,7 @@ def sshfs(
 
     cmd = (
         'sshfs', *sshfs_args,
-        f"{remote_user}@{remote_addr}:{remote_dir}",
+        f"{remote_host}:{remote_dir}",
         str(mnt_point),
     )
     sp.run(cmd, check=True)
@@ -92,22 +88,8 @@ else:
 
 del NY
 
-mnt_list = None
-
 mnt_list = host['mounts']
-ip = host['ip']
-
-try:
-    user = host['user']
-except KeyError:
-    user = getpass.getuser()
-
-try:
-    port = host['ssh_port']
-except KeyError:
-    port = 22
 
 # Mount
-SSHFS_ARGS += ('-p', str(port))
 for remote_dir, mount_point in mnt_list:
-    sshfs(mount_point, SSHFS_ARGS, user, ip, remote_dir)
+    sshfs(mount_point, SSHFS_OPTS, remote, remote_dir)
