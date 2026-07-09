@@ -304,9 +304,30 @@ def main() -> None:
 
     if __name__ == '__main__':
         jobs = [10,20,30,40]
-        for job, result in dispatch(jobs, worker):
-            # Results are ordered by which finish first
-            print(job, result)
+
+        print(f"Dispatching N workers...")
+        failed = 0
+        counter = 0
+        for j, result in dispatch(jobs, chunk_worker):
+            print('_' * 80)
+            if result.returncode == 0:
+                print('JOB FINISHED:', j['id'])
+            else:
+                failed += 1
+                print('JOB FAILED:', j['id'])
+            print(result.stdout)
+            print('-' * 80)
+
+            counter += 1
+            print("STATUS {}:  {} remain | {} succeeded | {} failed".format(
+                datetime.now().strftime("%a %H:%M"),
+                len(jobs) - counter,
+                counter - failed,
+                failed,
+            ))
+            print('-' * 80)
+
+
 
     # Style: Chain method calls
     result = (

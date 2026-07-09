@@ -7,7 +7,7 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 20 jun 2026
+# updated: 08 jul 2026
 
 
 # Backup Sync. Create backup of my data online using restic.

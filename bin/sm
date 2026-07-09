@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: sshfs, ~/.nunyuh
 # created: 25 jul 2024
-# updated: 08 jul 2026
+# updated: 09 jul 2026
 
 
 """Alias/shortcuts for mounting remote directories via SSH."""
@@ -17,7 +17,7 @@ from pathlib import Path
 # Constants
 HOME = Path.home()
 
-NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
+NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['sm']
 
 SSHFS_VER = next(filter(lambda x: x.startswith('SSHFS version '), sp.run(
     ('sshfs', '--version'), check=True, text=True, capture_output=True,
@@ -73,22 +73,13 @@ except IndexError:
     sys.exit(1)
 
 # Set values for remote host
-for k in NY:
-    try:
-        a = NY[k]['alias']
-    except KeyError:
-        a = None
-
-    if (remote == k.lower()) or (remote == a):
-        host = NY[k]
-        break
-else:
+try:
+    mnt_list = NY[remote]
+except KeyError:
     print("error: Unknown alias:", remote)
     sys.exit(1)
 
 del NY
-
-mnt_list = host['mounts']
 
 # Mount
 for remote_dir, mount_point in mnt_list:

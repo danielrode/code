@@ -4,10 +4,10 @@
 #   freerdp
 #   ~/.nunyuh
 # created: 15 jul 2025
-# updated: 18 may 2026
+# updated: 09 jul 2026
 
 
-# Alias/shortcuts for starting RDP (remote desktop) sessions.
+"""Alias/shortcuts for starting RDP (remote desktop) sessions."""
 
 
 import re
@@ -26,7 +26,7 @@ HOSTNAME = socket.gethostname()
 FREERDP_ARGS = [
     '/clipboard',
 ]
-NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['H']
+NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['rdp']
 
 
 # Parse command line arguments

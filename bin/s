@@ -4,7 +4,7 @@
 #   sshfs (local)
 #   dtach (on remote host)
 # created: 23 feb 2025
-# updated: 08 jul 2026
+# updated: 09 jul 2026
 
 
 # Alias/shortcuts for starting SSH sessions.
@@ -12,7 +12,6 @@
 
 import sys
 import shlex
-import tomllib
 import subprocess as sp
 from pathlib import Path
 
@@ -30,7 +29,6 @@ SSH_PREAMBLE = [
     '-o', 'ServerAliveCountMax=4',
     '-o', 'ServerAliveInterval=11',
 ]
-NY = tomllib.loads(Path(HOME, ".nunyuh").read_text())['H']
 
 
 # Parse command line arguments

@@ -4,11 +4,10 @@
 #   ~/code/bin/wconnect
 #   ~/.nunyuh
 # created: 01 apr 2026
-# updated: 18 may 2026
+# updated: 09 jul 2026
 
 
-"""Connect to mobile hotspot.
-"""
+"""Connect to mobile hotspot."""
 
 
 import tomllib
@@ -17,12 +16,12 @@ from pathlib import Path
 
 
 HOME = Path.home()
-NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['H']['PHONE']
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['wconnect']
 
 
 cmd = (
     str(HOME / 'code/bin/wconnect'),
     'w',
-    NY['hotspot_name'],
+    NY['phone'],
 )
 sp.run(cmd, check=True)
