@@ -7,4 +7,8 @@
 # Toggle Sway keyboard layout between QWERTY and Colemak.
 
 
+# swaymsg input type:keyboard xkb_layout us
+# swaymsg input type:keyboard xkb_variant colemak
+# swaymsg input type:keyboard xkb_variant "''"
+
 pkill kmonad || kmonad ~/code/etc/kmonad/colemak2qwerty.kbd &

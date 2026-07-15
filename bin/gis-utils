@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 24 jun 2026
+# updated: 14 jul 2026
 
 
 import sys
@@ -16,7 +16,8 @@ HELP = "Usage: gis-utils UTILITY_NAME [ARGS...]"
 PWD = Path.cwd()
 HOME = Path.home()
 GIT_REPO_PATH = HOME / 'union/github/gis-utils'
-CON_IMG = 'ghcr.io/danielrode/gis-utils:dev'
+# CON_IMG = 'ghcr.io/danielrode/gis-utils:dev'
+CON_IMG = 'gis-utils:dev'
 CON_ARGS = (
     '--rm',
     '--tty',

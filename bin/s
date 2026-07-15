@@ -4,10 +4,10 @@
 #   sshfs (local)
 #   dtach (on remote host)
 # created: 23 feb 2025
-# updated: 09 jul 2026
+# updated: 15 jul 2026
 
 
-# Alias/shortcuts for starting SSH sessions.
+"""Alias/shortcuts for starting SSH sessions."""
 
 
 import sys
@@ -26,8 +26,8 @@ SSH_PREAMBLE = [
     '-o', 'ConnectTimeout=5',
 
     # Disconnect if server disappears for too long
-    '-o', 'ServerAliveCountMax=4',
-    '-o', 'ServerAliveInterval=11',
+    '-o', 'ServerAliveCountMax=8',
+    '-o', 'ServerAliveInterval=16',
 ]
 
 
@@ -38,11 +38,18 @@ except IndexError:
     print("error: SSH remote host alias not provided")
     sys.exit(1)
 
+remote_cmd = sys.argv[2:]
+if not remote_cmd:
+    remote_cmd = ('fish',)
+
 # Set special values for remote host
 match remote:
     case 'h'|'p':
-        ssh_cmd = ('bash', '--login', '-c', 'fish')
+        ssh_cmd = ('bash', '--login', '-c', *remote_cmd)
     case _:
+        remote_cmd_str = shlex.quote(' '.join(
+            shlex.quote(i) for i in ('exec', *remote_cmd)
+        ))
         ssh_cmd = (
             # By using dtach, the user can simply close the terminal and it
             # will leave any program in the remote SSH shell running
@@ -57,8 +64,8 @@ match remote:
                 # trap cleanup EXIT
                 [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
                 dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE \\
-                    bash -l -c 'exec fish'
-            '''
+                    bash -l -c {remote_cmd_str}
+            ''',
         )
 
 # Connect to remote host via SSH
@@ -70,10 +77,8 @@ cmd = (
     *ssh_cmd
 )
 try:
-    sp.run(cmd)
+    p = sp.run(cmd)
 except KeyboardInterrupt:
     sys.exit(1)
 
-
-# TODO
-# - pass on "$@"
+sys.exit(p.returncode)
