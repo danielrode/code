@@ -106,7 +106,7 @@ EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 
 # Create container definitions
-sudo -u podman-compose --file=- up --no-start \\
+sudo -u app_{shlex.quote(APP_NAME)} -- podman-compose --file=- up --no-start \\
     <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
 
 # Start service
