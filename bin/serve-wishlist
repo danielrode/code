@@ -123,6 +123,12 @@ sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 sp.run(('sudo', 'bash'), check=True, text=True, input=install_payload)
 
 start_payload = f"""
+set -e
+set -x
+
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
 # Create container definitions
 cd /
 podman-compose --file=- up --no-start \\
