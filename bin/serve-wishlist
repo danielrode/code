@@ -54,10 +54,10 @@ CON_SERVICES = {
             # expire
             'TOKEN_TIME': 72,
         },
-        'cap_drop': ['ALL'],
-        'security_opt': ['no-new-privileges'],
-        'read_only': True,
-        'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+        'tmpfs': [':'.join((
+            '/usr/src/app/node_modules/.cache/jiti/',
+            'rw,noexec,nosuid,nodev,mode=1700'
+        ))],
         'restart': 'always',
     },
 }
@@ -71,7 +71,18 @@ CON_COMPOSE = {
     }
 }
 
-INSTALL_SH_PAYLOAD = f"""
+# PODMAN_PREAMBLE = (
+#     'sudo', '-u', f'app_{APP_NAME}',
+#     'podman-compose',
+#     '--no-ansi',
+#     '--abort-on-container-failure',
+#     '--podman-pull-args=--pull=missing',
+#     '--file=-',
+# )
+
+
+# Install and start service
+install_payload = f"""
 set -e
 set -x
 
@@ -108,32 +119,23 @@ tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 {USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
 EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+"""
+sp.run(('sudo', 'bash'), check=True, text=True, input=install_payload)
 
+start_payload = f"""
 # Create container definitions
-cd /home/app_{shlex.quote(APP_NAME)}
-sudo -u app_{shlex.quote(APP_NAME)} -- podman-compose --file=- up --no-start \\
+cd /
+podman-compose --file=- up --no-start \\
     <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
 
 # Start service
-systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
+systemctl --user \\
     enable --now --no-pager --full app_{shlex.quote(APP_NAME)}.service
-systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
+systemctl --user \\
     status --no-pager --full app_{shlex.quote(APP_NAME)}.service
 """
-
-# PODMAN_PREAMBLE = (
-#     'sudo', '-u', f'app_{APP_NAME}',
-#     'podman-compose',
-#     '--no-ansi',
-#     '--abort-on-container-failure',
-#     '--podman-pull-args=--pull=missing',
-#     '--file=-',
-# )
-
-
-# Install and start service
-sp.run(('sudo', 'bash'), check=True, text=True, input=INSTALL_SH_PAYLOAD)
-
+start_cmd = ('sudo', '-u', f'app_{APP_NAME}', 'bash')
+sp.run(start_cmd, check=True, text=True, input=install_payload)
 
 # # Main
 # try:
