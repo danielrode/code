@@ -91,13 +91,13 @@ id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
     useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
-systemctl daemon-reload
+# systemctl daemon-reload
 
 # Install systemd service file
 umask 0022
 tee <<'EOF' > /etc/systemd/user/app_{shlex.quote(APP_NAME)}.service
 [Unit]
-Description=app_{shlex.quote(APP_NAME)}
+Description=app_{APP_NAME}
 Requires=dbus.socket
 After=dbus.socket
 After=network-online.target
