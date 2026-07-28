@@ -25,12 +25,13 @@ USER = getpass.getuser()
 
 NY = tomllib.loads((HOME / '.nunyuh').read_text())['S']['wishlist']
 
+HARD_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
 CON_HARDENED_DEFAULTS = {
     'runtime': '/usr/bin/krun',
     'cap_drop': ['ALL'],
     'security_opt': ['no-new-privileges'],
     'read_only': True,
-    'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+    'tmpfs': ['/tmp:' + HARD_TMPFS],
     'deploy': {'resources': {'limits': {
         'mem_limit': '128m',  # Limit memory usage
         'cpus': 0.5,  # Limit CPU usage to 50% of a single core
@@ -54,10 +55,10 @@ CON_SERVICES = {
             # expire
             'TOKEN_TIME': 72,
         },
-        'tmpfs': [':'.join((
-            '/usr/src/app/node_modules/.cache/jiti/',
-            'rw,noexec,nosuid,nodev,mode=1700'
-        ))],
+        'tmpfs': [
+            '/usr/src/app/node_modules/.cache/jiti/:' + HARD_TMPFS,
+            '/root/.config/caddy/:' + HARD_TMPFS,
+        ],
         'restart': 'always',
     },
 }
