@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose, ~/.nunyuh
+# dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 04 may 2026
-# updated: 31 may 2026
+# updated: 27 jul 2026
 
 
-# Run cmintey's containerized "wishlist" app.
+"""Run cmintey's containerized 'wishlist' app."""
 
 
-import sys
+# import sys
+import shlex
+import getpass
 import tomllib
 import subprocess as sp
 from pathlib import Path
@@ -19,16 +21,17 @@ import yaml
 APP_NAME = "cmintey_wishlist"
 
 HOME = Path.home()
-DATA_DIR = Path(
-    HOME,
-    '.local',
-    'share',
-    'com.github.danielrode',
-    'wishlist',
-)
+USER = getpass.getuser()
 
 NY = tomllib.loads((HOME / '.nunyuh').read_text())['S']['wishlist']
 
+CON_HARDENED_DEFAULTS = {
+    'runtime': '/usr/bin/krun',
+    'cap_drop': ['ALL'],
+    'security_opt': ['no-new-privileges'],
+    'read_only': True,
+    'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
+}
 CON_SERVICES = {
     'wishlist': {
         'container_name': 'wishlist',
@@ -58,6 +61,8 @@ CON_SERVICES = {
     },
 }
 CON_COMPOSE = {
+    'version': '3',
+    'name': APP_NAME,
     'services': CON_SERVICES,
     'volumes': {
         'db': {},
@@ -65,33 +70,80 @@ CON_COMPOSE = {
     }
 }
 
-PODMAN_CMD = (
+PODMAN_PREAMBLE = (
+    'sudo', '-u', f'app_{APP_NAME}',
     'podman-compose',
     '--no-ansi',
+    '--abort-on-container-failure',
     '--podman-pull-args=--pull=missing',
-    '--project-name=' + APP_NAME,
     '--file=-',
 )
 
 
-# Main
-DATA_DIR.mkdir(exist_ok=True, parents=True, mode=0o700)
-try:
-    p = sp.run(
-        [*PODMAN_CMD, 'up'],
-        input=yaml.dump(CON_COMPOSE),
-        text=True,
-        check=True,
-    )
-    rc = p.returncode
-except KeyboardInterrupt:
-    rc = 0
+# Install and start service
+payload = f"""
+set -e
 
-print("Shutting down...")
-sp.run(
-    [*PODMAN_CMD, 'down'],
-    input=yaml.dump(CON_COMPOSE),
-    text=True,
-)
+# Add user for service
+useradd app_{shlex.quote(APP_NAME)}
+usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
+loginctl enable-linger app_{shlex.quote(APP_NAME)}
+systemctl daemon-reload
 
-sys.exit(rc)
+# Install systemd service file
+umask 0022
+tee <<'EOF' > /etc/systemd/user/app_{shlex.quote(APP_NAME)}.service
+[Unit]
+Description=app_{shlex.quote(APP_NAME)}
+Requires=dbus.socket
+After=dbus.socket
+After=network-online.target
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/bin/podman pod start pod_{APP_NAME}
+ExecStop=/usr/bin/podman pod start pod_{APP_NAME}
+[Install]
+WantedBy=default.target
+EOF
+
+# Allow current user to login as service user
+tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)} \\
+{USER} ALL=({APP_NAME}) NOPASSWD: ALL
+EOF
+sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+
+# Create container definitions
+sudo -u podman-compose --no-start --file=- \\
+    <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
+
+# Start service
+systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
+    enable --now app_{shlex.quote(APP_NAME)}.service
+systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
+    status app_{shlex.quote(APP_NAME)}.service
+"""
+sp.run(('sudo', 'bash'), check=True, text=True, input=payload)
+
+
+# # Main
+# try:
+#     p = sp.run(
+#         [*PODMAN_PREAMBLE, 'up'],
+#         input=yaml.dump(CON_COMPOSE),
+#         text=True,
+#         check=True,
+#     )
+#     rc = p.returncode
+# except KeyboardInterrupt:
+#     rc = 0
+
+# print("Shutting down...")
+# sp.run(
+#     [*PODMAN_PREAMBLE, 'down'],
+#     input=yaml.dump(CON_COMPOSE),
+#     text=True,
+# )
+
+# sys.exit(rc)

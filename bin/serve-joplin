@@ -2,11 +2,13 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 14 jun 2026
+# updated: 27 jul 2026
 
 
 # TODO
 
+
+# TODO see `serve-wishlist`
 
 # Run containerized Joplin (notes) server.
 
@@ -123,11 +125,12 @@ CON_COMPOSE = {
     'version': '3',
 }
 
-PODMAN_CMD = (
+PODMAN_PREAMBLE = (
     'podman-compose',
     '--no-ansi',
+    '--abort-on-container-failure',
     '--podman-pull-args=--pull=missing',
-    '--project-name=' + APP_NAME,
+    '--file=-',
 )
 
 
@@ -141,9 +144,8 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as td:
     )))
 
     cmd = (
-        *PODMAN_CMD,
+        *PODMAN_PREAMBLE,
         '--env-file=' + str(env_fp),
-        '--file=-',
         'up',
     )
     signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
