@@ -75,7 +75,7 @@ set -e
 set -x
 
 # Add user for service
-id app_{shlex.quote(APP_NAME)} 2>/dev/null || \\
+id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
     useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
@@ -106,6 +106,7 @@ EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 
 # Create container definitions
+cd /home/app_{shlex.quote(APP_NAME)}
 sudo -u app_{shlex.quote(APP_NAME)} -- podman-compose --file=- up --no-start \\
     <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
 
