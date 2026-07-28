@@ -70,18 +70,7 @@ CON_COMPOSE = {
     }
 }
 
-PODMAN_PREAMBLE = (
-    'sudo', '-u', f'app_{APP_NAME}',
-    'podman-compose',
-    '--no-ansi',
-    '--abort-on-container-failure',
-    '--podman-pull-args=--pull=missing',
-    '--file=-',
-)
-
-
-# Install and start service
-payload = f"""
+INSTALL_SH_PAYLOAD = f"""
 set -e
 
 # Add user for service
@@ -109,7 +98,7 @@ WantedBy=default.target
 EOF
 
 # Allow current user to login as service user
-tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)} \\
+tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 {USER} ALL=({APP_NAME}) NOPASSWD: ALL
 EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
@@ -124,7 +113,19 @@ systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
 systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
     status app_{shlex.quote(APP_NAME)}.service
 """
-sp.run(('sudo', 'bash'), check=True, text=True, input=payload)
+
+# PODMAN_PREAMBLE = (
+#     'sudo', '-u', f'app_{APP_NAME}',
+#     'podman-compose',
+#     '--no-ansi',
+#     '--abort-on-container-failure',
+#     '--podman-pull-args=--pull=missing',
+#     '--file=-',
+# )
+
+
+# Install and start service
+sp.run(('sudo', 'bash'), check=True, text=True, input=INSTALL_SH_PAYLOAD)
 
 
 # # Main
