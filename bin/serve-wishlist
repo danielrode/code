@@ -134,8 +134,10 @@ systemctl --user \\
 systemctl --user \\
     status --no-pager --full app_{shlex.quote(APP_NAME)}.service
 """
-start_cmd = ('sudo', '-u', f'app_{APP_NAME}', 'bash')
-sp.run(start_cmd, check=True, text=True, input=install_payload)
+sp.run(
+    ('sudo', '-u', f'app_{APP_NAME}', 'bash'),
+    check=True, text=True, input=install_payload,
+)
 
 # # Main
 # try:
