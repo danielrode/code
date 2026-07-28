@@ -101,7 +101,7 @@ EOF
 
 # Allow current user to login as service user
 tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
-{USER} ALL=({APP_NAME}) NOPASSWD: ALL
+{USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
 EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 
