@@ -129,9 +129,13 @@ podman-compose --file=- up --no-start \\
     <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
 
 # Start service
-systemctl --user \\
+# systemctl --user \\
+#     enable --now --no-pager --full app_{shlex.quote(APP_NAME)}.service
+# systemctl --user \\
+#     status --no-pager --full app_{shlex.quote(APP_NAME)}.service
+systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
     enable --now --no-pager --full app_{shlex.quote(APP_NAME)}.service
-systemctl --user \\
+systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
     status --no-pager --full app_{shlex.quote(APP_NAME)}.service
 """
 sp.run(
