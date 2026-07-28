@@ -111,10 +111,10 @@ sudo -u app_{shlex.quote(APP_NAME)} -- podman-compose --file=- up --no-start \\
     <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
 
 # Start service
-systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
+systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
     enable --now app_{shlex.quote(APP_NAME)}.service
-systemctl --user -M app_{shlex.quote(APP_NAME)}@.host \\
-    status --no-pager app_{shlex.quote(APP_NAME)}.service
+systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
+    status --no-pager --full --wait app_{shlex.quote(APP_NAME)}.service
 """
 
 # PODMAN_PREAMBLE = (
