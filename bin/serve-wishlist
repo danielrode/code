@@ -136,7 +136,7 @@ systemctl --user \\
 """
 sp.run(
     ('sudo', '-u', f'app_{APP_NAME}', 'bash'),
-    check=True, text=True, input=install_payload,
+    check=True, text=True, input=start_payload,
 )
 
 # # Main
