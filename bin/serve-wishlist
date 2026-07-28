@@ -37,7 +37,7 @@ CON_SERVICES = {
         **CON_HARDENED_DEFAULTS,
         'container_name': 'wishlist',
         'image': 'ghcr.io/cmintey/wishlist:latest',
-        'ports': ['127.0.0.1:3000:3000'],
+        'ports': ['3000:3000'],
         'volumes': [
             # Where user image uploads get stored
             'uploads:/usr/src/app/uploads',
@@ -99,6 +99,9 @@ ExecStop=/usr/bin/podman pod stop pod_{APP_NAME}
 [Install]
 WantedBy=default.target
 EOF
+
+# Firewall rules
+# TODO
 
 # Allow current user to login as service user
 tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
