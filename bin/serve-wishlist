@@ -75,7 +75,8 @@ set -e
 set -x
 
 # Add user for service
-useradd app_{shlex.quote(APP_NAME)}
+id app_{shlex.quote(APP_NAME)} 2>/dev/null || \\
+    useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
 systemctl daemon-reload
