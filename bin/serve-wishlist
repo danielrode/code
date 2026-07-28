@@ -34,6 +34,7 @@ CON_HARDENED_DEFAULTS = {
 }
 CON_SERVICES = {
     'wishlist': {
+        **CON_HARDENED_DEFAULTS,
         'container_name': 'wishlist',
         'image': 'ghcr.io/cmintey/wishlist:latest',
         'ports': ['127.0.0.1:3000:3000'],
