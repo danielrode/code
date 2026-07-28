@@ -90,7 +90,7 @@ Requires=dbus.socket
 After=dbus.socket
 After=network-online.target
 [Service]
-Type=simple
+Type=forking
 Restart=on-failure
 RestartSec=33
 ExecStart=/usr/bin/podman pod start pod_{APP_NAME}
