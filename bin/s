@@ -4,7 +4,7 @@
 #   sshfs (local)
 #   dtach (on remote host)
 # created: 23 feb 2025
-# updated: 15 jul 2026
+# updated: 30 jul 2026
 
 
 """Alias/shortcuts for starting SSH sessions."""
@@ -65,6 +65,7 @@ match remote:
                 [[ -d {shlex.quote(str(PWD))} ]] && cd {shlex.quote(str(PWD))}
                 dtach -c "$tmpdir/dtach_$(date '+%Y_%m_%d_%H%M').sock" -zE \\
                     bash -l -c {remote_cmd_str}
+                rm -fr -- "$tmpdir"
             ''',
         )
 
