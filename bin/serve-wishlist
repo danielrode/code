@@ -2,19 +2,19 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 04 may 2026
-# updated: 28 jul 2026
+# updated: 31 jul 2026
 
 
-"""Run cmintey's containerized 'wishlist' app."""
+"""Install and serve cmintey's containerized 'wishlist' app."""
 
 
+import pwd
+import json
 import shlex
 import getpass
 import tomllib
 import subprocess as sp
 from pathlib import Path
-
-import yaml
 
 
 APP_NAME = "cmintey_wishlist"
@@ -24,13 +24,15 @@ USER = getpass.getuser()
 
 NY = tomllib.loads((HOME / '.nunyuh').read_text())['S']['wishlist']
 
-HARD_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
+HARDENED_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
+CON_IMG_TAG = APP_NAME
 CON_HARDENED_DEFAULTS = {
     'runtime': '/usr/bin/krun',
+    # 'user': '1111:1111',
     'cap_drop': ['ALL'],
     'security_opt': ['no-new-privileges'],
     'read_only': True,
-    'tmpfs': ['/tmp:' + HARD_TMPFS],
+    'tmpfs': ['/tmp:' + HARDENED_TMPFS],
     'deploy': {'resources': {'limits': {
         'mem_limit': '128m',  # Limit memory usage
         'cpus': 0.5,  # Limit CPU usage to 50% of a single core
@@ -40,8 +42,7 @@ CON_SERVICES = {
     'wishlist': {
         **CON_HARDENED_DEFAULTS,
         'container_name': 'wishlist',
-        'image': 'ghcr.io/cmintey/wishlist:latest',
-        'ports': ['3000:3000'],
+        'image': CON_IMG_TAG,
         'volumes': [
             # Where user image uploads get stored
             'uploads:/usr/src/app/uploads',
@@ -54,9 +55,17 @@ CON_SERVICES = {
             # expire
             'TOKEN_TIME': 72,
         },
+        'secrets': [{
+            'source': APP_NAME + '_rh_token',
+            'target': '/etc/rathole.conf',
+            'uid': '0',
+            'gid': '0',
+            'mode': '0444',
+        }],
         'tmpfs': [
-            '/usr/src/app/node_modules/.cache/jiti/:' + HARD_TMPFS,
-            '/root/.config/caddy/:' + HARD_TMPFS,
+            '/usr/src/app/node_modules/.cache/jiti/:' + HARDENED_TMPFS,
+            '/usr/src/app/.config/caddy:' + HARDENED_TMPFS,
+            '/root/.config/caddy/:' + HARDENED_TMPFS,
         ],
         'restart': 'always',
     },
@@ -68,12 +77,51 @@ CON_COMPOSE = {
     'volumes': {
         'db': {},
         'uploads': {},
-    }
+    },
+    'secrets': {
+        APP_NAME + '_rh_token': {'external': True},
+    },
 }
 
+RH_CONF = f"""
+[client]
+remote_addr = "{NY['remote_addr']}"
+[client.services.wishlist]
+type = "tcp"
+token = "{NY['rh_token']}"
+local_addr = "localhost:3000" 
+"""
 
-# Install and start service
-install_payload = f"""
+IMG_SHA256 = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
+DOCKERFILE = f"""
+FROM ghcr.io/cmintey/wishlist:latest
+# Image 52f3a087ccb8 = rathole:v0.5.0
+COPY --from=docker.io/rapiz1/rathole@sha256:{IMG_SHA256} \\
+    /app/rathole /opt/bin/rathole
+COPY <<'EOF' /opt/bin/init.sh
+#!/usr/bin/env bash
+log_run() {{
+    local label="$1"
+    shift
+    ("$@" 2>&1) | sed -u "s/^/[$label] /"
+}}
+(
+    log_run "RATHOLE" /opt/bin/rathole /etc/rathole.conf &
+    log_run "WISHLIST" /usr/bin/sh /usr/src/app/entrypoint.sh &
+    wait
+) | ts '[%Y-%m-%d %H:%M:%S]'
+EOF
+RUN apt-get update \\
+    && apt-get install -y --no-install-recommends \\
+        bash moreutils \\
+    && rm -rf /var/lib/apt/lists/* \\
+    && apt-get clean \\
+;
+
+ENTRYPOINT bash /opt/bin/init.sh
+"""
+
+SETUP_ROOT_SH_PAYLOAD = f"""
 set -e
 set -x
 
@@ -102,40 +150,93 @@ ExecStop=/usr/bin/podman pod stop pod_{APP_NAME}
 WantedBy=default.target
 EOF
 
-# Firewall rules
-# TODO
-
 # Allow current user to login as service user
 tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 {USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
 EOF
 sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 """
-sp.run(('sudo', 'bash'), check=True, text=True, input=install_payload)
 
-start_payload = f"""
-set -e
-set -x
 
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+# Run setup code that needs to be run as root
+try:
+    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+except KeyError:
+    app_user_id = None
 
-# Create container definitions
-cd /
-podman-compose --file=- up --no-start \\
-    <<< {shlex.quote(yaml.dump(CON_COMPOSE))}
+if any((
+    app_user_id is None,
+    not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
+)):
+    sp.run(
+        ('sudo', 'bash'),
+        check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
+    )
 
-# Start service
-# systemctl --user \\
-#     enable --now --no-pager --full app_{shlex.quote(APP_NAME)}.service
-# systemctl --user \\
-#     status --no-pager --full app_{shlex.quote(APP_NAME)}.service
-systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
-    enable --now --no-pager --full app_{shlex.quote(APP_NAME)}.service
-systemctl --user --machine=app_{shlex.quote(APP_NAME)}@.host \\
-    status --no-pager --full app_{shlex.quote(APP_NAME)}.service
-"""
+# Build container
+app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+cmd_preamble = (
+    'sudo',
+        '-u', f'app_{APP_NAME}',
+    'env',
+        '--chdir=/tmp',
+        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+)
 sp.run(
-    ('sudo', '-u', f'app_{APP_NAME}', 'bash'),
-    check=True, text=True, input=start_payload,
+    (
+        *cmd_preamble,
+        'podman', 'build',
+            '--file=-',
+            '--tag', CON_IMG_TAG,
+    ),
+    input=DOCKERFILE,
+    check=True, text=True,
+)
+
+# Create container
+sp.run(
+    (
+        *cmd_preamble,
+        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_token', '-',
+    ),
+    input=RH_CONF,
+    check=True, text=True,
+)
+sp.run(
+    (
+        *cmd_preamble,
+        'podman-compose', '--file=-', 'up', '--no-start',
+    ),
+    input=json.dumps(CON_COMPOSE),
+    check=True, text=True,
+)
+
+# Start container
+sp.run(
+    (
+        *cmd_preamble,
+        'systemctl',
+        '--user',
+        f'--machine=app_{APP_NAME}@.host',
+        'enable',
+        '--now',
+        '--no-pager',
+        '--full',
+        f'app_{APP_NAME}.service',
+    ),
+    check=True,
+)
+sp.run(
+    (
+        *cmd_preamble,
+        'systemctl',
+        '--user',
+        f'--machine=app_{APP_NAME}@.host',
+        'status',
+        '--no-pager',
+        '--full',
+        f'app_{APP_NAME}.service',
+    ),
+    check=True,
 )
