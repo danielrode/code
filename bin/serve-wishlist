@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 04 may 2026
-# updated: 31 jul 2026
+# updated: 01 aug 2026
 
 
 """Install and serve cmintey's containerized 'wishlist' app."""
@@ -28,6 +28,11 @@ HARDENED_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
 CON_IMG_TAG = APP_NAME
 CON_HARDENED_DEFAULTS = {
     'runtime': '/usr/bin/krun',
+    # "...the microVM ignores the USER set in the Dockerfile and always
+    # boots as root. Either switch to the correct user manually or put the
+    # switch into an entrypoint script."
+    # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
+    # TODO what about setting the user here (in compose)? does that work?
     # 'user': '1111:1111',
     'cap_drop': ['ALL'],
     'security_opt': ['no-new-privileges'],
@@ -39,8 +44,7 @@ CON_HARDENED_DEFAULTS = {
     }}},
 }
 CON_SERVICES = {
-    'wishlist': {
-        **CON_HARDENED_DEFAULTS,
+    'wishlist': CON_HARDENED_DEFAULTS | {
         'container_name': 'wishlist',
         'image': CON_IMG_TAG,
         'volumes': [
@@ -206,7 +210,7 @@ sp.run(
 sp.run(
     (
         *cmd_preamble,
-        'podman-compose', '--file=-', 'up', '--no-start',
+        'podman-compose', '--file=-', 'up', '--no-start', '--no-color',
     ),
     input=json.dumps(CON_COMPOSE),
     check=True, text=True,
