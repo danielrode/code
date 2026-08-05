@@ -2,66 +2,66 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 01 aug 2026
+# updated: 03 aug 2026
 
 
-# TODO
-
-
-# TODO see `serve-wishlist`
-
-# Run containerized Joplin (notes) server.
+"""Setup and run containerized Joplin (notes) server."""
 
 # NOTE:
 # Joplin server's default username and pw: "admin@localhost", "admin"
 # Change these first thing!
 
 
-import sys
-import signal
+import pwd
+import json
+import shlex
+import getpass
 import tomllib
 import subprocess as sp
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
-import yaml
 
 
 APP_NAME = 'joplin'
 
 HOME = Path.home()
+USER = getpass.getuser()
 
 NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
-HARDENED_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
+# rathole:v0.5.0 container image ID
+RH_IMG_ID = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
+
 CON_HARDENED_DEFAULTS = {
     'runtime': '/usr/bin/krun',
-    # "...the microVM ignores the USER set in the Dockerfile and always
-    # boots as root. Either switch to the correct user manually or put the
-    # switch into an entrypoint script."
-    # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
-    # TODO what about setting the user here (in compose)? does that work?
-    # 'user': '1111:1111',
     'cap_drop': ['ALL'],
     'security_opt': ['no-new-privileges'],
     'read_only': True,
-    'tmpfs': ['/tmp:' + HARDENED_TMPFS],
+    'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
     'deploy': {'resources': {'limits': {
         'mem_limit': '128m',  # Limit memory usage
         'cpus': 0.5,  # Limit CPU usage to 50% of a single core
     }}},
 }
 CON_SERVICES = {
-    # todo
-    # 'rathole': CON_HARDENED_DEFAULTS | {
-    #     'image': 'docker.io/rapiz1/rathole:latest',
-    #     'container_name': f'{APP_NAME}_rathole',
-    #     # 'volumes': [
-    #     #     '~/rathole.toml:/rh.toml:ro,U,Z', # todo
-    #     # ],
-    #     'command': '/rh.toml',  # todo use podman secrets?
-    #     'restart': 'always',
-    # },
+    'rathole': CON_HARDENED_DEFAULTS | {
+        'image': f'docker.io/rapiz1/rathole@sha256:{RH_IMG_ID}',
+        'container_name': f'{APP_NAME}_rathole',
+        'secrets': [{
+            'source': APP_NAME + '_rh_token',
+            'target': '/etc/rathole.toml',
+            'uid': '0',
+            'gid': '0',
+            'mode': '0444',
+        }],
+        'command': '/etc/rathole.toml',
+        'restart': 'always',
+        # "...the microVM ignores the USER set in the Dockerfile and always
+        # boots as root. Either switch to the correct user manually or put the
+        # switch into an entrypoint script."
+        # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
+        # TODO what about setting the user here (in compose)? does that work?
+        'user': '1111:1111',
+    },
     'db': CON_HARDENED_DEFAULTS | {
         'image': 'docker.io/postgres:16',
         'container_name': f'{APP_NAME}_db',
@@ -75,31 +75,30 @@ CON_SERVICES = {
                     'mode': 0o700,
                 },
             },
-            # 'postgres:/var/lib/postgresql/data:U',
         ],
         'environment': [
-            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_PASSWORD=' + NY['db_pw'],  # TODO make podman secret somehow?
             'POSTGRES_USER=joplin0',
             'POSTGRES_DB=joplindb',
         ],
         'restart': 'always',
         # 'deploy': { 'resources': { 'limits': {
-        #     # Limit memory usage
         #     'mem_limit': '256m',
-        #     # Limit CPU usage to 50% of a single core
-        #     'cpus': 0.5,
-        # }}},
         'user': '999:999',
     },
     'joplin': CON_HARDENED_DEFAULTS | {
         'image': 'docker.io/joplin/server:latest',
         'container_name': f'{APP_NAME}_server',
         'depends_on': ['db'],
+        'tmpfs': [
+            '/tmp:rw,noexec,nosuid,nodev,mode=1777',
+            '/opt/pm2:rw,noexec,nosuid,nodev,mode=1777',
+        ],
         'environment': [
-            'APP_PORT=22300',  #todo
-            'APP_BASE_URL=${APP_BASE_URL}',
+            'APP_PORT=22300',
+            'APP_BASE_URL=' + NY['origin'],
             'DB_CLIENT=pg',
-            'POSTGRES_PASSWORD=${DB_PW}',
+            'POSTGRES_PASSWORD=' + NY['db_pw'],  # TODO make podman secret somehow?
             'POSTGRES_DATABASE=joplindb',
             'POSTGRES_USER=joplin0',
             'POSTGRES_PORT=5432',
@@ -107,22 +106,19 @@ CON_SERVICES = {
         ],
         'restart': 'always',
         # 'deploy': { 'resources': { 'limits': {
-        #     # Limit memory usage
         #     'mem_limit': '256m',
-        #     # Limit CPU usage to 50% of a single core
-        #     'cpus': 0.5,
-        # }}},
     },
 }
 CON_COMPOSE = {
+    'version': '3',
     'name': APP_NAME,
     'services': CON_SERVICES,
     'volumes': {
-        'postgres': {
-            'name': f'{APP_NAME}_postgres',
-        },
+        'postgres': {},
     },
-    'version': '3',
+    'secrets': {
+        APP_NAME + '_rh_token': {'external': True},
+    },
 }
 
 PODMAN_PREAMBLE = (
@@ -132,25 +128,126 @@ PODMAN_PREAMBLE = (
     '--file=-',
 )
 
+RH_CONF = f"""
+[client]
+remote_addr = "{NY['rh_addr']}"
+[client.services.joplin]
+type = "tcp"
+token = "{NY['rh_token']}"
+local_addr = "joplin:22300" 
+"""
 
-# Main
-with TemporaryDirectory(ignore_cleanup_errors=True) as td:
-    env_fp = Path(td, 'compose.env')
-    env_fp.touch(mode=0o600)
-    env_fp.write_text('\n'.join((
-        # TODO use podman secrets instead
-        'DB_PW=' + NY['db_pw'],
-        'APP_BASE_URL' + NY['origin'],
-    )))
+SETUP_ROOT_SH_PAYLOAD = f"""
+set -e
+set -x
 
-    cmd = (
-        *PODMAN_PREAMBLE,
-        '--env-file=' + str(env_fp),
-        'up',
-        '--no-color',
-        '--abort-on-container-failure',
+# Add user for service
+id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
+    useradd -m app_{shlex.quote(APP_NAME)}
+usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
+loginctl enable-linger app_{shlex.quote(APP_NAME)}
+# systemctl daemon-reload
+
+# Install systemd service file
+umask 0022
+tee <<'EOF' > /etc/systemd/user/app_{shlex.quote(APP_NAME)}.service
+[Unit]
+Description=app_{APP_NAME}
+Requires=dbus.socket
+After=dbus.socket
+After=network-online.target
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/bin/podman pod start pod_{APP_NAME}
+ExecStop=/usr/bin/podman pod stop pod_{APP_NAME}
+[Install]
+WantedBy=default.target
+EOF
+
+# Allow current user to login as service user
+tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+{USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
+EOF
+sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+"""
+
+
+# Run setup code that needs to be run as root
+try:
+    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+except KeyError:
+    app_user_id = None
+
+if any((
+    app_user_id is None,
+    not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
+)):
+    sp.run(
+        ('sudo', 'bash'),
+        check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
-    signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
-    p = sp.run(cmd, input=yaml.dump(CON_COMPOSE), text=True)
 
-sys.exit(p.returncode)
+# Create container
+app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+sudo_preamble = (
+    'sudo',
+        '-u', f'app_{APP_NAME}',
+    'env',
+        '--chdir=/tmp',
+        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+)
+sp.run(
+    (
+        *sudo_preamble,
+        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_token', '-',
+    ),
+    input=RH_CONF,
+    check=True, text=True,
+)
+sp.run(
+    (
+        *sudo_preamble,
+        'podman-compose', '--file=-', 'up', '--no-start', '--no-color',
+    ),
+    input=json.dumps(CON_COMPOSE),
+    check=True, text=True,
+)
+
+# Start container
+sp.run(
+    (
+        *sudo_preamble,
+        'systemctl',
+        '--user',
+        f'--machine=app_{APP_NAME}@.host',
+        'enable',
+        '--now',
+        '--no-pager',
+        '--full',
+        f'app_{APP_NAME}.service',
+    ),
+    check=True,
+)
+sp.run(
+    (
+        *sudo_preamble,
+        'systemctl',
+        '--user',
+        f'--machine=app_{APP_NAME}@.host',
+        'status',
+        '--no-pager',
+        '--full',
+        f'app_{APP_NAME}.service',
+    ),
+    check=True,
+)
+
+
+
+
+# todo debug
+# why this? rathole::client: Failed to run the data channel: Failed to connect to joplin:22300: Connection refused (os error 111)
+

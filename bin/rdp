@@ -4,7 +4,7 @@
 #   freerdp
 #   ~/.nunyuh
 # created: 15 jul 2025
-# updated: 31 jul 2026
+# updated: 04 aug 2026
 
 
 """Macro for starting RDP (remote desktop) sessions."""
@@ -28,6 +28,9 @@ HOME = Path.home()
 HOSTNAME = socket.gethostname()
 FREERDP_ARGS = [
     '/clipboard',
+    '-toggle-fullscreen',
+    '-wallpaper',
+    '-themes',
 ]
 NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['rdp']
 

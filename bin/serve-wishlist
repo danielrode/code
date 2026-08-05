@@ -61,7 +61,7 @@ CON_SERVICES = {
         },
         'secrets': [{
             'source': APP_NAME + '_rh_token',
-            'target': '/etc/rathole.conf',
+            'target': '/etc/rathole.toml',
             'uid': '0',
             'gid': '0',
             'mode': '0444',
@@ -89,7 +89,7 @@ CON_COMPOSE = {
 
 RH_CONF = f"""
 [client]
-remote_addr = "{NY['remote_addr']}"
+remote_addr = "{NY['rh_addr']}"
 [client.services.wishlist]
 type = "tcp"
 token = "{NY['rh_token']}"
@@ -99,7 +99,7 @@ local_addr = "localhost:3000"
 IMG_SHA256 = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
 DOCKERFILE = f"""
 FROM ghcr.io/cmintey/wishlist:latest
-# Image 52f3a087ccb8 = rathole:v0.5.0
+# Image a31b9178e985d = rathole:v0.5.0
 COPY --from=docker.io/rapiz1/rathole@sha256:{IMG_SHA256} \\
     /app/rathole /opt/bin/rathole
 COPY <<'EOF' /opt/bin/init.sh
@@ -110,7 +110,7 @@ log_run() {{
     ("$@" 2>&1) | sed -u "s/^/[$label] /"
 }}
 (
-    log_run "RATHOLE" /opt/bin/rathole /etc/rathole.conf &
+    log_run "RATHOLE" /opt/bin/rathole /etc/rathole.toml &
     log_run "WISHLIST" /usr/bin/sh /usr/src/app/entrypoint.sh &
     wait
 ) | ts '[%Y-%m-%d %H:%M:%S]'
