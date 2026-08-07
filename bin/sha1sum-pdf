@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: pdftotext
+# created: 06 aug 2026
+
+
+import sys
+import hashlib
+import subprocess as sp
+from pathlib import Path
+
+
+def sha1(text: str) -> str:
+    """Return SHA1 hash of string."""
+
+    return hashlib.sha1(bytes(text, 'utf8')).hexdigest()
+
+
+for fp in sys.argv[1:]:
+    fp = Path(fp)
+
+    cmd = ('pdftotext', str(fp), '-')
+    p = sp.run(cmd, check=True, text=True, capture_output=True)
+
+    body = p.stdout.strip()
+ 
+    print(f'{sha1(body)}  {fp.name}')

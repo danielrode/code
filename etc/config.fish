@@ -113,6 +113,7 @@ abbr --add rsynca rsync \
 abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b --csv
 abbr --add pstree pstree -aps "$fish_pid"
+abbr --add rga rga --rga-no-cache
 
 # One-liners / utils
 abbr --add lswifi nmcli device wifi list

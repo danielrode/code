@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies:
+#   magic wormhole
+# created: 06 aug 2026
+# updated: -
+
+
+"""Alias for Magic Wormhole."""
+
+
+import sys
+import subprocess as sp
+
+
+match sys.argv[1]:
+    case 's'|'d'|'i'|'get'|'down'|'pull'|'take'|'in'|'send':
+        wh_cmd = 'receive'
+    case 'r'|'p'|'u'|'o'|'put'|'up'|'push'|'give'|'out'|'receive':
+        wh_cmd = 'send'
+    case _:
+        wh_cmd = sys.argv[1]
+
+try:
+    p = sp.run(('wormhole', wh_cmd, *sys.argv[2:]))
+except KeyboardInterrupt:
+    sys.exit(1)
+sys.exit(p.returncode)
