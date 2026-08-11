@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: i2pd
+# created: 22 jun 2026
+# updated: 10 aug 2026
+
+
+echo 'chromium --proxy-server="http://127.0.0.1:4444" --incognito'
+
+args=(
+    # https://docs.i2pd.website/en/latest/user-guide/configuration/
+    --log=stdout
+    --loglevel=warn
+
+    --ipv6
+    --bandwidth=100mb
+
+    --http.enabled=true
+    --http.address=127.0.0.1
+    --http.port=7070
+
+    --httpproxy.enabled=true
+    --httpproxy.address=127.0.0.1
+    --httpproxy.port=4444
+
+    --sam.enabled=true
+    --sam.address=127.0.0.1
+    --sam.port=7656
+    --sam.portudp=7655
+
+    # http://reg.i2p at "mainline" I2P network
+    --addressbook.defaulturl=\
+http://shx5vqsw7usdaunyzr2qmes2fq37oumybpudrd4jjj4e4vk4uusa.b32.i2p/hosts.txt
+)
+i2pd "${args[@]}"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # author: daniel rode
 # dependencies:
+#   ipfs (kubo)
 #   ~/code/bin/o
 # created: 26 feb 2026
 
