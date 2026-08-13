@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: go 1.24+
+# created: 12 aug 2026
+# updated: -
+
+
+# Install Landrun for running programs within Linux Landlock sandboxes.
+#
+# https://github.com/Zouuup/landrun
+
+
+tmpdir="$(mktemp -d)"
+function cleanup() { rm -fr -- "$tmpdir"; }
+trap cleanup EXIT
+
+cd "$tmpdir"
+git clone https://github.com/zouuup/landrun.git
+cd landrun
+go build -o landrun cmd/landrun/main.go
+sudo install -v landrun /usr/local/bin/
+cd -

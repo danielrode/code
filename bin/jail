@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: landrun
+# created: 12 aug 2026
+# updated: -
+
+
+"""Run a program in a sandbox.
+
+Run a program so that everything is read-only except the current directory
+and its children. If no program is given, run fish shell in private mode.
+"""
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+args = (
+    '--rox=/',
+    '--rw=/dev/null',
+    '--rw=/tmp',
+    '--rw', str(Path.cwd()),
+    '--env=DCV_CODE_PATH',
+    '--env=DCV_HOME_OPT',
+    '--env=DFLT_NET_IFACE',
+    '--env=EDITOR',
+    '--env=GOPATH',
+    '--env=HOSTNAME',
+    '--env=LANG',
+    '--env=LESS',
+    '--env=LESSEDIT',
+    '--env=LS_COLORS',
+    '--env=PAGER',
+    '--env=PATH',
+    '--env=R_LIBS_USER',
+    '--env=STARSHIP_LOG',
+    '--env=TERM',
+    '--env=USER',
+    '--env=VISUAL',
+)
+
+if len(sys.argv[1:]) == 0:
+    child_cmd = ('fish', '--private')
+else:
+    child_cmd = sys.argv[1:]
+
+cmd = ('landrun', *args, '--', *child_cmd)
+print("RUNNING:", cmd)
+try:
+    p = sp.run(cmd)
+except KeyboardInterrupt:
+    sys.exit(1)
+
+sys.exit(p.returncode)
+
+
+
+# TODO
+# - once island is mature, consider switching to it
+#   - https://github.com/landlock-lsm/island
+# - implement seccomp
+#   - see for inspiration: ~/working/00archive/jail.py
+# - consider activating landlock without natively (without having to depend on landrun or island)
+#   - see for inspiration: ~/working/00archive/rorun.py
