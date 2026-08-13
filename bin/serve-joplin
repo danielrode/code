@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 03 aug 2026
+# updated: 12 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -47,7 +47,7 @@ CON_SERVICES = {
         'image': f'docker.io/rapiz1/rathole@sha256:{RH_IMG_ID}',
         'container_name': f'{APP_NAME}_rathole',
         'secrets': [{
-            'source': APP_NAME + '_rh_token',
+            'source': APP_NAME + '_rh_conf',
             'target': '/etc/rathole.toml',
             'uid': '0',
             'gid': '0',
@@ -117,7 +117,7 @@ CON_COMPOSE = {
         'postgres': {},
     },
     'secrets': {
-        APP_NAME + '_rh_token': {'external': True},
+        APP_NAME + '_rh_conf': {'external': True},
     },
 }
 
@@ -202,7 +202,7 @@ sudo_preamble = (
 sp.run(
     (
         *sudo_preamble,
-        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_token', '-',
+        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_conf', '-',
     ),
     input=RH_CONF,
     check=True, text=True,
@@ -248,6 +248,7 @@ sp.run(
 
 
 
-# todo debug
-# why this? rathole::client: Failed to run the data channel: Failed to connect to joplin:22300: Connection refused (os error 111)
+# TODO DEBUG
+# - run joplin and friends under podman --runtime=/usr/bin/krun run --rm -it quay.io/podman/stable
+#   - install podman-compose in podman/stable container or just have init script create pod manually?
 
