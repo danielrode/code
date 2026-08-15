@@ -133,14 +133,6 @@ dnf install -y --refresh --setopt=install_weak_deps=False \
     podman-compose \
 ;
 dnf clean all
-useradd --shell /bin/false app
-mkdir /app
-# chown app:app /app
-# cd /app
-# runuser --user=app -- env HOME=/app podman-compose \
-#     --file=/etc/joplin_compose.yaml \
-#     pull \
-# ;
 EOF
 """
 
@@ -251,7 +243,7 @@ sp.run(
             'run',
             '--name', APP_NAME,
             '--replace',
-            '--memory=8g',
+            # '--memory=8g',
             # '--cap-drop=ALL',
             '--security-opt=no-new-privileges',
             '--security-opt=proc-opts=hidepid=2',
@@ -274,24 +266,20 @@ sp.run(
         'bash', '-c', f'''
             set -e
             set -x
-            mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1777 tmpfs /tmp
-            mkdir -p /dev/mqueue
-            mount -t mqueue none /dev/mqueue
-            mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
-            chown app:app /app
-            cd /app
-            runuser --user=app -- env HOME=/app \
-                podman secret create {shlex.quote(APP_NAME)}_rh_conf \
-                    /etc/rathole.toml \
+            mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
+            # mkdir -p /dev/mqueue
+            # mount -t mqueue none /dev/mqueue
+            # mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
+            # chown app:app /app
+            # cd /app
+            podman secret create {shlex.quote(APP_NAME)}_rh_conf \
+                /etc/rathole.toml \
             ;
-            runuser --user=app -- env HOME=/app \
-                podman-compose \
-                    --file=/etc/joplin_compose.yaml \
-                    up \
-                    --no-color \
-                    --no-start \
+            podman-compose \
+                --file=/etc/joplin_compose.yaml \
+                up \
             ;
-            runuser --user=app -- env HOME=/app podman pod start pod_joplin
+            # podman pod start pod_joplin
         ''',
     ),
     check=True,
