@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 12 aug 2026
+# updated: 14 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -32,7 +32,6 @@ NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 RH_IMG_ID = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
 
 CON_HARDENED_DEFAULTS = {
-    'runtime': '/usr/bin/krun',
     'cap_drop': ['ALL'],
     'security_opt': ['no-new-privileges'],
     'read_only': True,
@@ -121,12 +120,29 @@ CON_COMPOSE = {
     },
 }
 
-PODMAN_PREAMBLE = (
-    'podman-compose',
-    '--no-ansi',
-    '--podman-pull-args=--policy=missing',
-    '--file=-',
-)
+CON_IMG_TAG = "app_" + APP_NAME
+DOCKERFILE = f"""
+FROM quay.io/podman/stable:latest
+COPY <<'EOF' /etc/joplin_compose.yaml
+{json.dumps(CON_COMPOSE)}
+EOF
+RUN <<'EOF'
+set -e
+set -x
+dnf install -y --refresh --setopt=install_weak_deps=False \
+    podman-compose \
+;
+dnf clean all
+useradd --shell /bin/false app
+mkdir /app
+# chown app:app /app
+# cd /app
+# runuser --user=app -- env HOME=/app podman-compose \
+#     --file=/etc/joplin_compose.yaml \
+#     pull \
+# ;
+EOF
+"""
 
 RH_CONF = f"""
 [client]
@@ -189,7 +205,7 @@ if any((
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
 
-# Create container
+# Build container
 app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
 sudo_preamble = (
     'sudo',
@@ -202,53 +218,124 @@ sudo_preamble = (
 sp.run(
     (
         *sudo_preamble,
+        'podman', 'build',
+            '--file=-',
+            '--tag', CON_IMG_TAG,
+    ),
+    input=DOCKERFILE,
+    check=True, text=True,
+)
+
+# Create container
+sp.run(
+    (
+        *sudo_preamble,
         'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_conf', '-',
     ),
     input=RH_CONF,
     check=True, text=True,
 )
+# sp.run(
+#     (
+#         *sudo_preamble,
+#         'podman', 'secret', 'create', '--replace', f'{APP_NAME}_compose', '-',
+#     ),
+#     input=json.dumps(CON_COMPOSE),
+#     check=True, text=True,
+# )
 sp.run(
     (
         *sudo_preamble,
-        'podman-compose', '--file=-', 'up', '--no-start', '--no-color',
-    ),
-    input=json.dumps(CON_COMPOSE),
-    check=True, text=True,
-)
-
-# Start container
-sp.run(
-    (
-        *sudo_preamble,
-        'systemctl',
-        '--user',
-        f'--machine=app_{APP_NAME}@.host',
-        'enable',
-        '--now',
-        '--no-pager',
-        '--full',
-        f'app_{APP_NAME}.service',
+        'podman',
+            '--runtime=/usr/bin/krun',
+            'run',
+            '--name', APP_NAME,
+            '--replace',
+            '--memory=8g',
+            # '--cap-drop=ALL',
+            '--security-opt=no-new-privileges',
+            '--security-opt=proc-opts=hidepid=2',
+            '--restart=unless-stopped',
+            '--secret', ','.join((
+                f'source={APP_NAME}_rh_conf',
+                'target=/etc/rathole.toml',
+                'uid=0',
+                'gid=0',
+                'mode=0444',
+            )),
+            # '--secret', ','.join((
+            #     f'source={APP_NAME}_compose',
+            #     'target=/etc/joplin_compose.yaml',
+            #     'uid=0',
+            #     'gid=0',
+            #     'mode=0444',
+            # )),
+            CON_IMG_TAG,
+        'bash', '-c', f'''
+            set -e
+            set -x
+            mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1777 tmpfs /tmp
+            mkdir -p /dev/mqueue
+            mount -t mqueue none /dev/mqueue
+            mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
+            chown app:app /app
+            cd /app
+            runuser --user=app -- env HOME=/app \
+                podman secret create {shlex.quote(APP_NAME)}_rh_conf \
+                    /etc/rathole.toml \
+            ;
+            runuser --user=app -- env HOME=/app \
+                podman-compose \
+                    --file=/etc/joplin_compose.yaml \
+                    up \
+                    --no-color \
+                    --no-start \
+            ;
+            runuser --user=app -- env HOME=/app podman pod start pod_joplin
+        ''',
     ),
     check=True,
 )
-sp.run(
-    (
-        *sudo_preamble,
-        'systemctl',
-        '--user',
-        f'--machine=app_{APP_NAME}@.host',
-        'status',
-        '--no-pager',
-        '--full',
-        f'app_{APP_NAME}.service',
-    ),
-    check=True,
-)
+
+# sp.run(
+#     (
+#         *sudo_preamble,
+#         'podman-compose',
+#             '--file=-',
+#             'up',
+#             '--no-start',
+#             '--no-color',
+#     ),
+#     input=json.dumps(CON_COMPOSE),
+#     check=True, text=True,
+# )
 
 
-
-
-# TODO DEBUG
-# - run joplin and friends under podman --runtime=/usr/bin/krun run --rm -it quay.io/podman/stable
-#   - install podman-compose in podman/stable container or just have init script create pod manually?
-
+# # Start service
+# sp.run(
+#     (
+#         *sudo_preamble,
+#         'systemctl',
+#         '--user',
+#         f'--machine=app_{APP_NAME}@.host',
+#         'enable',
+#         '--now',
+#         '--no-pager',
+#         '--full',
+#         f'app_{APP_NAME}.service',
+#     ),
+#     check=True,
+# )
+# sp.run(
+#     (
+#         *sudo_preamble,
+#         'systemctl',
+#         '--user',
+#         f'--machine=app_{APP_NAME}@.host',
+#         'status',
+#         '--no-pager',
+#         '--full',
+#         f'app_{APP_NAME}.service',
+#     ),
+#     check=True,
+# )
