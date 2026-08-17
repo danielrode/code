@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 14 aug 2026
+# updated: 16 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -92,6 +92,7 @@ CON_SERVICES = {
         'tmpfs': [
             '/tmp:rw,noexec,nosuid,nodev,mode=1777',
             '/opt/pm2:rw,noexec,nosuid,nodev,mode=1777',
+            '/home/joplin/packages/server:rw,noexec,nosuid,nodev,mode=1777',
         ],
         'environment': [
             'APP_PORT=22300',
@@ -278,8 +279,10 @@ sp.run(
             podman-compose \
                 --file=/etc/joplin_compose.yaml \
                 up \
+                --no-start \
             ;
-            # podman pod start pod_joplin
+            podman pod start pod_joplin
+            podman pod logs --names --timestamps --follow pod_joplin
         ''',
     ),
     check=True,
