@@ -13,12 +13,20 @@ import subprocess as sp
 from pathlib import Path
 
 
+def print2(*args, *kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
+
 def main():
-    real_uid = os.getuid()
+    if os.getuid() != 0:
+        print2("error: Run as/via root/sudo")
+        sys.exit(1)
+
+    calling_uid = int(os.getenv('SUDO_UID'))
     for i in sys.argv[1:]:
         fp_uid = Path(i).stat().st_uid
-        if real_uid != fp_uid:
-            print("error: Permission denied:", i)
+        if calling_uid != fp_uid:
+            print2("error: Permission denied:", i)
             sys.exit(1)
 
     p = sp.run(('btrfs', 'subvolume', 'delete', *sys.argv[1:]))
