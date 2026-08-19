@@ -22,5 +22,7 @@ ignore = [
   # "E226 missing whitespace around arithmetic operator"
   "E226",
   # "E124 closing bracket does not match visual indentation"
-  "E124",
+  # "E124",
+  # "Do not assign a `lambda` expression, use a `def`"
+  "E731",
 ]

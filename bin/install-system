@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 12 jan 2026
-# updated: 15 may 2026
+# updated: 18 aug 2026
 
 
 # Install system files.
@@ -31,6 +31,7 @@ PERMS = {
     Path('/usr/local/bin/serve-mumble'):           '0755',
     Path('/usr/local/bin/serve-wishlist'):         '0755',
     Path('/usr/local/bin/serve-copyparty'):        '0755',
+    Path('/usr/local/bin/btrfs-subvol-del'):       '0755',
 }
 
 

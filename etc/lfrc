@@ -248,5 +248,14 @@ map am ${{
     mntdir="$f.mnt"
     mkdir -p -- "$mntdir"
     archivemount "$f" "$mntdir"
-    lf -remote "send $id cd \"$(printf '%s' "$mntdir" | sed 's/\\/\\\\/g;s/"/\\"/g')\""
+    lf \
+        -command 'set nohidden' \
+        -command 'set nohistory' \
+        -command 'set nopreview; set ratios 1' \
+        -command 'set drawbox' \
+        -command 'set promptfmt "### ARCHIVE MOUNT MODE ###"' \
+        "$mntdir" \
+	;
+    umount "$mntdir"
+    rmdir "$mntdir"
 }}

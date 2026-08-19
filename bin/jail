@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: landrun
 # created: 12 aug 2026
-# updated: 13 aug 2026
+# updated: 18 aug 2026
 
 
 """Run a program in a sandbox.
@@ -19,6 +19,7 @@ from pathlib import Path
 
 LANDRUN_PREAMBLE = (
     'landrun',
+    '--add-exec',
     '--rox=/',
     '--rw=/dev/null',
     '--rw=/tmp',

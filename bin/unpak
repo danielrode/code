@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: python 3.14+, tar, 7z, unzip
+# created: 18 aug 2026
+# updated: -
+
+
+"""Unpack a given archive using available utilites."""
+
+
+import os
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+def print2(*args, **kwa):
+    print(*args, *kwa, file=sys.stderr)
+
+
+def unzip(src_fp, dst_fp):
+    """Unpack zip archive using unzip."""
+
+    dst_fp.mkdir(exist_ok=True)
+    cmd = (
+        'unzip',
+        str(src_fp),
+        '-d', str(dst_fp),
+    )
+    return sp.run(cmd).returncode
+
+
+def tar(src_fp, dst_fp, *tar_args):
+    """Unpack archive using tar."""
+
+    dst_fp.mkdir(exist_ok=True)
+    cmd = (
+        'tar',
+        *tar_args,
+        '--verbose',
+        '--extract',
+        '--file', str(src_fp),
+        '--directory', str(dst_fp),
+    )
+    return sp.run(cmd).returncode
+
+
+def sevenz(src_fp, dst_fp, *sevenz_args):
+    """Unpack archive using 7z."""
+
+    dst_fp.mkdir(exist_ok=True)
+    cmd = (
+        '7z', 'x',
+        *sevenz_args,
+        '-spd',  # disable wildcard matching for file names
+        '-o' + str(dst_fp),
+        '--',
+        str(src_fp),
+    )
+    return sp.run(cmd).returncode
+
+
+def rpm(src_fp, dst_fp):
+    """Unpack RPM archive."""
+
+    src_fp = src_fp.resolve()
+    dst_fp.mkdir(exist_ok=True)
+    cwd0 = Path.cwd()
+    os.chdir(dst_fp)
+
+    p1 = sp.Popen(('rpm2cpio', str(src_fp)), stdout=sp.PIPE)
+    # -i = extract
+    # -d = make directories
+    # -m = preserve modification time
+    # -v = verbose
+    p2 = sp.Popen(('cpio', '-idmv'), stdin=p1.stdout, stdout=sp.PIPE)
+    p1.stdout.close()
+    p2.communicate()
+
+    os.chdir(cwd0)
+
+    return max((p1.returncode, p2.returncode))
+
+
+# Parse command line arguments
+src_fp = Path(sys.argv[1])
+try:
+    dst_fp = Path(sys.argv[2])
+except IndexError:
+    dst_fp = Path(str(src_fp) + '.dir')
+
+# Determine which unpacker to use
+fp_ext = '_'.join(src_fp.suffixes[-2:]).replace('.', '').lower()
+match fp_ext:
+    case '7z'|'rar'|'deb'|'epub'|'msi'|'jar'|'cab'|'dmg'|'xz'|'gz':
+        unpack_fn = sevenz
+    case 'zip':
+        unpack_fn = unzip
+    case 'tar':
+        unpack_fn = tar
+    case 'tar_gz'|'tgz':
+        unpack_fn = lambda x, y: tar(x, y, '--gzip')
+    case 'tar_xz'|'txz':
+        unpack_fn = lambda x, y: tar(x, y, '--xz')
+    case 'tar_bz2'|'bz2'|'tbz'|'tbz2'|'tb2':
+        unpack_fn = lambda x, y: tar(x, y, '--bzip2')
+    case 'tar_lzma'|'tar_lz'|'lz'|'lzma'|'tlz':
+        unpack_fn = lambda x, y: tar(x, y, '--lzma')
+    case 'tar_z'|'z'|'taz':
+        unpack_fn = lambda x, y: tar(x, y, '--compress')
+    case 'tar_zst'|'zstd'|'zst':
+        unpack_fn = lambda x, y: tar(x, y, '--zstd')
+    case 'rpm':
+        unpack_fn = rpm
+    case _:
+        print2("No suitable unpacker found")
+        sys.exit(1)
+
+# Unpack archive
+rc = unpack_fn(src_fp, dst_fp)
+sys.exit(rc)
+
+
+"""
+TODO
+
+consider using python native unpacking; see link https://docs.python.org/3/library/tarfile.html and modules
+
+    shutil.unpack_archive
+    zlib
+    bz2
+    lzma
+    compression.zstd  (python 3.14+)
+"""
