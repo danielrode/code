@@ -70,7 +70,7 @@ pkgs=(
 )
 if cmd_exists dnf
 then
-    dnf group install -y \
+    dnf group install -y --skip-broken \
         sway-desktop-environment \
     ;
     dnf install -y \
