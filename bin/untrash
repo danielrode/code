@@ -105,3 +105,4 @@ for entry in selection:
 
 # TODO
 # - Have files sorted by date when the selection prompt initially opens.
+# - support new `can` trashing format

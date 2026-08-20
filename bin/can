@@ -1,119 +1,111 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# tags: file management, wrapper
-# dependencies:
-#   gio [optional]
-#   trash-cli [optional]
+# tags: file management
+# dependencies: python 3.12+
 # created: 21 jul 2022
-# updated: 08 jun 2026
+# updated: 19 aug 2026
 
 
-# (Trash)Can. Sends a given set of files to the trash. Accounts for various
-# platforms and available tools.
+"""Trash files.
+
+(Trash)Can. Sends a given set of files to the trash. Accounts for various
+platforms and available tools.
+"""
 
 
 import os
 import sys
 import time
+import uuid
+import fcntl
 import shutil
 import subprocess as sp
 from pathlib import Path
 
 
 EXE_NAME = Path(__file__).name
-HELP_TEXT = f"Usage: {EXE_NAME} PATH..."
+HELP = f"Usage: {EXE_NAME} PATH..."
 HOME = Path.home()
+PWD = Path.cwd()
 
-try:
-    if os.environ['XDG_DATA_HOME']:
-        TRASH_DIR = Path(os.environ['XDG_DATA_HOME'])
-    else:
-        TRASH_DIR = HOME / ".local/share/Trash"
-except KeyError:
-    TRASH_DIR = HOME / ".local/share/Trash"
+TRASH_DIR = HOME / '.trash'
 
 
 # Functions
-def dot_trash(path_list):
-    for p in path_list:
-        trash_pth = p.parent / ".trash"
-        trash_pth.mkdir(exist_ok = True)
-        dst_pth = trash_pth / f"{time.time_ns()}_{p.name}"
-        if dst_pth.exists():
-            print("skipping (dest already exists):", dst_pth)
-            continue
-        try:
-            p.rename(dst_pth)
-        except OSError as err:
-            print(f"skipping: {p}: {err}")
-            continue
+def same_filesystem(a, b):
+    """Check if two paths are on the same filesystem."""
 
+    if os.stat(a).st_dev == os.stat(b).st_dev:
+        return True
+    else:
+        return False
 
-def trash_put(path_list):
-    sp.run(['trash-put', 'trash', *path_list], check=True)
+def cp_reflink_a(src, dst):
+    """Copy file as reflink and preserve metadata."""
 
+    with open(src, "rb") as s, open(dst, "wb") as d:
+        fcntl.ioctl(d.fileno(), fcntl.FICLONE, s.fileno())
 
-def gio_trash(path_list):
-    sp.run(['gio', 'trash', *path_list], check=True)
+    shutil.copystat(src, dst)
 
+def cp_r(src, dst):
+    """Copy file or directory."""
 
-def same_filesystem(path_list):
-    user_trash_dev_num = os.stat(TRASH_DIR).st_dev
-    for p in path_list:
-        if os.stat(p).st_dev != user_trash_dev_num:
-            return False
+    if src.is_dir():
+        shutil.copytree(src, dst, copy_function=cp_reflink_a)
+    else:
+        cp_reflink_a(src, dst)
 
-    return True
+def rm_r(fp):
+    """Delete file or directory."""
 
+    if fp.is_dir():
+        fp.rmdir()
+    else:
+        fp.unlink()
 
-def command_exists(cmd):
-    match shutil.which(cmd):
-        case None:
-            return False
-        case _:
-            return True
+def trash(fp, trash_dir=TRASH_DIR):
+    """Trash the given file/dir."""
 
+    dst_fp = Path(trash_dir, str(uuid.uuid4()), fp.name)
+    dst_fp.parent.mkdir(exist_ok=True, parents=True)
 
-def force_manual_trash_set():
+    if same_filesystem(fp, trash_dir):
+        dst_fp.parent.with_suffix('.info').write_text(str(fp.resolve()))
+        fp.rename(dst_fp)
+        return
+
     try:
-        if os.environ['DCV_CAN_FORCE_MANUAL_TRASH_YES'] == 'true':
-            return True
-    except KeyError:
-        pass
+        cp_r(fp, dst_fp)
+    except OSError as e:
+        shutil.rmtree(dst_fp.parent)
+        if str(e) in (
+            '[Errno 18] Invalid cross-device link',
+            '[Errno 95] Operation not supported',
+        ):
+            trash(fp, trash_dir=Path('./.trash'))
+        else:
+            raise e
+    else:
+        dst_fp.parent.with_suffix('.info').write_text(str(fp.resolve()))
+        rm_r(fp)
 
-    return False
 
+# Parse command line arguments
+if not sys.argv[1:]:
+    print(HELP)
+    sys.exit(1)
 
-# Main
-fp_list = []
+# Process files
 for fp in sys.argv[1:]:
     fp = Path(fp)
 
     if not fp.exists():
-        print("Skipping (path does not exist):", fp)
+        print("SKIPPING (path does not exist):", fp)
         continue
 
     if fp.is_mount():
-        sp.run(['umount', '-v', str(fp)], check=True)
+        sp.run(['umount', '--verbose', str(fp)], check=True)
 
-    fp_list += [fp]
-
-if not fp_list:
-    print(HELP_TEXT)
-    sys.exit(1)
-  
-if force_manual_trash_set():
-    trash_func = dot_trash
-elif not same_filesystem(fp_list):
-    print("Files not on same filesystem, so moving to .trash/...")
-    trash_func = dot_trash
-elif command_exists('gio'):
-    trash_func = gio_trash
-elif command_exists('trash-put'):
-    trash_func = trash_put
-else:
-    trash_func = dot_trash
-
-for fp in fp_list:
     print("Trashing:", fp)
-    trash_func([fp])
+    trash(fp)
