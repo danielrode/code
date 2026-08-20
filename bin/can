@@ -3,7 +3,7 @@
 # tags: file management
 # dependencies: python 3.12+
 # created: 21 jul 2022
-# updated: 19 aug 2026
+# updated: 20 aug 2026
 
 
 """Trash files.
@@ -15,12 +15,12 @@ platforms and available tools.
 
 import os
 import sys
-import time
 import uuid
 import fcntl
 import shutil
 import subprocess as sp
 from pathlib import Path
+from datetime import datetime
 
 
 EXE_NAME = Path(__file__).name
@@ -32,6 +32,9 @@ TRASH_DIR = HOME / '.trash'
 
 
 # Functions
+def print2(*a, **kw):
+    print(*a, **kw, file=sys.stderr)
+
 def same_filesystem(a, b):
     """Check if two paths are on the same filesystem."""
 
@@ -67,12 +70,22 @@ def rm_r(fp):
 def trash(fp, trash_dir=TRASH_DIR):
     """Trash the given file/dir."""
 
-    dst_fp = Path(trash_dir, str(uuid.uuid4()), fp.name)
+    dst_fp = Path(
+        trash_dir,
+        "__".join((
+            datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            str(uuid.uuid4()),
+            fp.name,
+        )),
+        'file',
+    )
     dst_fp.parent.mkdir(exist_ok=True, parents=True)
 
+    info_fp = dst_fp.parent / 'src'
     if same_filesystem(fp, trash_dir):
-        dst_fp.parent.with_suffix('.info').write_text(str(fp.resolve()))
+        info_fp.write_text(str(fp.resolve()))
         fp.rename(dst_fp)
+
         return
 
     try:
@@ -87,13 +100,13 @@ def trash(fp, trash_dir=TRASH_DIR):
         else:
             raise e
     else:
-        dst_fp.parent.with_suffix('.info').write_text(str(fp.resolve()))
+        info_fp.write_text(str(fp.resolve()))
         rm_r(fp)
 
 
 # Parse command line arguments
 if not sys.argv[1:]:
-    print(HELP)
+    print2(HELP)
     sys.exit(1)
 
 # Process files

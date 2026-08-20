@@ -28,3 +28,7 @@ googleearth  # Maps, GIS
 
 update ./tem with
 .../edu/.../presentation.typ
+
+support new `can` format in rmtrash, lstrash, untrash (and any other of my trash scripts)
+
+rm # -*- coding: utf-8 -*- lines
