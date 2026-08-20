@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: go 1.24+
+# created: 19 aug 2026
+# updated: -
+
+
+# Install Hax (AI coding agent) from source.
+#
+# https://github.com/OleksandrChekhovskyi/hax
+
+
+tmpdir="$(mktemp -d)"
+function cleanup() { rm -fr -- "$tmpdir" > /dev/null; }
+trap cleanup EXIT
+
+cd "$tmpdir"
+git clone https://github.com/OleksandrChekhovskyi/hax.git
+cd hax
+bash -x scripts/install_deps.sh
+make
+mkdir -p ~/.local/bin
+cp -v build/hax ~/.local/bin/
+cd /
