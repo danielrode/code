@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 19 aug 2026
+# updated: 20 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -44,9 +44,8 @@ CON_HARDENED_DEFAULTS = {
 CON_SERVICES = {
     'rathole': CON_HARDENED_DEFAULTS | {
         'image': f'docker.io/rapiz1/rathole@sha256:{RH_IMG_ID}',
-        'container_name': f'{APP_NAME}_rathole',
         'secrets': [{
-            'source': APP_NAME + '_rh_conf',
+            'source': 'rh_conf',
             'target': '/etc/rathole.toml',
             'uid': '0',
             'gid': '0',
@@ -54,32 +53,22 @@ CON_SERVICES = {
         }],
         'command': '/etc/rathole.toml',
         'restart': 'always',
-        # "...the microVM ignores the USER set in the Dockerfile and always
-        # boots as root. Either switch to the correct user manually or put the
-        # switch into an entrypoint script."
-        # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
-        # TODO what about setting the user here (in compose)? does that work?
         'user': '1111:1111',
     },
     'db': CON_HARDENED_DEFAULTS | {
         'image': 'docker.io/postgres:16',
-        'container_name': f'{APP_NAME}_db',
         'volumes': [
-            {
-                'type': 'volume',
-                'source': 'postgres',
-                'target': '/var/lib/postgresql/data',
-                'volume': {
-                    'U': True,
-                    'mode': 0o700,
-                },
-            },
+            '/notes_db:/var/lib/postgresql/data:U,Z,nodev,noexec,nosuid',
         ],
         'environment': [
-            'POSTGRES_PASSWORD=' + NY['db_pw'],  # TODO make podman secret somehow?
             'POSTGRES_USER=joplin0',
             'POSTGRES_DB=joplindb',
         ],
+        'secrets': [{
+            'type': 'env',
+            'source': 'db_pw',
+            'target': 'POSTGRES_PASSWORD',
+        }],
         'restart': 'always',
         # 'deploy': { 'resources': { 'limits': {
         #     'mem_limit': '256m',
@@ -87,7 +76,6 @@ CON_SERVICES = {
     },
     'joplin': CON_HARDENED_DEFAULTS | {
         'image': 'docker.io/joplin/server:latest',
-        'container_name': f'{APP_NAME}_server',
         'depends_on': ['db'],
         'read_only': False,
         'tmpfs': [
@@ -96,13 +84,23 @@ CON_SERVICES = {
         ],
         'environment': [
             'APP_PORT=22300',
-            'APP_BASE_URL=' + NY['origin'],
             'DB_CLIENT=pg',
-            'POSTGRES_PASSWORD=' + NY['db_pw'],  # TODO make podman secret somehow?
             'POSTGRES_DATABASE=joplindb',
             'POSTGRES_USER=joplin0',
             'POSTGRES_PORT=5432',
             'POSTGRES_HOST=db',
+        ],
+        'secrets': [
+            {
+                'type': 'env',
+                'source': 'db_pw',
+                'target': 'POSTGRES_PASSWORD',
+            },
+            {
+                'type': 'env',
+                'source': 'origin',
+                'target': 'APP_BASE_URL',
+            }
         ],
         'restart': 'always',
         # 'deploy': { 'resources': { 'limits': {
@@ -117,7 +115,9 @@ CON_COMPOSE = {
         'postgres': {},
     },
     'secrets': {
-        APP_NAME + '_rh_conf': {'external': True},
+        'rh_conf': {'external': True},
+        'db_pw': {'external': True},
+        'origin': {'external': True},
     },
 }
 
@@ -198,7 +198,7 @@ if any((
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
 
-# Build container
+# Cleanup Podman storage
 app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
 sudo_preamble = (
     'sudo',
@@ -211,96 +211,123 @@ sudo_preamble = (
 sp.run(
     (
         *sudo_preamble,
-        'podman', 'build',
-            '--file=-',
-            '--tag', CON_IMG_TAG,
+        'bash', '-c', '''
+            set -e
+            set -x
+            podman volume prune --force
+            # podman image prune --all --force
+            podman image prune --force
+        ''',
     ),
     input=DOCKERFILE,
     check=True, text=True,
 )
 
+# Build container
+app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+sudo_preamble = (
+    'sudo',
+        '-u', f'app_{APP_NAME}',
+    'env',
+        '--chdir=/tmp',
+        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+)
+
+def run_app_user(cmd_part2, check=True, **kwargs):
+    cmd = (*sudo_preamble, *cmd_part2)
+    try:
+        if kwargs['input']:
+            kwargs['text'] = True
+    except KeyError:
+        pass
+    p = sp.run(cmd, check=check, **kwargs)
+
+    return p
+
+run_app_user(
+    (
+        'podman', 'build',
+            '--file=-',
+            '--tag', CON_IMG_TAG,
+    ),
+    input=DOCKERFILE,
+)
+
 # Create container
-sp.run(
-    (
-        *sudo_preamble,
-        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_conf', '-',
-    ),
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_conf', '-'),
     input=RH_CONF,
-    check=True, text=True,
 )
-# sp.run(
-#     (
-#         *sudo_preamble,
-#         'podman', 'secret', 'create', '--replace', f'{APP_NAME}_compose', '-',
-#     ),
-#     input=json.dumps(CON_COMPOSE),
-#     check=True, text=True,
-# )
-sp.run(
-    (
-        *sudo_preamble,
-        'podman',
-            '--runtime=/usr/bin/krun',
-            'run',
-            '--name', APP_NAME,
-            '--replace',
-            # '--memory=8g',
-            # '--cap-drop=ALL',
-            '--security-opt=no-new-privileges',
-            '--security-opt=proc-opts=hidepid=2',
-            '--restart=unless-stopped',
-            '--secret', ','.join((
-                f'source={APP_NAME}_rh_conf',
-                'target=/etc/rathole.toml',
-                'uid=0',
-                'gid=0',
-                'mode=0444',
-            )),
-            # '--secret', ','.join((
-            #     f'source={APP_NAME}_compose',
-            #     'target=/etc/joplin_compose.yaml',
-            #     'uid=0',
-            #     'gid=0',
-            #     'mode=0444',
-            # )),
-            CON_IMG_TAG,
-        'bash', '-c', f'''
-            set -e
-            set -x
-            mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
-            # mkdir -p /dev/mqueue
-            # mount -t mqueue none /dev/mqueue
-            # mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
-            # chown app:app /app
-            # cd /app
-            podman secret create {shlex.quote(APP_NAME)}_rh_conf \
-                /etc/rathole.toml \
-            ;
-            podman-compose \
-                --file=/etc/joplin_compose.yaml \
-                up \
-                --no-start \
-            ;
-            podman pod start pod_joplin
-            podman pod logs --names --timestamps --follow pod_joplin
-        ''',
-    ),
-    check=True,
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_origin', '-'),
+    input=NY['origin'],
+)
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_db_pw', '-'),
+    input=NY['db_pw'],
 )
 
-# sp.run(
-#     (
-#         *sudo_preamble,
-#         'podman-compose',
-#             '--file=-',
-#             'up',
-#             '--no-start',
-#             '--no-color',
-#     ),
-#     input=json.dumps(CON_COMPOSE),
-#     check=True, text=True,
-# )
-
+run_app_user((
+    'podman',
+        '--runtime=/usr/bin/krun',
+        'run',
+        '--name', APP_NAME,
+        '--replace',
+        # '--memory=8g',
+        # '--cap-drop=ALL',
+        # "...the microVM ignores the USER set in the Dockerfile and always
+        # boots as root. Either switch to the correct user manually or put
+        # the switch into an entrypoint script."
+        # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
+        '--user=',
+        '--security-opt=no-new-privileges',
+        '--security-opt=proc-opts=hidepid=2',
+        '--restart=unless-stopped',
+        '--secret', ','.join((
+            f'source={APP_NAME}_rh_conf',
+            'target=/etc/rathole.toml',
+            'uid=0',
+            'gid=0',
+            'mode=0444',
+        )),
+        '--secret', ','.join((
+            f'source={APP_NAME}_origin',
+            'target=/pod_secret__origin',
+            'uid=0',
+            'gid=0',
+            'mode=0444',
+        )),
+        '--secret', ','.join((
+            f'source={APP_NAME}_db_pw',
+            'target=/pod_secret__db_pw',
+            'uid=0',
+            'gid=0',
+            'mode=0444',
+        )),
+        '--volume=notes_db:/notes_db',
+        CON_IMG_TAG,
+    'bash', '-c', '''
+        set -e
+        set -x
+        mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
+        # mkdir -p /dev/mqueue
+        # mount -t mqueue none /dev/mqueue
+        # mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
+        # chown app:app /app
+        # cd /app
+        podman secret create rh_conf /etc/rathole.toml
+        podman secret create origin /pod_secret__origin
+        podman secret create db_pw /pod_secret__db_pw
+        podman-compose \
+            --file=/etc/joplin_compose.yaml \
+            up \
+            --no-start \
+        ;
+        podman pod start pod_joplin
+        podman pod logs --names --timestamps --follow pod_joplin
+    ''',
+))
 
 # # Start service
 # sp.run(
