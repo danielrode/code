@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
+# dependencies: podman, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 20 aug 2026
+# updated: 21 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -25,117 +25,87 @@ APP_NAME = 'joplin'
 
 HOME = Path.home()
 USER = getpass.getuser()
-
 NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
-# rathole:v0.5.0 container image ID
-RH_IMG_ID = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
+CON_DEFAULTS = (
+    '--replace',
+    '--pod=app',
+    # '--tz=local',
 
-CON_HARDENED_DEFAULTS = {
-    'cap_drop': ['ALL'],
-    'security_opt': ['no-new-privileges'],
-    'read_only': True,
-    'tmpfs': ['/tmp:rw,noexec,nosuid,nodev,mode=1700'],
-    'deploy': {'resources': {'limits': {
-        'mem_limit': '128m',  # Limit memory usage
-        'cpus': 0.5,  # Limit CPU usage to 50% of a single core
-    }}},
-}
-CON_SERVICES = {
-    'rathole': CON_HARDENED_DEFAULTS | {
-        'image': f'docker.io/rapiz1/rathole@sha256:{RH_IMG_ID}',
-        'secrets': [{
-            'source': 'rh_conf',
-            'target': '/etc/rathole.toml',
-            'uid': '0',
-            'gid': '0',
-            'mode': '0444',
-        }],
-        'command': '/etc/rathole.toml',
-        'restart': 'always',
-        'user': '1111:1111',
-    },
-    'db': CON_HARDENED_DEFAULTS | {
-        'image': 'docker.io/postgres:16',
-        'volumes': [
-            '/notes_db:/var/lib/postgresql/data:U,Z,nodev,noexec,nosuid',
-        ],
-        'environment': [
-            'POSTGRES_USER=joplin0',
-            'POSTGRES_DB=joplindb',
-        ],
-        'secrets': [{
-            'type': 'env',
-            'source': 'db_pw',
-            'target': 'POSTGRES_PASSWORD',
-        }],
-        'restart': 'always',
-        # 'deploy': { 'resources': { 'limits': {
-        #     'mem_limit': '256m',
-        'user': '999:999',
-    },
-    'joplin': CON_HARDENED_DEFAULTS | {
-        'image': 'docker.io/joplin/server:latest',
-        'depends_on': ['db'],
-        'read_only': False,
-        'tmpfs': [
-            '/tmp:rw,noexec,nosuid,nodev,mode=1777',
-            '/opt/pm2:rw,noexec,nosuid,nodev,mode=1777',
-        ],
-        'environment': [
-            'APP_PORT=22300',
-            'DB_CLIENT=pg',
-            'POSTGRES_DATABASE=joplindb',
-            'POSTGRES_USER=joplin0',
-            'POSTGRES_PORT=5432',
-            'POSTGRES_HOST=db',
-        ],
-        'secrets': [
-            {
-                'type': 'env',
-                'source': 'db_pw',
-                'target': 'POSTGRES_PASSWORD',
-            },
-            {
-                'type': 'env',
-                'source': 'origin',
-                'target': 'APP_BASE_URL',
-            }
-        ],
-        'restart': 'always',
-        # 'deploy': { 'resources': { 'limits': {
-        #     'mem_limit': '256m',
-    },
-}
-CON_COMPOSE = {
-    'version': '3',
-    'name': APP_NAME,
-    'services': CON_SERVICES,
-    'volumes': {
-        'postgres': {},
-    },
-    'secrets': {
-        'rh_conf': {'external': True},
-        'db_pw': {'external': True},
-        'origin': {'external': True},
-    },
+    # Hardening
+    '--pull=newer',
+    '--cpus=0.5',  # Limit CPU usage to 50% of a single core
+    '--memory=128m',
+    '--restart=always',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--cap-drop=ALL',
+    # '--user=1111:1111',
+    '--read-only',
+    '--read-only-tmpfs',
+    # '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+)
+CHILD_CONTAINERS = {
+    'docker.io/rapiz1/rathole:v0.5.0': (
+        *CON_DEFAULTS,
+        # '--user=1000:1000',
+        '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+        '--name=RATHOLE',
+        '--secret=rh_conf,type=mount,target=/etc/rathole.toml',
+        '--entrypoint=' + json.dumps((
+            '/app/rathole',
+            '/etc/rathole.toml',
+        )),
+    ),
+    'docker.io/postgres:16': (
+        *CON_DEFAULTS,
+        '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+        '--name=DATABASE',
+        '--volume=/notes_db:/var/lib/postgresql/data:U,Z,nodev,noexec,nosuid',
+        '--env=POSTGRES_USER=joplin0',
+        '--env=POSTGRES_DB=joplindb',
+        '--secret=db_pw,type=env,target=POSTGRES_PASSWORD',
+        '--user=999:999',
+    ),
+    'docker.io/joplin/server:latest': (
+        *CON_DEFAULTS,
+        '--name=JOPLIN',
+        '--requires=DATABASE',
+        # '--user=joplin',
+        '--read-only=false',
+        # '--read-only-tmpfs=false',
+        # '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1777',
+        # '--tmpfs=/opt/pm2:rw,noexec,nosuid,nodev,mode=1777',
+        '--cpus=1.0',
+        '--memory=512m',
+        '--env=APP_PORT=22300',
+        '--env=DB_CLIENT=pg',
+        '--env=POSTGRES_DATABASE=joplindb',
+        '--env=POSTGRES_USER=joplin0',
+        '--env=POSTGRES_PORT=5432',
+        '--env=POSTGRES_HOST=::1',
+        '--secret=db_pw,type=env,target=POSTGRES_PASSWORD',
+        '--secret=origin,type=env,target=APP_BASE_URL',
+    ),
 }
 
-CON_IMG_TAG = "app_" + APP_NAME
-DOCKERFILE = f"""
-FROM quay.io/podman/stable:latest
-COPY <<'EOF' /etc/joplin_compose.yaml
-{json.dumps(CON_COMPOSE)}
-EOF
-RUN <<'EOF'
-set -e
-set -x
-dnf install -y --refresh --setopt=install_weak_deps=False \
-    podman-compose \
-;
-dnf clean all
-EOF
-"""
+VM_CONTAINER = (
+    '--name=app_' + APP_NAME,
+    '--replace',
+    '--pull=newer',
+    '--memory=1g',
+    # '--cap-drop=ALL',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--restart=always',
+    '--secret=app_rh_conf,type=mount,target=/etc/rathole.toml',
+    '--secret=app_origin,type=mount,target=/pod_secret__origin',
+    '--secret=app_db_pw,type=mount,target=/pod_secret__db_pw',
+    '--volume=app_podman_store0:/var/lib/containers',
+    '--volume=app_podman_store1:/home/podman/.local/share/containers',
+    '--volume=notes_db:/notes_db',
+    'quay.io/podman/stable:latest',
+)
 
 RH_CONF = f"""
 [client]
@@ -143,7 +113,7 @@ remote_addr = "{NY['rh_addr']}"
 [client.services.joplin]
 type = "tcp"
 token = "{NY['rh_token']}"
-local_addr = "joplin:22300" 
+local_addr = "localhost:22300" 
 """
 
 SETUP_ROOT_SH_PAYLOAD = f"""
@@ -183,6 +153,16 @@ sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 """
 
 
+def con_fmt_sh(con):
+    sh_args = [
+        shlex.quote(i)
+        for i in CHILD_CONTAINERS[con]
+    ]
+    sh_args += [shlex.quote(con)]
+
+    return ' '.join(sh_args)
+
+
 # Run setup code that needs to be run as root
 try:
     app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
@@ -198,32 +178,7 @@ if any((
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
 
-# Cleanup Podman storage
-app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-sudo_preamble = (
-    'sudo',
-        '-u', f'app_{APP_NAME}',
-    'env',
-        '--chdir=/tmp',
-        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
-        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
-)
-sp.run(
-    (
-        *sudo_preamble,
-        'bash', '-c', '''
-            set -e
-            set -x
-            podman volume prune --force
-            # podman image prune --all --force
-            podman image prune --force
-        ''',
-    ),
-    input=DOCKERFILE,
-    check=True, text=True,
-)
-
-# Build container
+# Define function to run commands as app user
 app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
 sudo_preamble = (
     'sudo',
@@ -245,114 +200,87 @@ def run_app_user(cmd_part2, check=True, **kwargs):
 
     return p
 
-run_app_user(
-    (
-        'podman', 'build',
-            '--file=-',
-            '--tag', CON_IMG_TAG,
-    ),
-    input=DOCKERFILE,
-)
+# Cleanup Podman storage
+# run_app_user((
+#     'bash', '-c', '''
+#         set -e
+#         set -x
+#         podman volume prune --force
+#         # podman image prune --all --force
+#         podman image prune --force
+#     ''',
+# ))
 
 # Create container
 run_app_user(
-    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_conf', '-'),
+    ('podman', 'secret', 'create', '--replace', 'app_rh_conf', '-'),
     input=RH_CONF,
 )
 run_app_user(
-    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_origin', '-'),
+    ('podman', 'secret', 'create', '--replace', 'app_origin', '-'),
     input=NY['origin'],
 )
 run_app_user(
-    ('podman', 'secret', 'create', '--replace', f'{APP_NAME}_db_pw', '-'),
+    ('podman', 'secret', 'create', '--replace', 'app_db_pw', '-'),
     input=NY['db_pw'],
 )
 
 run_app_user((
     'podman',
         '--runtime=/usr/bin/krun',
-        'run',
-        '--name', APP_NAME,
-        '--replace',
-        # '--memory=8g',
-        # '--cap-drop=ALL',
-        # "...the microVM ignores the USER set in the Dockerfile and always
-        # boots as root. Either switch to the correct user manually or put
-        # the switch into an entrypoint script."
-        # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
-        '--security-opt=no-new-privileges',
-        '--security-opt=proc-opts=hidepid=2',
-        '--restart=unless-stopped',
-        '--secret', ','.join((
-            f'source={APP_NAME}_rh_conf',
-            'target=/etc/rathole.toml',
-            'uid=0',
-            'gid=0',
-            'mode=0444',
-        )),
-        '--secret', ','.join((
-            f'source={APP_NAME}_origin',
-            'target=/pod_secret__origin',
-            'uid=0',
-            'gid=0',
-            'mode=0444',
-        )),
-        '--secret', ','.join((
-            f'source={APP_NAME}_db_pw',
-            'target=/pod_secret__db_pw',
-            'uid=0',
-            'gid=0',
-            'mode=0444',
-        )),
-        '--volume=notes_db:/notes_db',
-        CON_IMG_TAG,
-    'bash', '-c', '''
+        'create',
+        *VM_CONTAINER,
+    'bash', '-c', f'''
         set -e
         set -x
         mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
+
         # mkdir -p /dev/mqueue
         # mount -t mqueue none /dev/mqueue
         # mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
         # chown app:app /app
         # cd /app
-        podman secret create rh_conf /etc/rathole.toml
-        podman secret create origin /pod_secret__origin
-        podman secret create db_pw /pod_secret__db_pw
-        podman-compose \
-            --file=/etc/joplin_compose.yaml \
-            up \
-            --no-start \
-        ;
-        podman pod start pod_joplin
-        podman pod logs --names --timestamps --follow pod_joplin
+
+        # Verify rathole image integrity
+        podman pull docker.io/rapiz1/rathole:v0.5.0
+        if ! test \
+            "$(podman inspect -f='{{{{.Id}}}}' rathole:v0.5.0)" \
+            = 548fb992c738b11d4e23a95e93f5ccec32a49cc0277adf0d1f4d576744685526
+        then
+            echo "Bad rathole image!"
+            exit 1
+        fi
+
+        podman pod create --replace app
+        podman secret create --ignore rh_conf /etc/rathole.toml
+        podman secret create --ignore origin /pod_secret__origin
+        podman secret create --ignore db_pw /pod_secret__db_pw
+
+        {';\n'.join((
+            'podman create ' + con_fmt_sh(con)
+            for con in CHILD_CONTAINERS
+        ))}
+
+        podman pod start app
+        podman pod logs --names --timestamps --follow app
     ''',
 ))
 
-# # Start service
-# sp.run(
-#     (
-#         *sudo_preamble,
-#         'systemctl',
-#         '--user',
-#         f'--machine=app_{APP_NAME}@.host',
-#         'enable',
-#         '--now',
-#         '--no-pager',
-#         '--full',
-#         f'app_{APP_NAME}.service',
-#     ),
-#     check=True,
-# )
-# sp.run(
-#     (
-#         *sudo_preamble,
-#         'systemctl',
-#         '--user',
-#         f'--machine=app_{APP_NAME}@.host',
-#         'status',
-#         '--no-pager',
-#         '--full',
-#         f'app_{APP_NAME}.service',
-#     ),
-#     check=True,
-# )
+# Start service
+run_app_user((
+    'systemctl',
+    '--user',
+    'enable',
+    '--now',
+    '--no-pager',
+    '--full',
+    f'app_{APP_NAME}.service',
+))
+run_app_user((
+    'systemctl',
+    '--user',
+    'status',
+    '--no-pager',
+    '--full',
+    f'app_{APP_NAME}.service',
+))
