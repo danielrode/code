@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, ~/.nunyuh
+# dependencies: podman, crun-krun, ~/.nunyuh
 # created: 24 may 2026
 # updated: 21 aug 2026
 
@@ -14,7 +14,6 @@ https://github.com/usememos/memos
 import pwd
 import json
 import shlex
-import signal
 import getpass
 import tomllib
 import subprocess as sp
@@ -33,6 +32,7 @@ CON_DEFAULTS = (
     '--tz=local',
 
     # Hardening
+    '--pull=newer',
     '--cpus=0.5',  # Limit CPU usage to 50% of a single core
     '--memory=128m',
     '--restart=always',
@@ -46,35 +46,36 @@ CON_DEFAULTS = (
 )
 CHILD_CONTAINERS = {
     'docker.io/neosmemo/memos:stable': (
+        *CON_DEFAULTS,
         '--name=MEMOS',
         '--requires=RH',
         '--env=MEMOS_INSTANCE_URL',
         '--volume=/var/opt/memos:/var/opt/memos:U',
-        *CON_DEFAULTS,
     ),
     'docker.io/rapiz1/rathole:v0.5.0': (
+        *CON_DEFAULTS,
         '--name=RH',
         '--secret=rh_conf,type=mount,target=/etc/rathole.toml',
         '--entrypoint=' + json.dumps((
             '/app/rathole',
             '/etc/rathole.toml',
         )),
-        *CON_DEFAULTS,
     )
 }
 
 VM_CONTAINER = (
-        '--name=app_{}'.format(APP_NAME),
-        '--replace',
-        # '--memory=1g',
-        # '--cap-drop=ALL',
-        '--security-opt=no-new-privileges',
-        '--security-opt=proc-opts=hidepid=2',
-        '--restart=always',
-        '--secret=rh_conf,target=/etc/rathole.toml',
-        '--secret=origin,type=env,target=MEMOS_INSTANCE_URL',
-        '--volume=memos_data:/var/opt/memos:U',
-        'quay.io/podman/stable:latest',
+    '--name=app_{}'.format(APP_NAME),
+    '--replace',
+    '--pull=newer',
+    # '--memory=1g',
+    # '--cap-drop=ALL',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--restart=always',
+    '--secret=rh_conf,target=/etc/rathole.toml',
+    '--secret=origin,type=env,target=MEMOS_INSTANCE_URL',
+    '--volume=memos_data:/var/opt/memos:U',
+    'quay.io/podman/stable:latest',
 )
 
 RH_CONF = f"""
@@ -190,7 +191,6 @@ run_app_user(
     input=NY['origin'],
 )
 
-signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
 p = run_app_user((
     'podman',
         '--runtime=/usr/bin/krun',
@@ -213,13 +213,17 @@ p = run_app_user((
 
         podman pod create app
         podman secret create rh_conf /etc/rathole.toml
-        podman run --detach {con_fmt_sh('docker.io/rapiz1/rathole:v0.5.0')}
-        podman run --detach {con_fmt_sh('docker.io/neosmemo/memos:stable')}
 
-        podman logs --follow --names --timestamps RH MEMOS
+        {';\n'.join((
+            'podman create ' + con_fmt_sh(con)
+            for con in CHILD_CONTAINERS
+        ))}
+
+        podman pod start app
+        podman pod logs --follow --names --timestamps app
     ''',
 ))
-    
+
 # Start service
 run_app_user((
     'systemctl',
