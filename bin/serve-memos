@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose, ~/.nunyuh
+# dependencies: podman, ~/.nunyuh
 # created: 24 may 2026
-# updated: 26 may 2026
+# updated: 21 aug 2026
 
 
-# Run memos server.
-#
-# https://github.com/usememos/memos
+"""Setup and run containerized Memos server.
+
+https://github.com/usememos/memos
+"""
 
 
-import os
-import sys
+import pwd
+import json
+import shlex
 import signal
+import getpass
+import tomllib
 import subprocess as sp
 from pathlib import Path
 
@@ -20,38 +24,217 @@ from pathlib import Path
 APP_NAME = 'memos'
 
 HOME = Path.home()
-DATA_DIR = Path(
-    HOME,
-    '.appdata',
-    APP_NAME,
-)
+USER = getpass.getuser()
+NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
-CON_IMG = 'docker.io/neosmemo/memos:stable'
-PORT = 5230
-PODMAN_CMD = [
-    'podman', 'run',
-    '--name={}'.format(APP_NAME),
+CON_DEFAULTS = (
     '--replace',
-    '--publish={}:{}'.format(PORT, PORT),
-    '--volume={HOME}/.appdata/memos:/var/opt/memos:z'.format(HOME=HOME),
-    '--userns=keep-id',
-    '--user={}:{}'.format(os.getuid(), os.getgid()),
+    '--pod=app',
     '--tz=local',
-    '--pull=never',
 
-    # Harden
+    # Hardening
+    '--cpus=0.5',  # Limit CPU usage to 50% of a single core
+    '--memory=128m',
+    '--restart=always',
     '--security-opt=no-new-privileges',
     '--security-opt=proc-opts=hidepid=2',
     '--cap-drop=ALL',
+    '--user=1111:1111',
     '--read-only',
     '--read-only-tmpfs',
     '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+)
+CHILD_CONTAINERS = {
+    'docker.io/neosmemo/memos:stable': (
+        '--name=MEMOS',
+        '--requires=RH',
+        '--env=MEMOS_INSTANCE_URL',
+        '--volume=/var/opt/memos:/var/opt/memos:U',
+        *CON_DEFAULTS,
+    ),
+    'docker.io/rapiz1/rathole:v0.5.0': (
+        '--name=RH',
+        '--secret=rh_conf,type=mount,target=/etc/rathole.toml',
+        '--entrypoint=' + json.dumps((
+            '/app/rathole',
+            '/etc/rathole.toml',
+        )),
+        *CON_DEFAULTS,
+    )
+}
 
-    CON_IMG,
-]
+VM_CONTAINER = (
+        '--name=app_{}'.format(APP_NAME),
+        '--replace',
+        # '--memory=1g',
+        # '--cap-drop=ALL',
+        '--security-opt=no-new-privileges',
+        '--security-opt=proc-opts=hidepid=2',
+        '--restart=always',
+        '--secret=rh_conf,target=/etc/rathole.toml',
+        '--secret=origin,type=env,target=MEMOS_INSTANCE_URL',
+        '--volume=memos_data:/var/opt/memos:U',
+        'quay.io/podman/stable:latest',
+)
 
-DATA_DIR.mkdir(exist_ok=True, parents=True)
+RH_CONF = f"""
+[client]
+remote_addr = "{NY['rh_addr']}"
+[client.services.{APP_NAME}]
+type = "tcp"
+token = "{NY['rh_token']}"
+local_addr = "localhost:5230"
+"""
+
+SETUP_ROOT_SH_PAYLOAD = f"""
+set -e
+set -x
+
+# Add user for service
+id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
+    useradd -m app_{shlex.quote(APP_NAME)}
+usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
+loginctl enable-linger app_{shlex.quote(APP_NAME)}
+
+# Install systemd service file
+umask 0022
+tee <<'EOF' > /etc/systemd/user/app_{shlex.quote(APP_NAME)}.service
+[Unit]
+Description=app_{APP_NAME}
+Requires=dbus.socket
+After=dbus.socket
+After=network-online.target
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=33
+ExecStart=/usr/bin/podman start app_{APP_NAME}
+ExecStop=/usr/bin/podman stop app_{APP_NAME}
+[Install]
+WantedBy=default.target
+EOF
+
+# Allow current user to login as service user
+tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+{USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
+EOF
+sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+"""
+
+
+def con_fmt_sh(con):
+    sh_args = [
+        shlex.quote(i)
+        for i in CHILD_CONTAINERS[con]
+    ]
+    sh_args += [shlex.quote(con)]
+
+    return ' '.join(sh_args)
+
+
+# Run setup code that needs to be run as root
+try:
+    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+except KeyError:
+    app_user_id = None
+
+if any((
+    app_user_id is None,
+    not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
+)):
+    # TODO check if service file contents changejournalctl --user -xeu app_memos.service
+    sp.run(
+        ('sudo', 'bash'),
+        check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
+    )
+
+# Define function to run commands as app user
+app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+sudo_preamble = (
+    'sudo',
+        '-u', f'app_{APP_NAME}',
+    'env',
+        '--chdir=/tmp',
+        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+)
+
+def run_app_user(cmd_part2, check=True, **kwargs):
+    cmd = (*sudo_preamble, *cmd_part2)
+    try:
+        if kwargs['input']:
+            kwargs['text'] = True
+    except KeyError:
+        pass
+    p = sp.run(cmd, check=check, **kwargs)
+
+    return p
+
+# Cleanup Podman storage
+run_app_user((
+    'bash', '-c', '''
+        set -e
+        set -x
+        podman volume prune --force
+        podman image prune --force
+    ''',
+))
+
+# Create container
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'rh_conf', '-'),
+    input=RH_CONF,
+)
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'origin', '-'),
+    input=NY['origin'],
+)
 
 signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
-p = sp.run(PODMAN_CMD)
-sys.exit(p.returncode)
+p = run_app_user((
+    'podman',
+        '--runtime=/usr/bin/krun',
+        'create',
+        *VM_CONTAINER,
+    'bash', '-c', f'''
+        set -e
+        set -x
+        mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
+
+        # Verify rathole image integrity
+        podman pull docker.io/rapiz1/rathole:v0.5.0
+        if ! test \
+            "$(podman inspect -f='{{{{.Id}}}}' rathole:v0.5.0)" \
+            = 548fb992c738b11d4e23a95e93f5ccec32a49cc0277adf0d1f4d576744685526
+        then
+            echo "Bad rathole image!"
+            exit 1
+        fi
+
+        podman pod create app
+        podman secret create rh_conf /etc/rathole.toml
+        podman run --detach {con_fmt_sh('docker.io/rapiz1/rathole:v0.5.0')}
+        podman run --detach {con_fmt_sh('docker.io/neosmemo/memos:stable')}
+
+        podman logs --follow --names --timestamps RH MEMOS
+    ''',
+))
+    
+# Start service
+run_app_user((
+    'systemctl',
+    '--user',
+    'enable',
+    '--now',
+    '--no-pager',
+    '--full',
+    f'app_{APP_NAME}.service',
+))
+run_app_user((
+    'systemctl',
+    '--user',
+    'status',
+    '--no-pager',
+    '--full',
+    f'app_{APP_NAME}.service',
+))
