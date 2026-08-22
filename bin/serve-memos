@@ -142,7 +142,7 @@ if any((
     app_user_id is None,
     not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
 )):
-    # TODO check if service file contents changejournalctl --user -xeu app_memos.service
+    # TODO check if service file contents
     sp.run(
         ('sudo', 'bash'),
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
