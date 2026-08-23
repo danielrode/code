@@ -51,8 +51,8 @@ CON_ARGS = (
     '--publish=127.0.0.1:5001:5001',
     '--env=IPFS_TELEMETRY=off',
     '--env=DO_NOT_TRACK=1',
-    '--volume={}:/data/ipfs'.format(IPFS_DATA_DIR),
-    '--volume={}:/export'.format(IPFS_STAGING_DIR),
+    '--volume={}:/data/ipfs:z'.format(IPFS_DATA_DIR),
+    '--volume={}:/export:z'.format(IPFS_STAGING_DIR),
 
     'docker.io/ipfs/kubo:latest',
 )
