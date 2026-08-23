@@ -113,7 +113,7 @@ remote_addr = "{NY['rh_addr']}"
 [client.services.joplin]
 type = "tcp"
 token = "{NY['rh_token']}"
-local_addr = "localhost:22300" 
+local_addr = "localhost:22300"
 """
 
 SETUP_ROOT_SH_PAYLOAD = f"""
