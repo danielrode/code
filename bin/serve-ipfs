@@ -1,18 +1,66 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # author: daniel rode
 # dependencies: podman
 # created: 26 feb 2026
 # updated: 22 aug 2026
 
 
-# Serve IPFS (kubo) daemon.
+"""Serve IPFS (kubo) daemon."""
+
+# https://docs.ipfs.tech/install/run-ipfs-inside-docker/#set-up
 
 
-podman run \
-    --rm \
-    --tty --interactive \
-    --network=host \
-    --env=IPFS_TELEMETRY=off \
-    --env=DO_NOT_TRACK=1 \
-    docker.io/ipfs/kubo:latest \
-;
+import os
+import signal
+import subprocess as sp
+from pathlib import Path
+
+
+HOME = Path().home()
+DATA_DIR = HOME / '.appdata/ipfs'
+
+IPFS_DATA_DIR = DATA_DIR / 'data_ipfs'
+IPFS_STAGING_DIR = DATA_DIR / 'staging'
+
+CON_ARGS = (
+    'podman', 'run',
+
+    # Hardening
+    '--pull=newer',
+    '--cpus=0.5',  # Limit CPU usage to 50% of a single core
+    '--memory=512m',
+    '--restart=always',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--cap-drop=ALL',
+    '--read-only',
+    '--read-only-tmpfs',
+    '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+
+    '--name', 'ipfs',
+    '--replace',
+    # '--tty', '--interactive',
+    '--detach',
+    '--tz=local',
+    '--user={}:{}'.format(os.getuid(), os.getgid()),
+    '--userns=keep-id',
+
+    '--publish=4001:4001/tcp',
+    '--publish=4001:4001/udp',
+    '--publish=127.0.0.1:8080:8080',
+    '--publish=127.0.0.1:5001:5001',
+    '--env=IPFS_TELEMETRY=off',
+    '--env=DO_NOT_TRACK=1',
+    '--volume={}:/data/ipfs'.format(IPFS_DATA_DIR),
+    '--volume={}:/export'.format(IPFS_STAGING_DIR),
+
+    'docker.io/ipfs/kubo:latest',
+)
+
+
+IPFS_DATA_DIR.mkdir(exist_ok=True, parents=True)
+IPFS_STAGING_DIR.mkdir(exist_ok=True, parents=True)
+
+sp.run(CON_ARGS, check=True)
+signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
+sp.run('podman logs --follow ipfs', shell=True)
