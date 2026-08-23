@@ -7,6 +7,13 @@
 
 """Serve IPFS (kubo) daemon."""
 
+# DOC:
+#
+# - Be sure to open up firewall!
+# - Remote view console by reverse forwarding these ports:
+#     ssh -NL 5001:localhost:5001 IPFS_CON_HOST
+#     ssh -NL 8080:localhost:8080 IPFS_CON_HOST
+#
 # https://docs.ipfs.tech/install/run-ipfs-inside-docker/#set-up
 
 
@@ -63,4 +70,5 @@ IPFS_STAGING_DIR.mkdir(exist_ok=True, parents=True)
 
 sp.run(CON_ARGS, check=True)
 signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
+print("!SHOWING PODMAN LOGS (CTRL+C WILL NOT KILL IPFS, JUST LOG VIEWER)!")
 sp.run('podman logs --follow ipfs', shell=True)
