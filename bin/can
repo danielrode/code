@@ -3,7 +3,7 @@
 # tags: file management
 # dependencies: python 3.12+
 # created: 21 jul 2022
-# updated: 21 aug 2026
+# updated: 23 aug 2026
 
 
 """Trash files.
@@ -55,7 +55,13 @@ def cp_r(src, dst):
     """Copy file or directory."""
 
     if src.is_dir():
-        shutil.copytree(src, dst, copy_function=cp_reflink_a)
+        shutil.copytree(
+            src,
+            dst,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+            copy_function=cp_reflink_a,
+        )
     else:
         cp_reflink_a(src, dst)
 
