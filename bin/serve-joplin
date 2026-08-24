@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 21 aug 2026
+# updated: 24 aug 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -235,11 +235,7 @@ run_app_user((
         set -x
         mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
 
-        # mkdir -p /dev/mqueue
-        # mount -t mqueue none /dev/mqueue
-        # mount -t tmpfs -o nosuid,size=90%,mode=0700 tmpfs /app
-        # chown app:app /app
-        # cd /app
+        podman system migrate
 
         # Verify rathole image integrity
         podman pull docker.io/rapiz1/rathole:v0.5.0
