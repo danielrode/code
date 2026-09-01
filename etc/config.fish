@@ -76,7 +76,6 @@ abbr --add p wl-paste
 abbr --add m micro
 abbr --add rp realpath
 abbr --add py python3
-abbr --add ipy ipython
 abbr --add zj zellij
 
 # Mnemonics
@@ -114,6 +113,7 @@ abbr --add pkill pkill -e
 abbr --add pspg pspg -X -b --csv
 abbr --add pstree pstree -aps "$fish_pid"
 abbr --add rga rga --rga-no-cache
+abbr --add ipy ipython -i --no-confirm-exit
 
 # One-liners / utils
 abbr --add lswifi nmcli device wifi list
