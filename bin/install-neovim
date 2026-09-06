@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: bash 4.3+
+# created: 03 sep 2026
+# updated: -
+
+
+# Install Neovim from source.
+#
+# https://github.com/neovim/neovim/blob/master/BUILD.md
+
+
+set -e
+set -x
+
+
+tmpdir="$(mktemp -d)"
+function cleanup { rm -fr -- "$tmpdir"; }
+trap cleanup EXIT
+
+sudo xbps-install --yes base-devel cmake curl git
+
+git clone https://github.com/neovim/neovim
+cd neovim
+
+make CMAKE_BUILD_TYPE=RelWithDebInfo
+sudo make install
+
+cd /
