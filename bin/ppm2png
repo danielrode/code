@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: graphicsmagick|ffmpeg
+# created: 07 sep 2026
+# updated:
+
+
+"""Convert a PPM image file to PNG."""
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+src_ppm = Path(sys.argv[1])
+
+cmd = (
+    # 'ffmpeg', '-i', str(src_ppm), src_ppm.with_suffix('.png'),
+    'gm', 'convert', str(src_ppm), src_ppm.with_suffix('.png'),
+)
+sp.run(cmd, check=True)
