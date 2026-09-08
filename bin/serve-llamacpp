@@ -2,11 +2,11 @@
 # author: daniel rode
 # dependencies: podman, podman-compose, aria2
 # created: 07 feb 2026
-# updated: 18 may 2026
+# updated: 07 sep 2026
 
 
-# Run LLMs (AI chat) locally via llama.cpp.
-#
+"""Run LLMs (AI chat) locally via llama.cpp."""
+
 # ssh -tL 5001:localhost:5001 REMOTE_USER@REMOTE_IP sh -c '~/code/bin/lcpp'
 
 
@@ -150,7 +150,7 @@ CON_SERVICES = {
             # 'LLAMA_ARG_N_GPU_LAYERS=auto',
         ],
         'ports': [
-            f'127.0.0.1:{CON_PORT}:{CON_PORT}',
+            f'{CON_PORT}:{CON_PORT}',
         ],
         'restart': 'unless-stopped',
     },
