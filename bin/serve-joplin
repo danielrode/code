@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 24 aug 2026
+# updated: 16 sep 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -28,6 +28,7 @@ USER = getpass.getuser()
 NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
 CON_DEFAULTS = (
+    '--rm',
     '--replace',
     '--pod=app',
     # '--tz=local',
@@ -36,7 +37,6 @@ CON_DEFAULTS = (
     '--pull=newer',
     '--cpus=0.5',  # Limit CPU usage to 50% of a single core
     '--memory=128m',
-    '--restart=always',
     '--security-opt=no-new-privileges',
     '--security-opt=proc-opts=hidepid=2',
     '--cap-drop=ALL',
@@ -116,6 +116,7 @@ token = "{NY['rh_token']}"
 local_addr = "localhost:22300"
 """
 
+INIT_CON_SH_FP = Path(f"/home/app_{APP_NAME}/start-{APP_NAME}.sh")
 SETUP_ROOT_SH_PAYLOAD = f"""
 set -e
 set -x
@@ -124,6 +125,8 @@ set -x
 id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
     useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
+chmod 770 /home/app_{shlex.quote(APP_NAME)}
+#setfacl -m u:{shlex.quote(USER)}:rwx /home/app_{shlex.quote(APP_NAME)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
 # systemctl daemon-reload
 
@@ -136,10 +139,10 @@ Requires=dbus.socket
 After=dbus.socket
 After=network-online.target
 [Service]
-Type=forking
+Type=exec
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/bin/podman start app_{APP_NAME}
+ExecStart={shlex.quote(str(INIT_CON_SH_FP))}
 ExecStop=/usr/bin/podman stop app_{APP_NAME}
 [Install]
 WantedBy=default.target
@@ -178,57 +181,15 @@ if any((
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
 
-# Define function to run commands as app user
-app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-sudo_preamble = (
-    'sudo',
-        '-u', f'app_{APP_NAME}',
-    'env',
-        '--chdir=/tmp',
-        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
-        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
-)
-
-def run_app_user(cmd_part2, check=True, **kwargs):
-    cmd = (*sudo_preamble, *cmd_part2)
-    try:
-        if kwargs['input']:
-            kwargs['text'] = True
-    except KeyError:
-        pass
-    p = sp.run(cmd, check=check, **kwargs)
-
-    return p
-
-# Cleanup Podman storage
-# run_app_user((
-#     'bash', '-c', '''
-#         set -e
-#         set -x
-#         podman volume prune --force
-#         # podman image prune --all --force
-#         podman image prune --force
-#     ''',
-# ))
-
-# Create container
-run_app_user(
-    ('podman', 'secret', 'create', '--replace', 'app_rh_conf', '-'),
-    input=RH_CONF,
-)
-run_app_user(
-    ('podman', 'secret', 'create', '--replace', 'app_origin', '-'),
-    input=NY['origin'],
-)
-run_app_user(
-    ('podman', 'secret', 'create', '--replace', 'app_db_pw', '-'),
-    input=NY['db_pw'],
-)
-
-run_app_user((
+# Write container spawning script
+script_chmod = 0o755
+INIT_CON_SH_FP.touch(script_chmod)
+INIT_CON_SH_FP.chmod(script_chmod)
+script_blob = '#!/usr/bin/env bash\n'
+script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
     'podman',
         '--runtime=/usr/bin/krun',
-        'create',
+        'run',
         *VM_CONTAINER,
     'bash', '-c', f'''
         set -e
@@ -261,6 +222,43 @@ run_app_user((
         podman pod logs --names --timestamps --follow app
     ''',
 ))
+INIT_CON_SH_FP.write_text(script_blob)
+
+# Define function to run commands as app user
+app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+sudo_preamble = (
+    'sudo',
+        '-u', f'app_{APP_NAME}',
+    'env',
+        '--chdir=/tmp',
+        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+)
+
+def run_app_user(cmd_part2, check=True, **kwargs):
+    cmd = (*sudo_preamble, *cmd_part2)
+    try:
+        if kwargs['input']:
+            kwargs['text'] = True
+    except KeyError:
+        pass
+    p = sp.run(cmd, check=check, **kwargs)
+
+    return p
+
+# Create container infrastructure
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'app_rh_conf', '-'),
+    input=RH_CONF,
+)
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'app_origin', '-'),
+    input=NY['origin'],
+)
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'app_db_pw', '-'),
+    input=NY['db_pw'],
+)
 
 # Start service
 run_app_user((

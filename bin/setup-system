@@ -85,6 +85,7 @@ elif cmd_exists xbps-install
 then
     xbps-install -y \
         "${pkgs[@]}" \
+        acl-progs \
         delta \
         fd \
         fuse-archivemount \

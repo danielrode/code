@@ -83,6 +83,7 @@ abbr --add log svlogtail
 abbr --add ttop watch -d -n 1 sensors
 abbr --add gtop nvtop
 abbr --add gemini-browser amfora
+abbr --add wifim nmtui-connect
 
 # Make commonly used flags/cmd settings default
 abbr --add cl cal -n 6

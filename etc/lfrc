@@ -245,17 +245,18 @@ map ax !{{
 	7z x -o"${f%.*}" $f
 }}
 map am ${{
-    mntdir="$f.mnt"
-    mkdir -p -- "$mntdir"
-    archivemount "$f" "$mntdir"
+    mntdir="$(mktemp -d --suffix=.mnt)"
+	chmod 700 "$mntdir"
+	cleanup() { rm -fr -- "$mntdir"; }
+	trap cleanup EXIT
+    archivemount -o readonly "$f" "$mntdir"
     lf \
         -command 'set nohidden' \
         -command 'set nohistory' \
-        -command 'set nopreview; set ratios 1' \
+        -command 'set preview; set ratios 1:1' \
         -command 'set drawbox' \
         -command 'set promptfmt "### ARCHIVE MOUNT MODE ###"' \
         "$mntdir" \
 	;
-    umount "$mntdir"
-    rmdir "$mntdir"
+    umount --lazy "$mntdir"
 }}
