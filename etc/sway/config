@@ -223,7 +223,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
 
     # Start workspace renamer prompt
     bindsym $mod+F2 exec $lw_term --window-size-chars=30x3 \
-       --app-id=sway_prompt_float ~/code/bin/sway-rename-workspace
+       --app-id=sway_prompt_float ~/code/bin/sway-rename-workspaces
 
     # Toggle window border style
     bindsym $mod+apostrophe border toggle

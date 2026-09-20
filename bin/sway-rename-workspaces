@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# tags: window management
+# created: 08 feb 2020
+# updated: 20 sep 2026
+
+
+# Sway Rename Workspaces. Opens text editor with name of each workspace on
+# separate lines. Edits to the text as saved as renames of the workspaces.
+
+
+import sys
+import shlex
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from i3ipc import Connection
+
+
+def main():
+    i3 = Connection()
+    workspaces = list(i3.get_workspaces())
+
+    focused_ws_idx = next(filter(
+        lambda x: x[1].focused,
+        enumerate(workspaces),
+    ))[0] + 1
+
+    with TemporaryDirectory() as td:
+        fp = Path(td, 'workspaces.txt')
+        fp.write_text('\n'.join(i.name for i in workspaces))
+
+        cmd = ('nvim', f'+{focused_ws_idx}', '+normal! V', str(fp))
+        sp.run(cmd, check=True)
+
+        new_names = fp.read_text().strip().splitlines()
+
+    for w, new in zip(workspaces, new_names):
+        old = w.name
+        i3.command('rename workspace {} to {}'.format(
+            shlex.quote(old),
+            shlex.quote(new),
+        ))
+        
+
+if __name__ == "__main__":
+    main()
+    sys.exit(0)

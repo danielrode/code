@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Application
-Name=sway-rename-workspace
-Exec=sway-rename-workspace
+Name=sway-rename-workspaces
+Exec=sway-rename-workspaces
 Terminal=true
