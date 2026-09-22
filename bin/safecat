@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# author: olibre (https://superuser.com/a/380778) & daniel rode
+# created: 31 aug 2026
+# updated: -
+
+
+# Dump a file to stdout, but print only plain text characters (and no terminal
+# control sequences).
+
+
+function stripper {
+    strings \
+        --all \
+        --include-all-whitespace \
+        --bytes=1 \
+        --unicode=hex \
+    | \
+    perl -0777 -pe '
+        # Remove complete CSI
+        s/\e\[[0-9:;<=>?]*[ -\/]*[\x40-\x7E]//g;
+
+        # Remove complete control strings
+        s/\e[PX^_][^\e]*\e\\//g;
+
+        # Remove Fe/Fs escapes
+        s/\e[ -\/]*[\x40-\x4F\x51-\x57\x59-\x5A\x5C\x60-\x7E]//g; 
+
+        # Remove incomplete CSI fragments
+        s/\e\[[0-9:;<=>?]*[ -\/]*//g;
+
+        # Remove incomplete Fe/Fs fragments
+        s/\e[ -\/]+//g;
+    '
+}
+
+
+if [[ -z $1 ]]
+then
+    stripper
+else
+    stripper < "$1"
+fi
