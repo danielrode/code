@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: typst, pandoc
-# created: 25 apr 2026
+# dependencies: podman, hunspell
 # updated: -
 
 
 import os
+import sys
 import subprocess as sp
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -17,57 +17,105 @@ def cd0() -> None:
 
     os.chdir(Path(__file__).resolve().parent)
 
+def print2(*a, **kw):
+    print(*a, **kw, file=sys.stderr)
+
+def podman(con_args, img, entry_args, sp_args):
+    cmd = (
+        "podman",
+        "run",
+        "--rm",
+        "--interactive",
+        "--volume=./:/portal",
+        "--workdir=/portal",
+        *con_args,
+        img,
+        *entry_args,
+    )
+    return sp.run(cmd, text=True, **sp_args)
+
+def typst(
+    *args,
+    podman_args=[],
+    sp_args={'capture_output': True},
+) -> str:
+    p = podman(
+        con_args=(
+            "--entrypoint=typst",
+            *podman_args,
+        ),
+        img="docker.io/pandoc/typst:latest",
+        entry_args=args,
+        sp_args=sp_args,
+    )
+
+    if p.stderr:
+        print2(p.stderr)
+    if p.returncode != 0:
+        print2("error: Typst:", p)
+
+    return p.stdout
+
+def pandoc(
+    *args,
+    podman_args=[],
+    sp_args={'check': True},
+) -> None:
+    podman(
+        con_args=podman_args,
+        img="docker.io/pandoc/typst:latest",
+        entry_args=args,
+        sp_args=sp_args,
+    )
+
 
 # Set working directory
 cd0()
 
 # Spell check
-cmd = (
-    "cat ./presentation.typ"
-    "| podman run --rm --interactive docker.io/pandoc/typst:latest"
-        " --from typst --to plain"
-    "| hunspell -l"
-    "| sort | uniq"
-)
+cmd = """
+    cat ./presentation.typ \
+    | podman run --rm --interactive docker.io/pandoc/typst:latest \
+         --from typst --to plain \
+    | hunspell -l \
+    | sort \
+    | uniq \
+"""
 sp.run(cmd, check=True, shell=True)
 
 # Compile to PDF
-cmd = (
-    "typst",
+typst(
     "compile",
     "./presentation.typ",
     "./export.pdf",
 )
-sp.run(cmd, check=True)
 
 # Compile to PPTX (PowerPoint)
 with TemporaryDirectory() as tmpdir:
     tmpdir = Path(tmpdir)
 
     # Compile to PNGs
-    cmd = (
-        "typst",
+    typst(
         "compile",
         "--ppi", "300",
         "./presentation.typ",
         str(tmpdir / "img{0p}.png"),
+        podman_args=[f'-v={tmpdir}:{tmpdir}'],
     )
-    sp.run(cmd, check=True)
 
     # Compile to PPTX
     md_blob = "\n".join([
         '# {data-background-image="' + str(i) + '"}'
         for i in sorted(list(tmpdir.glob("*.png")))
     ])
-    cmd = (
-        "pandoc",
+    pandoc(
         "--from", "markdown",
         "--to", "pptx",
         "--output", "./export.pptx",
         "-",  # Read from stdin
+        podman_args=[f'-v={tmpdir}:{tmpdir}'],
+        sp_args={'input': md_blob}
     )
-    sp.run(cmd, check=True, text=True, input=md_blob)
 
 
-# TODO use docker container for all calls to typst, and I guess pandoc as well
 # TODO check out https://github.com/polylux-typ/polylux

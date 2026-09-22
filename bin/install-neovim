@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: bash 4.3+
 # created: 03 sep 2026
-# updated: 17 sep 2026
+# updated: 21 sep 2026
 
 
 # Install Neovim from source.
@@ -17,6 +17,7 @@ set -x
 tmpdir="$(mktemp -d)"
 function cleanup { rm -fr -- "$tmpdir"; }
 trap cleanup EXIT
+cd "$tmpdir"
 
 sudo xbps-install --yes base-devel cmake curl git
 

@@ -2,8 +2,10 @@
 // CONFIG
 #set page(paper: "presentation-16-9")
 #set text(
-  font: "Liberation Sans",
-  // font: "DejaVu Sans",
+  font: "DejaVu Sans Mono",
+  // font: "Libertinus Serif",
+  // font: "New Computer Modern",
+  // font: "New Computer Modern Math",
   size: 24pt, // Default body font size
 )
 
@@ -21,7 +23,7 @@
 }
 
 
-// DEFINITIONS
+// PREAMBLE
 #let title_page(title, author, date) = {
   align(center + horizon)[
     #text(size: 36pt, weight: "bold")[#title]
@@ -58,7 +60,6 @@
   - These topics matter because without them, populations would grow infinitely
   - Ecological interventions often require determining the trophic control of a given community
 ]
-)
 
 = The Papers
 
