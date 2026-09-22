@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: bash 4.3+
 # created: 03 sep 2026
-# updated: -
+# updated: 17 sep 2026
 
 
 # Install Neovim from source.
@@ -20,7 +20,9 @@ trap cleanup EXIT
 
 sudo xbps-install --yes base-devel cmake curl git
 
-git clone https://github.com/neovim/neovim
+# git clone --filter=tree:0 \
+git clone --depth=1 \
+    https://github.com/neovim/neovim
 cd neovim
 
 make CMAKE_BUILD_TYPE=RelWithDebInfo

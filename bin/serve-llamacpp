@@ -7,7 +7,18 @@
 
 """Run LLMs (AI chat) locally via llama.cpp."""
 
-# ssh -tL 5001:localhost:5001 REMOTE_USER@REMOTE_IP sh -c '~/code/bin/lcpp'
+# Connect to server via port forwarding:
+#
+#   ssh -tL 5001:localhost:5001 REMOTE_USER@REMOTE_IP sh -c '~/code/bin/lcpp'
+#
+# Block LAN access to server (on Fedora):
+#
+#   sudo systemctl enable --now firewalld
+#   sudo firewall-cmd --get-active-zones
+#   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-interface=lo
+#   sudo firewall-cmd --permanent --zone=FedoraWorkstation --remove-port=5001/tcp
+#   sudo firewall-cmd --permanent --zone=FedoraWorkstation --remove-port=5001/udp
+#
 
 
 import sys

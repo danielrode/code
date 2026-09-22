@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# dependencies: landlock, landrun, hax, ~/code/bin/serve-llamacpp
+# created: 21 sep 2026
+# updated: -
+
+
+"""Coding (AI) agent/assistant.
+
+Run hax and restrict its write access to the current directory, and only allow
+it to communicate over port 5001 (llama.cpp port).
+"""
+
+
+import os
+import sys
+import ctypes
+import signal
+import platform
+import subprocess as sp
+from pathlib import Path
+
+
+PWD = Path.cwd()
+
+MANDATED_LANDLOCK_VER = 9
+
+LANDLOCK_CREATE_RULESET = 444
+LANDLOCK_CREATE_RULESET_VERSION = 1 << 0
+LANDLOCK_SUPPORTED_ARCHS = ("x86_64", "aarch64")
+
+HAX_CONFIG = {
+    # Reference:
+    # https://github.com/OleksandrChekhovskyi/hax/blob/master/docs/configuration.md
+    'HAX_OPENAI_BASE_URL': 'http://127.0.0.1:5001/v1',
+    'HAX_OPENAI_DISPLAY_NAME': 'serve-llamacpp',
+    'HAX_PROVIDER': 'openai-compatible',
+    'HAX_MODEL': 'gemma-4-E4B-it-Q4_0',
+}
+
+
+def print2(*a, **kw):
+    print(*a, **kw, file=sys.stderr)
+
+
+def libc_syscall(num, *args):
+    libc = ctypes.CDLL(None, use_errno=True)
+    libc.syscall.restype = ctypes.c_long
+    libc.prctl.restype = ctypes.c_int
+    libc.prctl.argtypes = [
+        ctypes.c_int,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+    ]
+
+    result = libc.syscall(num, *args)
+    if result < 0:
+        err = ctypes.get_errno()
+        err_msg = os.strerror(err)
+        raise OSError(err, err_msg)
+
+    return result
+
+
+def landlock_supported(version=0) -> bool:
+    assert platform.machine() in LANDLOCK_SUPPORTED_ARCHS
+
+    landlock_ver = libc_syscall(
+        LANDLOCK_CREATE_RULESET,
+        None,
+        ctypes.c_size_t(0),
+        ctypes.c_uint32(LANDLOCK_CREATE_RULESET_VERSION),
+    )
+
+    if landlock_ver >= version:
+        return True
+    else:
+        return False
+
+
+# Make sure Landlock controls are available
+if not landlock_supported(version=MANDATED_LANDLOCK_VER):
+    print2("error: Required Landlock version unavailable")
+    sys.exit(1)
+
+# Start llama.cpp server
+print2("Starting llama.cpp in background...")
+lcpp_p = sp.Popen(('serve-llamacpp'), stderr=sp.DEVNULL, stdout=sp.DEVNULL)
+
+# Run hax
+cmd = (
+    'landrun',
+    '--rox', '/',
+    '--rwx', str(PWD),
+    '--connect-tcp', '5001',
+    # '--log-enable-subprocesses',
+    *(
+        i for k in HAX_CONFIG
+        for i in ('--env', k)
+    ),
+    'hax',
+)
+signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
+p = sp.run(
+    cmd,
+    env=os.environ | HAX_CONFIG,
+)
+sys.exit(p.returncode)
