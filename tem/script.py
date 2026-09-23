@@ -227,9 +227,9 @@ def main() -> None:
 
     if __name__ == '__main__':
         jobs = [10,20,30,40]
-        for job, result in dispatch(jobs, worker):
+        for j, result in dispatch(jobs, worker):
             # Results are ordered by which finish first
-            print(job, result, flush=True)
+            print(j, result, flush=True)
 
     # Use concurrency to run several tasks in parallel in the background, but
     # with threads instead of processes (requires Python 3.14+). Submits jobs

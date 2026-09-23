@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
 # dependencies: python 3.14
-# created: 28 apr 2026
 # updated: -
 
 
-# Retrieve and cache assets locally (under this directory).
+"""Retrieve and cache assets locally (under this directory)."""
 
 
 import os

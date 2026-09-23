@@ -90,7 +90,11 @@ typst(
     "./export.pdf",
 )
 
-# Compile to PPTX (PowerPoint)
+# Exit if only PDF is desired
+if Path(__file__).stem == 'preview':
+    sys.exit(0)
+
+# Compile to PPTX (PowerPoint) and revealjs (HTML)
 with TemporaryDirectory() as tmpdir:
     tmpdir = Path(tmpdir)
 
@@ -105,16 +109,40 @@ with TemporaryDirectory() as tmpdir:
 
     # Compile to PPTX
     md_blob = "\n".join([
-        '# {data-background-image="' + str(i) + '"}'
+        # https://pandoc.org/demo/example33/10.8-background-in-reveal.js-beamer-and-pptx.html
+        # https://revealjs.com/backgrounds/
+        # https://revealjs.com/transitions/
+        f"""# {{
+            data-background-image="{i}"
+            data-background-size="contain"
+            data-background-position="center"
+            data-background-repeat="no-repeat"
+            data-background-opacity="1"
+            data-background-color="black"
+            data-transition="none"
+            data-background-transition="none"
+        }}"""
         for i in sorted(list(tmpdir.glob("*.png")))
     ])
     pandoc(
-        "--from", "markdown",
-        "--to", "pptx",
-        "--output", "./export.pptx",
+        "--from=markdown",
+        "--to=pptx",
+        "--output=./export.pptx",
         "-",  # Read from stdin
-        podman_args=[f'-v={tmpdir}:{tmpdir}'],
-        sp_args={'input': md_blob}
+        podman_args=[f"-v={tmpdir}:{tmpdir}"],
+        sp_args={"input": md_blob}
+    )
+
+    # Compile to revealjs (HTML)
+    pandoc(
+        "--standalone",
+        "--embed-resources",
+        "--from=markdown",
+        "--to=revealjs",
+        "--output=./export.html",
+        "-",  # Read from stdin
+        podman_args=[f"-v={tmpdir}:{tmpdir}"],
+        sp_args={"input": md_blob}
     )
 
 
