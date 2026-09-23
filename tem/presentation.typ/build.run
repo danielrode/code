@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, hunspell
+# dependencies: podman, hunspell, gm
 # updated: -
 
 
@@ -9,6 +9,11 @@ import sys
 import subprocess as sp
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
+from collections.abc import Iterator
+from collections.abc import Callable
+from typing import Any
 
 
 # Functions
@@ -19,6 +24,21 @@ def cd0() -> None:
 
 def print2(*a, **kw):
     print(*a, **kw, file=sys.stderr)
+
+def dispatch(
+    jobs: iter, worker: Callable, max_workers=os.cpu_count(),
+) -> Iterator[(Any, Any)]:
+    """Run jobs in parallel.
+
+    Parallel apply dispatching function: Run a list of jobs with a given
+    worker function, in parallel. Yield worker results in order they
+    finish.
+    """
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures_jobs = {executor.submit(worker, j): j for j in jobs}
+        for f in as_completed(futures_jobs):
+            yield (futures_jobs[f], f.result())
 
 def podman(con_args, img, entry_args, sp_args):
     cmd = (
@@ -68,82 +88,108 @@ def pandoc(
         sp_args=sp_args,
     )
 
+def png2jpg(png_fp):
+    return sp.run(
+        (
+            'gm',
+            'convert',
+            '-quality',
+            '80',
+            str(png_fp),
+            str(png_fp.with_suffix('.jpg')),
+        )
+    )
 
-# Set working directory
-cd0()
 
-# Spell check
-cmd = """
-    cat ./presentation.typ \
-    | podman run --rm --interactive docker.io/pandoc/typst:latest \
-         --from typst --to plain \
-    | hunspell -l \
-    | sort \
-    | uniq \
-"""
-sp.run(cmd, check=True, shell=True)
+def main():
+    # Set working directory
+    cd0()
 
-# Compile to PDF
-typst(
-    "compile",
-    "./presentation.typ",
-    "./export.pdf",
-)
+    # Spell check
+    cmd = """
+        cat ./presentation.typ \
+        | podman run --rm --interactive docker.io/pandoc/typst:latest \
+             --from typst --to plain \
+        | hunspell -l \
+        | sort \
+        | uniq \
+    """
+    sp.run(cmd, check=True, shell=True)
 
-# Exit if only PDF is desired
-if Path(__file__).stem == 'preview':
-    sys.exit(0)
-
-# Compile to PPTX (PowerPoint) and revealjs (HTML)
-with TemporaryDirectory() as tmpdir:
-    tmpdir = Path(tmpdir)
-
-    # Compile to PNGs
+    # Compile to PDF
     typst(
         "compile",
-        "--ppi", "300",
         "./presentation.typ",
-        str(tmpdir / "img{0p}.png"),
-        podman_args=[f'-v={tmpdir}:{tmpdir}'],
+        "./export.pdf",
     )
 
-    # Compile to PPTX
-    md_blob = "\n".join([
-        # https://pandoc.org/demo/example33/10.8-background-in-reveal.js-beamer-and-pptx.html
-        # https://revealjs.com/backgrounds/
-        # https://revealjs.com/transitions/
-        f"""# {{
-            data-background-image="{i}"
-            data-background-size="contain"
-            data-background-position="center"
-            data-background-repeat="no-repeat"
-            data-background-opacity="1"
-            data-background-color="black"
-            data-transition="none"
-            data-background-transition="none"
-        }}"""
-        for i in sorted(list(tmpdir.glob("*.png")))
-    ])
-    pandoc(
-        "--from=markdown",
-        "--to=pptx",
-        "--output=./export.pptx",
-        "-",  # Read from stdin
-        podman_args=[f"-v={tmpdir}:{tmpdir}"],
-        sp_args={"input": md_blob}
-    )
+    # Exit if only PDF is desired
+    if Path(__file__).stem == 'preview':
+        sys.exit(0)
 
-    # Compile to revealjs (HTML)
-    pandoc(
-        "--standalone",
-        "--embed-resources",
-        "--from=markdown",
-        "--to=revealjs",
-        "--output=./export.html",
-        "-",  # Read from stdin
-        podman_args=[f"-v={tmpdir}:{tmpdir}"],
-        sp_args={"input": md_blob}
-    )
+    # Compile to PPTX (PowerPoint) and revealjs (HTML)
+    with TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+
+        # Compile to PNGs
+        typst(
+            "compile",
+            "--ppi", "300",
+            "./presentation.typ",
+            str(tmpdir / "img{0p}.png"),
+            podman_args=[f'-v={tmpdir}:{tmpdir}'],
+        )
+
+        # Convert PNGs to JPEGs
+        for j, result in dispatch(
+            jobs=tmpdir.glob("*.png"),
+            worker=png2jpg,
+        ):
+            if result.returncode != 0:
+                raise Exception(f'error: gm convert failed: {j}')
+
+        # Compile to PPTX
+        md_blob = "\n".join([
+            # https://pandoc.org/demo/example33/10.8-background-in-reveal.js-beamer-and-pptx.html
+            # https://revealjs.com/backgrounds/
+            # https://revealjs.com/transitions/
+            f"""# {{
+                data-background-image="{i}"
+                data-background-size="contain"
+                data-background-position="center"
+                data-background-repeat="no-repeat"
+                data-background-opacity="1"
+                data-background-color="black"
+                data-transition="none"
+                data-background-transition="none"
+            }}"""
+            for i in sorted(list(tmpdir.glob("*.jpg")))
+        ])
+        pandoc(
+            "--from=markdown",
+            "--to=pptx",
+            "--output=./export.pptx",
+            "-",  # Read from stdin
+            podman_args=[f"-v={tmpdir}:{tmpdir}"],
+            sp_args={"input": md_blob}
+        )
+
+        # Compile to revealjs (HTML)
+        pandoc(
+            "--standalone",
+            "--embed-resources",
+            "--from=markdown",
+            "--to=revealjs",
+            "--output=./export.html",
+            "-",  # Read from stdin
+            podman_args=[f"-v={tmpdir}:{tmpdir}"],
+            sp_args={"input": md_blob}
+        )
+
+if __name__ == '__main__':
+    main()
+    sys.exit(0)
+
 
 
 # TODO check out https://github.com/polylux-typ/polylux
