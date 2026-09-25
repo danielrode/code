@@ -6,7 +6,8 @@
 # updated: -
 
 
-"""Brief description of what script does.
+"""
+Brief description of what script does.
 
 More in-depth description of what the script does.
 """

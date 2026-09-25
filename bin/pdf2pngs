@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+# author: daniel rode
+# tags: image, conversion, file management
+# dependencies: poppler
+# created: 16 may 2024
+# updated: 25 sep 2026
+
+
+"""
+PDF to PNG(s).
+
+Convert a given PDF file to a set of PNGs with the same name, but the .pdf
+suffix is replaced with .png.
+"""
+
+
+import sys
+import subprocess as sp
+from pathlib import Path
+
+
+EXE_NAME = Path(__file__)
+HELP = f"Usage: {EXE_NAME} PDF [DST_DIR]"
+
+
+if __name__ == '__main__':
+    # Parse command line arguments
+    src_pdf = Path(sys.argv[1])
+
+    try:
+        dst_dir = Path(sys.argv[2])
+    except IndexError:
+        dst_dir = Path(str(src_pdf) + "--pngs")
+
+    # Convert PDF to PNG(s)
+    dst_dir.mkdir(exist_ok=True)
+    p = sp.run(
+        (
+            'pdftoppm',
+            '-progress',
+            '-png',
+            str(src_pdf),
+            f'{dst_dir}/{src_pdf.stem}',
+        ),
+    )
+    sys.exit(p.returncode)

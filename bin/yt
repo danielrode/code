@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: yt-dlp, lf
 # created: 26 mar 2026
-# updated: 21 jun 2026
+# updated: 25 sep 2026
 
 
 # Download internet video.
@@ -17,7 +17,7 @@ from tempfile import TemporaryDirectory
 
 HOME = Path.home()
 YTDLP_ARGS = (
-    # '--no-playlist',
+    '--no-playlist',
     # '--format', '[height<721][fps<31]',
 )
 
