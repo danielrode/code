@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: GraphicsMagick
+# created: 28 sep 2026
+# updated: -
+
+
+# Zealous Crop. Trim the whitespace off of the edges of an image.
+
+
+HELP="Usage: zealouscrop SRC_PNG DST_PNG"
+
+if [[ ! -e $1 ]]; then
+    echo "$HELP"
+    exit 1
+fi
+gm convert "$1" -trim +repage "$2"
