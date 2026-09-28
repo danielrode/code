@@ -51,10 +51,7 @@ def print2(*a, **kw):
 def same_filesystem(a, b):
     """Check if two paths are on the same filesystem."""
 
-    if os.stat(a).st_dev == os.stat(b).st_dev:
-        return True
-    else:
-        return False
+    return os.stat(a).st_dev == os.stat(b).st_dev
 
 def reflink_supported(a, b):
     """Check if making a reflink copy between a and dir b is supported."""
