@@ -2,9 +2,10 @@
 # author: daniel rode
 # dependencies: podman
 # created: 21 jul 2025
-# updated: 14 jul 2026
+# updated: 01 oct 2026
 
 
+import os
 import sys
 import subprocess as sp
 from pathlib import Path
@@ -22,15 +23,18 @@ CON_ARGS = (
     '--rm',
     '--tty',
     '--interactive',
+    '--userns=keep-id',
+    '--user=' + f'{os.getuid()}:{os.getgid()}',
     # '--oom-score-adj=999',
-    '--mount=type=bind,source=/etc/localtime,target=/etc/localtime',
+    '--mount=type=bind,source=/etc/localtime,target=/etc/localtime,ro',
     '--mount=type=bind,source=/tmp,target=/tmp',
     '--mount=type=bind,source=/home,target=/home,ro',
-    *[
+    '--mount=type=bind,source=/mnt,target=/mnt,ro',
+    *(
         '--mount=type=bind,source={},target={},ro'.format(d, d)
         for d in Path('/mnt').iterdir()
-        if d.is_dir()
-    ],
+        if (d.is_dir() and not d.is_symlink())
+    ),
     '--mount=type=bind,source={},target={}'.format(PWD, PWD),
     '--workdir={}'.format(PWD),
 

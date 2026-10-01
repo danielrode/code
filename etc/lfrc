@@ -216,21 +216,21 @@ map Y yank_path
 map p paste_cow
 
 map z1 :{{
-	set ratios 1
 	set preview false
+	set ratios 1
 }}
 map z2 :{{
-	set ratios '1:3'
 	set preview false
+	set ratios '1:3'
 }}
 map z3 :{{
-	set ratios '1:3:3'
 	set preview true
+	set ratios '1:3:3'
 }}
 map zz :{{
 	set info
-	set ratios '1:3:3'
 	set preview true
+	set ratios '1:3:3'
 }}
 
 map al !{{
