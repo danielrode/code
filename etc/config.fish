@@ -56,6 +56,16 @@ set -gx HOSTNAME (hostname)
 # rm ~/.config/fish/fish_variables
 # and then restart fish shell (to also remove the abbreviations from cache).
 
+function fwatch -a cmd file
+    if test -z "$cmd" || test -z "$file"
+        echo "Usage: fwatch CMD FILE"
+        return
+    end
+    while inotifywait --event modify --event delete_self "$file"
+        $cmd
+    end
+end
+
 # LS macros
 abbr --add ls eza
 abbr --add ll eza -l
@@ -115,11 +125,11 @@ abbr --add pspg pspg -X -b --csv
 abbr --add pstree pstree -aps "$fish_pid"
 abbr --add rga rga --rga-no-cache
 abbr --add ipy ipython -i --no-confirm-exit
+abbr --add dmesg sudo dmesg -TH --color=always
 
 # One-liners / utils
 abbr --add lswifi nmcli device wifi list
 abbr --add lsfont fc-list : family
-abbr --add fwatch inotifywait --monitor --event modify
 abbr --add page ps -p $fish_pid
 abbr --add protectf xargs chattr +i
 abbr --add hist gnuplot -p -e "set term dumb; set style data histograms; set style fill solid; plot '-' using 1 smooth frequency with boxes notitle"
