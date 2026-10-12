@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: unzip, 7z, pdftotext, GraphicsMagick, chafa
 # created: 20 apr 2026
-# updated: 26 apr 2026
+# updated: 12 oct 2026
 
 
 # Generate preview for LF preview pane for given (highlighted) file.
@@ -14,6 +14,13 @@
 # position, and (6) mode ("preview" or "preload"). The output of this
 # script is printed in the LF preview pane.
 
+
+file_size="$(stat -c %s "$1")"
+if [ "$file_size" -gt 128000000 ]  # Skip files larger than 128 MB
+then
+	echo "large file (skipping preview)"
+	exit
+fi
 
 case "$(file -bL --mime-type "$1")" in
 	text/*|application/json|application/x-ndjson)
@@ -37,3 +44,6 @@ case "$(file -bL --mime-type "$1")" in
 	*)
 		echo "no preview";;
 esac
+
+
+# TODO if files are on SSH, do not preview them unless they are less than only a few MB

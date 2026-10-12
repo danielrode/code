@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 # author: daniel rode
 # created: 26 mar 2026
-# updated: -
+# updated: 05 oct 2026
 
 
 # Display clipboard contents as qrcode.
 
 
-qrgen "$(wl-paste | ~/code/bin/strip-newline)"
+wl-paste | ~/code/bin/strip-newline | qrgen
