@@ -1,15 +1,14 @@
-// Author: Daniel Rode
-// Name: Open
-// Type: File Manager / Program Launcher
-// Dependencies:
+// author: daniel rode
+// name: open
+// type: file manager / program launcher
+// dependencies:
 //   fzf
 //   fd
-// Version: *see 'version' variable below*
-// Created: 02 Oct 2019
-// Updated: 29 Sep 2025
+// version: *see 'version' variable below*
+// created: 02 oct 2019
+// updated: 12 oct 2026
 
-// Description:
-// Opens things. Files are opened with a specified list of programs based on
+// Open things. Files are opened with a specified list of programs based on
 // the file extension, URLs are opened in a web browser, and the contents of
 // directories are recursively displayed to select from.
 
@@ -42,7 +41,7 @@ import (
 var print = fmt.Println
 
 // Variables
-const version = "39"
+const version = "40"
 
 // Golang time format spec: https://go.dev/src/time/format.go
 const lauoutMthDayHrMinS = "Jan 02 15:04:05"
@@ -71,7 +70,7 @@ func getProgramByFiletype(path string) []string {
 		return []string{"zathura"}
 	case ".lyx":
 		return []string{"lyx"}
-	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".webp":
+	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".heic", ".webp", ".jxl":
 		return []string{"imv-dir"}
 	case ".mp4", ".wmv", ".m4v", ".webm", ".3gp", ".wav", ".3g2", ".avi",
 		".mkv", ".mov", ".ogv", ".mpv", ".mts":
