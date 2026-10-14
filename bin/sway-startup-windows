@@ -12,7 +12,7 @@
 #   google-chrome
 #   others?
 # created: 26 dec 2022
-# updated: 27 apr 2026
+# updated: 13 oct 2026
 
 
 # Start list of defined programs under Sway session and then arrange their
@@ -68,7 +68,7 @@ def arrange_startup_windows(i3, e) -> None:
     # names on different platforms/distros)
     con_id = e.container.app_id
     match con_id:
-        case 'Firefox':
+        case 'Firefox'|'firefox':
             con_id = 'org.mozilla.firefox'
 
     # Add container to arrangement queue
