@@ -25,4 +25,6 @@ ignore = [
   # "E124",
   # "Do not assign a `lambda` expression, use a `def`"
   "E731",
+  # "Import block is un-sorted or un-formatted"
+  "I001",
 ]

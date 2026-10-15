@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: bash 4.3+
 # created: 03 sep 2026
-# updated: 21 sep 2026
+# updated: 13 oct 2026
 
 
 # Install Neovim from source.
@@ -19,7 +19,14 @@ function cleanup { rm -fr -- "$tmpdir"; }
 trap cleanup EXIT
 cd "$tmpdir"
 
-sudo xbps-install --yes base-devel cmake curl git
+if command -v xbps-install &>/dev/null; then
+    sudo xbps-install --yes base-devel cmake curl git
+elif command -v dnf &>/dev/null; then
+    sudo dnf -y install @development-tools cmake curl git
+else
+    echo "No suitable package installer found"
+    exit 1
+fi
 
 # git clone --filter=tree:0 \
 git clone --depth=1 \

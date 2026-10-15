@@ -5,7 +5,7 @@
 #   udisks2
 #   lf
 # created: 12 apr 2020
-# updated: 22 may 2026
+# updated: 14 oct 2026
 
 
 import io
@@ -62,7 +62,7 @@ def csv2fixed(csv: str) -> str:
     return p.stdout
 
 
-def udisksctl(part_path: Path, ro=False) -> (str, str):
+def udisksctl_mount(part_path: Path, ro=False) -> (str, str):
     cmd = [
         'udisksctl', 'mount',
     ]
@@ -71,7 +71,7 @@ def udisksctl(part_path: Path, ro=False) -> (str, str):
     cmd += ['--block-device', str(part_path)]
 
     p = sp.run(cmd, check=True, capture_output=True, text=True)
-    print2(p.stdout)
+    print(p.stdout)
 
     blk_dev, mnt_point, = (
         p
@@ -95,7 +95,7 @@ for a in iter(sys.argv[1:]):
             sys.exit(1)
 
 if read_only_mode:
-    print2("Read-only mode ACTIVE!")
+    print("Read-only mode ACTIVE!")
 
 # Get list of partitions
 parts = lsblk()
@@ -116,19 +116,22 @@ cmd = (
     '--bind', 'f5:become(mntm)',
     '--header', 'Press F5 to refresh the list',
 )
-p = sp.run(cmd, text=True, stdout=sp.PIPE, input=parts_fw)
+p = sp.run(cmd, text=True, stdout=sp.PIPE, input=parts_fw, check=False)
 
 if not p.stdout:
     print2("No selection made")
     sys.exit(0)
 
 # Mount partition
-part_path = [i.split(' ')[0] for i in p.stdout.strip().split('\n')][0]
-_, mnt_point = udisksctl(part_path, ro=read_only_mode)
+part_path = next(i.split(' ')[0] for i in p.stdout.strip().split('\n'))
+_, mnt_point = udisksctl_mount(part_path, ro=read_only_mode)
 
 # Open mounted partition in file manager
-sp.run(["lf", mnt_point])  # todo use ccarousel
+sp.run(["lf", mnt_point], check=False)  # todo use ccarousel or lf with special border
 
 # Unmount partition
 sp.run(['umount', mnt_point], check=True)
-print2("Unmounted:", mnt_point)
+print("Unmounted:", mnt_point)
+
+# Power-off drive
+print(f"To power off drive, run:\nudisksctl power-off -b {part_path}")
