@@ -1,33 +1,28 @@
 #!/usr/bin/env dash
-# Author: Daniel Rode
-# Tags: macro, wrapper, launcher, files, documents
-# Dependencies:
+# author: daniel rode
+# tags: macro, wrapper, launcher, files, documents
+# dependencies:
 #   nvim (neovim)
-#   goneovim?
-#   alacritty?
-#   neovim-qt?
-#   wezterm?
-#   wezterm-terminfo?
-#   neovide?
 #   socat
-# Version: 19
-# Init: 29 Nov 2022
-# Updated: 26 Sep 2023
+# created: 29 nov 2022
+# updated: 15 oct 2026
 
-# Description: Open a given set of files in current instance of
-# Neovide/Neovim. If one does not exist, create one.
 
-# Variables
-help_text="Usage: ${0##*/} PATH..."
-program_name="nv"
+# Open a given set of files in current instance of Neovim. If one does not
+# exist, create one.
+
+
+EXE_NAME="${0##*/}"
+HELP="Usage: $EXE_NAME PATH..."
 
 [ -z "$XDG_CACHE_HOME" ] && XDG_CACHE_HOME="$HOME/.cache"
-CACHE_HOME="$XDG_CACHE_HOME/daniel_rode_code/$program_name"
+CACHE_DIR="$XDG_CACHE_HOME/com.github.danielrode/$EXE_NAME"
+
 
 # Ready environment
-SESSION_DIR="$CACHE_HOME/sessions.link"
+SESSION_DIR="$CACHE_DIR/sessions.link"
 if [ ! -e "$SESSION_DIR" ]; then
-	mkdir -p "$CACHE_HOME"
+	mkdir -p "$CACHE_DIR"
 	ln -sf $(mktemp -d) "$SESSION_DIR"
 fi
 
@@ -39,41 +34,13 @@ fi
 
 export NVIM_LISTEN_ADDRESS="$NV_SESSION_ID/nvim.socket"
 
-# Main
-
 # Start nvim session if it is not running
 # https://unix.stackexchange.com/a/556790/33109
 # Socat is used to test if socket is currently open or dead
-if ! socat -u OPEN:/dev/null UNIX-CONNECT:"$NVIM_LISTEN_ADDRESS" 2>/dev/null; then
-	if [ "$NV_NEW_WINDOW" = true ]; then
-		# NOTE: whenever I update something here, I need to update
-		# `arrange-wins-swaywm.py`
-		#
-		# Cons: ctrl+enter shortcut does not work
-		# alacritty --command nvim -p "$@" &
-		# OR
-		# Cons: seems to cause issue with spellchecking, scrolls too quick via
-		# mouse wheel, crashes when cutting large visual selection of text
-		goneovim -p "$@" &
-		# OR
-		# neovide -- -c 'set guifont=FiraCode\ Nerd\ Font:h11' -p "$@" &
-		# OR
-		# Pros: ligatures, more keymappings (not bound by terminal key
-		# interpretation limitations)
-		# Cons: clips large italic letters at ends of line
-		# nvim-qt --no-ext-tabline --no-ext-popupmenu -- -p "$@" &
-		# /usr/local/bin/nvim-qt -- -p "$@" &  # compiled from source
-		# OR
-		# Dependency: term = "wezterm" must be set in wezterm.lua config file
-		# or else squiggly red underline in neovim will not work
-		# Cons: red squigggly underline looks ugly and itallic font is blurry
-		# wezterm start nvim -p "$@" &
-
-	else
-		[ -t 1 ] || exit 1 # If not interactive terminal, abort
-		nvim -p "$@"
-	fi
-
+if ! socat -u OPEN:/dev/null UNIX-CONNECT:"$NVIM_LISTEN_ADDRESS" 2>/dev/null
+then
+	[ -t 1 ] || exit 1 # If not interactive terminal, abort
+	nvim -p "$@"
 # Open files in existing session
 else
 	# path="$(realpath "$arg")"
@@ -81,6 +48,3 @@ else
 		--server "$NVIM_LISTEN_ADDRESS" \
 		--remote "$@"
 fi
-
-# TODO
-# - ...

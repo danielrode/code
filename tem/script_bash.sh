@@ -12,6 +12,11 @@ set -e  # Exit on error
 set -x  # Echo script lines as they are executed
 set -o pipefail  # Prevent tee from swallowing upstream exit code
 
+
+EXE_NAME="${0##*/}"
+HELP="Usage: $EXE_NAME ARG..."
+
+
 # Set working directory to where this script is
 cd "$(dirname "$0")"
 
