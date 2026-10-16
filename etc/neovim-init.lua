@@ -6,6 +6,9 @@ vim.g.maplocalleader = "\\"
 vim.opt.whichwrap:append("<")
 vim.opt.whichwrap:append(">")
 
+-- Combine git gutter and line number column (if there is space)
+vim.opt.signcolumn = "number"
+
 -----------------------------------------------------------
 -- Plugins
 ----
@@ -74,18 +77,51 @@ require("lazy").setup({
         -- put your config here
       end,
     },
+    -- {
+    --   'akinsho/bufferline.nvim',
+    --   version = "*",
+    --   dependencies = 'nvim-tree/nvim-web-devicons',
+    -- },
     {
-      'akinsho/bufferline.nvim',
-      version = "*",
-      dependencies = 'nvim-tree/nvim-web-devicons',
+      'nvim-lualine/lualine.nvim',
+      dependencies = { 'nvim-tree/nvim-web-devicons' },
     },
     {
-        'nvim-lualine/lualine.nvim',
-        dependencies = { 'nvim-tree/nvim-web-devicons' },
+      'lewis6991/gitsigns.nvim',
     },
     {
-        'lewis6991/gitsigns.nvim',
+      "folke/flash.nvim",
+      event = "VeryLazy",
+      vscode = true,
+      ---@type Flash.Config
+      opts = {},
+      -- stylua: ignore
+      keys = {
+        { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
+        { "S", mode = { "n", "o", "x" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
+        { "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
+        { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+        { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
+        -- Simulate nvim-treesitter incremental selection
+        { "<c-space>", mode = { "n", "o", "x" },
+          function()
+            require("flash").treesitter({
+              actions = {
+                ["<c-space>"] = "next",
+                ["<BS>"] = "prev"
+              }
+            }) 
+          end, desc = "Treesitter Incremental Selection" },
+      },
     },
+    {
+						'nvim-telescope/telescope.nvim', version = '*',
+						dependencies = {
+								'nvim-lua/plenary.nvim',
+								-- optional but recommended
+								{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+						}
+				}
     {
       -- Keybindings reference popup
       "folke/which-key.nvim",
@@ -169,9 +205,9 @@ require('mini.pairs').setup()
 -- Load https://github.com/nvim-mini/mini.ai
 require('mini.ai').setup()
 
--- Load https://github.com/akinsho/bufferline.nvim
-vim.opt.termguicolors = true
-require("bufferline").setup{}
+-- -- Load https://github.com/akinsho/bufferline.nvim
+-- vim.opt.termguicolors = true
+-- require("bufferline").setup{}
 
 -- Load https://github.com/nvim-lualine/lualine.nvim
 require('lualine').setup()
@@ -202,7 +238,14 @@ vim.opt.guicursor = {
 -- Save and quit
 vim.keymap.set({'n', 'i', 'v'}, '<C-d>', '<cmd>qa<CR>', { desc = "Quit all" })
 vim.keymap.set({'n', 'v'}, '<C-q>', '<cmd>qa<CR>', { desc = "Quit all" })
-vim.keymap.set({'n', 'i', 'v'}, '<C-s>', '<cmd>w<CR>', { desc = "Save file" })
+vim.keymap.set(
+  {'n', 'i', 'v'}, '<C-s>', '<cmd>w<CR><Esc>', { desc = "Save file" }
+)
+
+-- Undo redo
+vim.keymap.set('n', 'U', '<C-r>', { 
+  noremap = true, silent = true, desc = "Redo"
+})
 
 -- Insert date/time
 local insert_date = function()
