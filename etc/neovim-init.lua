@@ -15,6 +15,9 @@ vim.opt.tabstop = 4        -- Number of spaces that equal a 'tab'
 vim.opt.shiftwidth = 4     -- Number of spaces for indentation (by default)
 vim.opt.softtabstop = 4    -- Number of spaces a tab equals while editing
 
+-- Yank to system clipboard
+vim.opt.clipboard = "unnamedplus"
+
 -----------------------------------------------------------
 -- Plugins
 ----
@@ -224,11 +227,6 @@ require("lazy").setup({
                 config = function(_, opts)
                     local wk = require("which-key")
                     wk.setup(opts)
-                    if not vim.tbl_isempty(opts.defaults) then
-                        LazyVim.warn(
-                            "which-key: opts.defaults deprecated. Use opts.spec.")
-                        wk.register(opts.defaults)
-                    end
                 end,
             }
         },
@@ -249,6 +247,13 @@ require("lazy").setup({
 
     -- Load https://github.com/nvim-lualine/lualine.nvim
     require('lualine').setup()
+
+    -- Load https://github.com/nvim-telescope/telescope.nvim
+local builtin = require('telescope.builtin')
+vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })
+vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live grep' })
+vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
+vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
     -----------------------------------------------------------
     -- Editor configs
@@ -302,12 +307,10 @@ require("lazy").setup({
         end, { desc = "Replace selection with date" })
 
         -- Toggle comments
-        vim.keymap.set({'n', 'i', 'v'}, '<C-7>', function()
-            require('Comment.api').toggle.linewise.current()
-        end, { desc = "Toggle comment" })
-        vim.keymap.set({'n', 'i', 'v'}, '<C-_>', function() -- <C-_> is <C-/> to term
-            require('Comment.api').toggle.linewise.current()
-        end, { desc = "Toggle comment" })
+        vim.keymap.set({'n'}, '<C-/>', 'gcc',
+            { remap = true, desc = "Toggle comment" })
+        vim.keymap.set({'v'}, '<C-/>', 'gc',
+            { remap = true, desc = "Toggle comment" })
 
         -- Sort
         vim.keymap.set('n', '<F9>', ':%sort<CR>', { desc = "Sort file" })
