@@ -1,6 +1,14 @@
--- Setup `mapleader` and `maplocalleader`
+-- Set leader keys
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
+
+-- Allow Left arrow key to wrap to the previous line
+vim.opt.whichwrap:append("<")
+vim.opt.whichwrap:append(">")
+
+-----------------------------------------------------------
+-- Plugins
+----
 
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -35,6 +43,48 @@ require("lazy").setup({
       config = function()
         vim.cmd([[colorscheme tokyonight]])
       end,
+    },
+    {
+      'nvim-mini/mini.pairs', version = false
+    },
+    {
+      'nvim-mini/mini.ai', version = false
+    },
+    {
+      'nvim-treesitter/nvim-treesitter',
+      lazy = false,
+      build = ':TSUpdate'
+    },
+    {
+      "nvim-treesitter/nvim-treesitter-textobjects",
+      branch = "main",
+      init = function()
+        -- Disable entire built-in ftplugin mappings to avoid conflicts.
+        -- See https://github.com/neovim/neovim/tree/master/runtime/ftplugin
+        -- for built-in ftplugins.
+        vim.g.no_plugin_maps = true
+
+        -- Or, disable per filetype (add as you like)
+        -- vim.g.no_python_maps = true
+        -- vim.g.no_ruby_maps = true
+        -- vim.g.no_rust_maps = true
+        -- vim.g.no_go_maps = true
+      end,
+      config = function()
+        -- put your config here
+      end,
+    },
+    {
+      'akinsho/bufferline.nvim',
+      version = "*",
+      dependencies = 'nvim-tree/nvim-web-devicons',
+    },
+    {
+        'nvim-lualine/lualine.nvim',
+        dependencies = { 'nvim-tree/nvim-web-devicons' },
+    },
+    {
+        'lewis6991/gitsigns.nvim',
     },
     {
       -- Keybindings reference popup
@@ -78,7 +128,6 @@ require("lazy").setup({
                 return require("which-key.extras").expand.win()
               end,
             },
-            -- better descriptions
             { "gx", desc = "Open with system app" },
           },
         },
@@ -103,14 +152,121 @@ require("lazy").setup({
         local wk = require("which-key")
         wk.setup(opts)
         if not vim.tbl_isempty(opts.defaults) then
-          LazyVim.warn("which-key: opts.defaults is deprecated. Please use opts.spec instead.")
+          LazyVim.warn("which-key: opts.defaults deprecated. Use opts.spec.")
           wk.register(opts.defaults)
         end
       end,
     }
   },
-  -- Configure any other settings here. See the documentation for more details.
-  -- colorscheme that will be used when installing plugins.
+  -- Colorscheme that will be used when installing plugins
   install = { colorscheme = { "habamax" } },
   checker = { enabled = false },  -- Check for plugin updates
 })
+
+-- Load https://github.com/nvim-mini/mini.pairs
+require('mini.pairs').setup()
+
+-- Load https://github.com/nvim-mini/mini.ai
+require('mini.ai').setup()
+
+-- Load https://github.com/akinsho/bufferline.nvim
+vim.opt.termguicolors = true
+require("bufferline").setup{}
+
+-- Load https://github.com/nvim-lualine/lualine.nvim
+require('lualine').setup()
+
+-----------------------------------------------------------
+-- Editor configs
+----
+
+vim.opt.colorcolumn = "80"         -- Rulers at column 80
+vim.opt.wrap = true                -- Enable soft-wrap by default
+vim.opt.number = true              -- Line numbers
+vim.opt.relativenumber = false     -- Absolute line numbers
+vim.opt.ignorecase = true          -- Case-insensitive search
+vim.opt.smartcase = true           -- Case-sensitive if uppercase present
+vim.opt.termguicolors = true       -- True color support
+
+-- Cursor shapes per mode
+vim.opt.guicursor = {
+  "n-v-c:block",
+  "i-ci-ve:ver25",
+  "r-cr:hor20"
+}
+
+-----------------------------------------------------------
+-- Keybindings
+----
+
+-- Save and quit
+vim.keymap.set({'n', 'i', 'v'}, '<C-d>', '<cmd>qa<CR>', { desc = "Quit all" })
+vim.keymap.set({'n', 'v'}, '<C-q>', '<cmd>qa<CR>', { desc = "Quit all" })
+vim.keymap.set({'n', 'i', 'v'}, '<C-s>', '<cmd>w<CR>', { desc = "Save file" })
+
+-- Insert date/time
+local insert_date = function()
+  local date_str = os.date("%Y-%m-%d %H:%M")
+  vim.api.nvim_put({date_str}, 'c', true, true)
+end
+vim.keymap.set(
+  {'n', 'i'},
+  '<F3>',
+  insert_date,
+  { desc = "Insert current date/time" })
+
+vim.keymap.set('v', '<F3>', function()
+  vim.cmd('normal! d')
+  insert_date()
+end, { desc = "Replace selection with date" })
+
+-- Toggle comments
+vim.keymap.set({'n', 'i', 'v'}, '<C-7>', function()
+  require('Comment.api').toggle.linewise.current()
+end, { desc = "Toggle comment" })
+vim.keymap.set({'n', 'i', 'v'}, '<C-_>', function() -- <C-_> is <C-/> to term
+  require('Comment.api').toggle.linewise.current()
+end, { desc = "Toggle comment" })
+
+-- Sort
+vim.keymap.set('n', '<F9>', ':%sort<CR>', { desc = "Sort file" })
+vim.keymap.set('v', '<F9>', ':sort<CR>', { desc = "Sort selection" })
+
+-- Toggle soft wrap
+vim.keymap.set({'n', 'i', 'v'}, '<F10>', function()
+  vim.wo.wrap = not vim.wo.wrap
+  print("Soft wrap: " .. tostring(vim.wo.wrap))
+end, { desc = "Toggle soft wrap" })
+
+-- Buffer (tab) management
+vim.keymap.set(
+  'n', 'gn', '<cmd>tabnext<CR>', { desc = "Next buffer" })
+vim.keymap.set(
+  'n', 'gN', '<cmd>tabNext<CR>', { desc = "Previous buffer" })
+vim.keymap.set(
+  'n', '<leader>x', '<cmd>bdelete<CR>', { desc = "Close buffer" })
+vim.keymap.set(
+  'n', '<leader>X', '<cmd>bdelete!<CR>', { desc = "Force close buffer" })
+
+-- Delete selection without yanking
+vim.keymap.set({'n', 'v'}, '<Del>', '"_x', { desc = "Delete without yank" })
+
+-- Copy current file path to Wayland clipboard
+vim.keymap.set('n', '<leader>Ay', function()
+  local filepath = vim.fn.expand('%:p')
+  vim.fn.system('wl-copy', filepath)
+  print("Copied path to clipboard: " .. filepath)
+end, { desc = "Copy file path to Wayland clipboard" })
+
+-- Hard-wrap text
+vim.keymap.set({'n', 'v'}, '<C-,>', function()
+  vim.cmd('normal! V')
+  vim.cmd("'<,'>w !hard-wrap-text")
+end, { desc = "Run hard-wrap-text script" })
+
+-- Markdown Paste command (<space>p)
+vim.keymap.set(
+  {'n', 'v'},
+  '<leader>p',
+  ':r !md-paste<CR>',
+  { desc = "Paste markdown output" })

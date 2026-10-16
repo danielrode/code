@@ -6,7 +6,7 @@
 //   fd
 // version: *see 'version' variable below*
 // created: 02 oct 2019
-// updated: 12 oct 2026
+// updated: 16 oct 2026
 
 // Open things. Files are opened with a specified list of programs based on
 // the file extension, URLs are opened in a web browser, and the contents of
@@ -41,7 +41,7 @@ import (
 var print = fmt.Println
 
 // Variables
-const version = "40"
+const version = "41"
 
 // Golang time format spec: https://go.dev/src/time/format.go
 const lauoutMthDayHrMinS = "Jan 02 15:04:05"
@@ -94,7 +94,7 @@ func getProgramByFiletype(path string) []string {
 		// return []string{"flatpak", "run", "org.qgis.qgis"}
 		return []string{os.Getenv("HOME") + "/code/bin/qgis"}
 	default:
-		return []string{"foot", "hx"}
+		return []string{"foot", "nvim"}
 	}
 }
 

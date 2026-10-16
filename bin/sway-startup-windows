@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # author: daniel rode
 # dependencies:
 #   python 3.7+
 #   i3ipc
-#   hx
+#   neovim
 #   foot
 #   firefox
 #   htop
@@ -30,7 +29,7 @@ HOSTNAME = socket.gethostname()
 
 STARTUP_CMDS_MESA = (
     "foot -a foot_tasks -e lf ~/union/csu-nrel/notes/Worklog/tasks/",
-    "foot -a foot_notes -e hx ~/union/csu-nrel/notes/",
+    "foot -a foot_notes -e nvim ~/union/csu-nrel/notes/",
     "foot -a foot_htop -e htop",
     "flatpak run com.google.Chrome",
 )
@@ -39,7 +38,7 @@ WIN_ARRANGEMENT_MESA = {
     '2': ('google-chrome',),
 }
 STARTUP_CMDS = (
-    "foot -a foot_helix hx ~/union/notes/wiki/programs/helix.txt",
+    "foot -a foot_helix nvim ~/union/notes/wiki/programs/neovim.txt",
     "foot -e fish",
     "foot -a foot_htop -e htop",
     "firefox",

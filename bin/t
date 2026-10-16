@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Name: Task Access
-# Type: productivity, file management
-# Description: Processes my task file and opens it in a text editor.
-# Dependencies:
-#   Python3.6+
-#   helix
-# Version: 7
-# Init: 15 Aug 2021
-# Updated: 08 Oct 2023
+# author: daniel rode
+# name: task access
+# type: productivity, file management
+# description: processes my task file and opens it in a text editor.
+# dependencies:
+#   python3.6+
+#   neovim
+# created: 15 aug 2021
+# updated: 16 oct 2026
 
 
 import sys
@@ -88,7 +86,7 @@ tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix='.todo')
 tmp_path = pl.Path(tmp_path.name)
 tmp_path.write_text('\n'.join([i[0] for i in tasks_sorted]))
 
-sp.run(['hx', tmp_path])
+sp.run(['nvim', tmp_path])
 
 
 # Verify that the tags/contexts given on the command line are included in new
