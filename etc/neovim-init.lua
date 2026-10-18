@@ -3,8 +3,8 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
 -- Allow Left arrow key to wrap to the previous line
-vim.opt.whichwrap:append("<")
-vim.opt.whichwrap:append(">")
+vim.opt.whichwrap:append("<>")  -- normal and visual modes
+vim.opt.whichwrap:append("[]")  -- insert and replace modes
 
 -- Combine git gutter and line number column (if there is space)
 vim.opt.signcolumn = "number"
@@ -17,6 +17,33 @@ vim.opt.softtabstop = 4    -- Number of spaces a tab equals while editing
 
 -- Yank to system clipboard
 vim.opt.clipboard = "unnamedplus"
+
+-- Soft wrap text
+vim.opt.wrap = true
+vim.opt.linebreak = true    -- Wrap on whitespace (not mid-word)
+vim.opt.breakindent = true  -- Match indentation level
+
+-- Set visual ruler
+vim.opt.colorcolumn = "80"
+
+-- Enable line-numbering
+vim.opt.number = true
+vim.opt.relativenumber = false
+
+-- Enable smart-case searching
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+
+-- True color (not needed for foot?)
+-- vim.opt.termguicolors = true
+
+-- Cursor shapes per mode
+-- vim.opt.guicursor = {
+--     "n-v-c:block",
+--     "i-ci-ve:ver25",
+--     "r-cr:hor20"
+-- }
+
 
 -----------------------------------------------------------
 -- Plugins
@@ -45,7 +72,7 @@ vim.opt.rtp:prepend(lazypath)
 -- Setup lazy.nvim
 require("lazy").setup({
     spec = {
-        -- PLUGINS HERE
+        -- PLUGINS
         {
             -- Tokyo Night theme
             -- https://github.com/folke/tokyonight.nvim
@@ -99,6 +126,12 @@ require("lazy").setup({
         },
         {
             'lewis6991/gitsigns.nvim',
+        },
+        {
+            "folke/ts-comments.nvim",
+            opts = {},
+            event = "VeryLazy",
+            enabled = vim.fn.has("nvim-0.10.0") == 1,
         },
         {
             "folke/flash.nvim",
@@ -255,24 +288,6 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live gr
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
------------------------------------------------------------
--- Editor configs
-----
-
-vim.opt.colorcolumn = "80"         -- Rulers at column 80
-vim.opt.wrap = true                -- Enable soft-wrap by default
-vim.opt.number = true              -- Line numbers
-vim.opt.relativenumber = false     -- Absolute line numbers
-vim.opt.ignorecase = true          -- Case-insensitive search
-vim.opt.smartcase = true           -- Case-sensitive if uppercase present
-vim.opt.termguicolors = true       -- True color support
-
--- Cursor shapes per mode
-vim.opt.guicursor = {
-    "n-v-c:block",
-    "i-ci-ve:ver25",
-    "r-cr:hor20"
-}
 
 -----------------------------------------------------------
 -- Keybindings
@@ -336,6 +351,15 @@ vim.keymap.set(
 -- Delete selection without yanking
 vim.keymap.set({'n', 'v'}, '<Del>', '"_x',
     { desc = "Delete without yank" })
+
+-- Allow Delete key to delete empty line under cursor in normal mode
+vim.keymap.set('n', { 'x', '<Del>' }, function()
+    if vim.api.nvim_get_current_line():match("^%s*$") then
+      return '"_dd'  -- Don't copy (use black hole registry)
+    else
+      return 'x'
+    end
+end, { expr = true, silent = true, desc = "Delete current empty line" })
 
 -- Copy current file path to Wayland clipboard
 vim.keymap.set('n', '<leader>Ay', function()
