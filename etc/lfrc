@@ -7,6 +7,7 @@
 #   wl-clipboard
 #   foot
 #   fuse-archivemount
+#   nvim
 
 
 # DOCUMENTATION:
@@ -90,12 +91,12 @@ cmd trash &~/code/bin/can $fx
 cmd new_file ${{
     echo -n '> '
 	read new_path
-	[ ! -e "$new_path" ] && touch "$new_path" && $EDITOR "$new_path"
+	[ ! -e "$new_path" ] && touch "$new_path" && nvim "$new_path"
 }}
 cmd new_txt_exe ${{
     echo -n '> '
 	read np  # New path
-	[ ! -e "$np" ] && touch "$np" && chmod +x "$np" && $EDITOR "$np"
+	[ ! -e "$np" ] && touch "$np" && chmod +x "$np" && nvim "$np"
 }}
 cmd new_dir %{{
 	read new_path
@@ -112,7 +113,7 @@ cmd bulk_rename ${{
     fi
     printf '%s\n' "$fs" >"$old"
     printf '%s\n' "$fs" >"$new"
-    $EDITOR "$new"
+    nvim "$new"
     [ "$(wc -l < "$new")" -ne "$(wc -l < "$old")" ] && exit
     paste "$old" "$new" | while IFS= read -r names; do
         src="$(printf '%s' "$names" | cut -f1)"
@@ -192,7 +193,7 @@ map <c-d> quit
 map q quit
 # map <c-d> quit_original_wd
 # map q quit_original_wd
-map e $"$EDITOR" $fx
+map e $nvim -p $fx
 map i $ov $f
 map X trash
 map bf new_file

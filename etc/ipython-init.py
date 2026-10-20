@@ -1,12 +1,15 @@
 
-# -*- coding: utf-8 -*-
-# Author: Daniel Rode
-# Dependencies: wl-clipboard
-# Created: 08 Dec 2021
-# Updated: -
+# author: daniel rode
+# dependencies: wl-clipboard
+# created: 08 dec 2021
+# updated: 19 oct 2026
 
 
+import os
+import sys
+import json
 import subprocess as sp
+from pathlib import Path
 
 
 # Retrieve clipboard contents
