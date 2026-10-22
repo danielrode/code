@@ -11,25 +11,35 @@
 #   google-chrome
 #   others?
 # created: 26 dec 2022
-# updated: 13 oct 2026
+# updated: 21 oct 2026
 
 
-# Start list of defined programs under Sway session and then arrange their
-# windows.
+"""Spawn startup programs.
+
+Start list of defined programs under Sway session and then arrange their
+windows.
+"""
 
 
 import sys
+import shlex
 import socket
+from pathlib import Path
 
 from i3ipc import Connection
 from i3ipc import Event
 
 
+HOME = Path.home()
 HOSTNAME = socket.gethostname()
 
 STARTUP_CMDS_MESA = (
-    "foot -a foot_tasks -e lf ~/union/csu-nrel/notes/Worklog/tasks/",
-    "foot -a foot_notes -e nvim ~/union/csu-nrel/notes/",
+    "foot -a foot_tasks -e lf ~/union/csu-nrel/notes/Worklog/tasks/", 
+    "foot -a foot_notes -e nvim -p " + ' '.join((
+        shlex.quote(str(i))
+        for i in Path(HOME, 'union/csu-nrel/notes/Worklog').iterdir()
+        if i.is_file()
+    )),
     "foot -a foot_htop -e htop",
     "flatpak run com.google.Chrome",
 )

@@ -1,51 +1,4 @@
--- Set leader keys
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
-
--- Allow Left arrow key to wrap to the previous line
-vim.opt.whichwrap:append("<>")  -- normal and visual modes
-vim.opt.whichwrap:append("[]")  -- insert and replace modes
-
--- Combine git gutter and line number column (if there is space)
-vim.opt.signcolumn = "number"
-
--- Tabs as spaces
-vim.opt.expandtab = true   -- Convert tabs to spaces
-vim.opt.tabstop = 4        -- Number of spaces that equal a 'tab'
-vim.opt.shiftwidth = 4     -- Number of spaces for indentation (by default)
-vim.opt.softtabstop = 4    -- Number of spaces a tab equals while editing
-
--- Yank to system clipboard
-vim.opt.clipboard = "unnamedplus"
-
--- Soft wrap text
-vim.opt.wrap = true
-vim.opt.linebreak = true    -- Wrap on whitespace (not mid-word)
-vim.opt.breakindent = true  -- Match indentation level
-
--- Set visual ruler
-vim.opt.colorcolumn = "80"
-
--- Enable line-numbering
-vim.opt.number = true
-vim.opt.relativenumber = false
-
--- Enable smart-case searching
-vim.opt.ignorecase = true
-vim.opt.smartcase = true
-
--- True color (not needed for foot?)
--- vim.opt.termguicolors = true
-
--- Cursor shapes per mode
--- vim.opt.guicursor = {
---     "n-v-c:block",
---     "i-ci-ve:ver25",
---     "r-cr:hor20"
--- }
-
-
------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Plugins
 ----
 
@@ -91,13 +44,19 @@ require("lazy").setup({
             'nvim-mini/mini.ai', version = false
         },
         {
+            -- Allows selcting based-on indentation level
+            'nvim-mini/mini.indentscope',
+            version = false,
+        },
+        {
             'nvim-treesitter/nvim-treesitter',
             lazy = false,
-            build = ':TSUpdate'
+            build = ':TSUpdate',
         },
         {
             "nvim-treesitter/nvim-treesitter-textobjects",
             branch = "main",
+            lazy = false,
             init = function()
                 -- Disable entire built-in ftplugin mappings to avoid conflicts.
                 -- See
@@ -108,18 +67,34 @@ require("lazy").setup({
                 -- Or, disable per filetype (add as you like)
                 -- vim.g.no_python_maps = true
                 -- vim.g.no_ruby_maps = true
-                -- vim.g.no_rust_maps = true
-                -- vim.g.no_go_maps = true
             end,
-            config = function()
-                -- put your config here
-            end,
+            -- config = function()
+            --     require("nvim-treesitter.configs").setup({
+            --         textobjects = {
+            --             select = {
+            --                 enable = true,
+            --                 lookahead = true,
+            --                 keymaps = {
+            --                     ["af"] = "@function.outer",
+            --                     ["if"] = "@function.inner",
+            --                 },
+            --             },
+            --         },
+            --     })
+            -- end,
+            opts = {
+                move = {
+                    enable = true,
+                    set_jumps = true,
+                },
+                keys = {
+                    goto_next_start = { ["]f"] = "@function.outer", ["]c"] = "@class.outer", ["]a"] = "@parameter.inner" },
+                    goto_next_end = { ["]F"] = "@function.outer", ["]C"] = "@class.outer", ["]A"] = "@parameter.inner" },
+                    goto_previous_start = { ["[f"] = "@function.outer", ["[c"] = "@class.outer", ["[a"] = "@parameter.inner" },
+                    goto_previous_end = { ["[F"] = "@function.outer", ["[C"] = "@class.outer", ["[A"] = "@parameter.inner" },
+                },
+            }
         },
-        -- {
-        --   'akinsho/bufferline.nvim',
-        --   version = "*",
-        --   dependencies = 'nvim-tree/nvim-web-devicons',
-        -- },
         {
             'nvim-lualine/lualine.nvim',
             dependencies = { 'nvim-tree/nvim-web-devicons' },
@@ -274,12 +249,49 @@ require('mini.pairs').setup()
 -- Load https://github.com/nvim-mini/mini.ai
 require('mini.ai').setup()
 
+-- Load https://github.com/nvim-mini/mini.indentscope
+require('mini.indentscope').setup({
+    draw = {
+        -- Disable visual animation
+        animation = require('mini.indentscope').gen_animation.none(),
+        -- Disable drawing scope
+        predicate = function(scope) return false end,
+    }
+})
+
 -- -- Load https://github.com/akinsho/bufferline.nvim
 -- vim.opt.termguicolors = true
 -- require("bufferline").setup{}
 
 -- Load https://github.com/nvim-lualine/lualine.nvim
 require('lualine').setup()
+
+-- Load https://github.com/nvim-treesitter/nvim-treesitter
+require('nvim-treesitter').install {
+    "bash",
+    "c",
+    "diff",
+    "html",
+    "javascript",
+    "jsdoc",
+    "json",
+    "lua",
+    "luadoc",
+    "luap",
+    "markdown",
+    "markdown_inline",
+    "printf",
+    "python",
+    "query",
+    "regex",
+    "toml",
+    "tsx",
+    "typescript",
+    "vim",
+    "vimdoc",
+    "xml",
+    "yaml",
+}
 
 -- Load https://github.com/nvim-telescope/telescope.nvim
 local builtin = require('telescope.builtin')
@@ -288,8 +300,66 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live gr
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
+-------------------------------------------------------------------------------
+-- Options
+----
 
------------------------------------------------------------
+-- Set leader keys
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
+
+-- Allow Left arrow key to wrap to the previous line
+vim.opt.whichwrap:append("<>")  -- normal and visual modes
+vim.opt.whichwrap:append("[]")  -- insert and replace modes
+
+-- Combine git gutter and line number column (if there is space)
+vim.opt.signcolumn = "number"
+
+-- Tabs as spaces
+vim.opt.expandtab = true   -- Convert tabs to spaces
+vim.opt.tabstop = 4        -- Number of spaces that equal a 'tab'
+vim.opt.shiftwidth = 4     -- Number of spaces for indentation (by default)
+vim.opt.softtabstop = 4    -- Number of spaces a tab equals while editing
+
+-- Yank to system clipboard
+vim.opt.clipboard = "unnamedplus"
+
+-- Soft wrap text
+vim.opt.wrap = true
+vim.opt.linebreak = true    -- Wrap on whitespace (not mid-word)
+vim.opt.breakindent = true  -- Match indentation level
+
+-- Set visual ruler
+vim.opt.colorcolumn = "80"
+
+-- Enable line-numbering
+vim.opt.number = true
+vim.opt.relativenumber = false
+
+-- Enable smart-case searching
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+
+-- True color (not needed for foot? todo)
+-- vim.opt.termguicolors = true
+
+-- Cursor shapes per mode
+-- vim.opt.guicursor = {
+--     "n-v-c:block",
+--     "i-ci-ve:ver25",
+--     "r-cr:hor20"
+-- }
+
+-- Tame Python auto indentation behavior
+-- https://neovim.io/doc/user/indent/#_python
+vim.g.python_indent = {
+    open_paren = 'shiftwidth()',
+    nested_paren = 'shiftwidth()',
+    continue = 'shiftwidth()',
+    closed_paren_align_last_line = false,
+}
+
+-------------------------------------------------------------------------------
 -- Keybindings
 ----
 

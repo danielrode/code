@@ -1,50 +1,114 @@
-#!/usr/bin/env dash
+#!/usr/bin/env python3
 # author: daniel rode
 # tags: macro, wrapper, launcher, files, documents
 # dependencies:
 #   nvim (neovim)
-#   socat
 # created: 29 nov 2022
-# updated: 15 oct 2026
+# updated: 21 oct 2026
 
 
-# Open a given set of files in current instance of Neovim. If one does not
-# exist, create one.
+"""Open file in Neovim.
+
+Open a given set of files in current instance of Neovim. If one does not
+exist, create one.
+"""
 
 
-EXE_NAME="${0##*/}"
-HELP="Usage: $EXE_NAME PATH..."
+import os
+import sys
+import socket
+import subprocess as sp
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
-[ -z "$XDG_CACHE_HOME" ] && XDG_CACHE_HOME="$HOME/.cache"
-CACHE_DIR="$XDG_CACHE_HOME/com.github.danielrode/$EXE_NAME"
+
+EXE_NAME = Path(__file__).name
+HELP = f"Usage: {EXE_NAME} PATH..."
+
+HOME = Path.home()
+try:
+    XDG_CACHE_HOME = Path(os.environ['XDG_CACHE_HOME'])
+except KeyError:
+    XDG_CACHE_HOME = HOME / ".cache"
+CACHE_DIR = Path(XDG_CACHE_HOME, 'com.github.danielrode', EXE_NAME)
+
+
+def socket_alive(sock_fp):
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+             sock.connect(str(sock_fp))
+             sock.shutdown(socket.SHUT_WR)
+    except OSError:
+         return False
+
+    return True
 
 
 # Ready environment
-SESSION_DIR="$CACHE_DIR/sessions.link"
-if [ ! -e "$SESSION_DIR" ]; then
-	mkdir -p "$CACHE_DIR"
-	ln -sf $(mktemp -d) "$SESSION_DIR"
-fi
+SESSION_DIR = Path(CACHE_DIR, "sessions.link")
+if not SESSION_DIR.exists():
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    td = Path(TemporaryDirectory(delete=False).name)
+    SESSION_DIR.symlink(td)
 
 # Get session ID, create if undefined
-if [ -z "$NV_SESSION_ID" ]; then
-	export NV_SESSION_ID="$(mktemp -d --tmpdir="$SESSION_DIR")"
-	mkdir -p "$NV_SESSION_ID"
-fi
+try:
+    NV_SESSION_ID = Path(os.environ['NV_SESSION_ID'])
+except KeyError:
+    NV_SESSION_ID = Path(
+        TemporaryDirectory(dir=SESSION_DIR, delete=False).name
+    )
 
-export NVIM_LISTEN_ADDRESS="$NV_SESSION_ID/nvim.socket"
+NVIM_LISTEN_ADDRESS = Path(NV_SESSION_ID, "nvim.socket")
 
-# Start nvim session if it is not running
-# https://unix.stackexchange.com/a/556790/33109
-# Socat is used to test if socket is currently open or dead
-if ! socat -u OPEN:/dev/null UNIX-CONNECT:"$NVIM_LISTEN_ADDRESS" 2>/dev/null
-then
-	[ -t 1 ] || exit 1 # If not interactive terminal, abort
-	nvim -p "$@"
-# Open files in existing session
-else
-	# path="$(realpath "$arg")"
-	nvim \
-		--server "$NVIM_LISTEN_ADDRESS" \
-		--remote "$@"
-fi
+# Get absolute path(s) for file(s) to open in nvim
+fps = [str(Path(i).absolute()) for i in sys.argv[1:]]
+
+# If inside git repo, cd to repo root
+p = sp.run(
+    ('git', 'rev-parse', '--show-toplevel'),
+    check=False,
+    capture_output=True,
+)
+if (p.returncode == 0) and (p.stdout):
+    os.chdir(p.stdout.strip())
+
+# Open file(s) in nvim
+# p = sp.run(
+#     # Socat is used to test if socket is currently open or dead
+#     # https://unix.stackexchange.com/a/556790/33109
+#     (
+#         'socat',
+#         '-u', 'OPEN:/dev/null',
+#         'UNIX-CONNECT:' + NVIM_LISTEN_ADDRESS,
+#     ),
+#     capture_output=True,
+# )
+if socket_alive(NVIM_LISTEN_ADDRESS):
+    # Open files in existing session
+    p = sp.run(
+        (
+            'nvim',
+            '--server', str(NVIM_LISTEN_ADDRESS),
+            '--remote', *fps,
+        ),
+        env=os.environ|{
+            "NV_SESSION_ID": str(NV_SESSION_ID),
+            "NVIM_LISTEN_ADDRESS": str(NVIM_LISTEN_ADDRESS),
+        },
+        check=False,
+    )
+else:
+    # Start nvim session if it is not running
+    if not sys.stdout.isatty():
+         sys.exit(1)
+    p = sp.run(
+        ('nvim', '-p', *fps),
+        env=os.environ|{
+            "NV_SESSION_ID": str(NV_SESSION_ID),
+            "NVIM_LISTEN_ADDRESS": str(NVIM_LISTEN_ADDRESS),
+        },
+        check=False,
+    )
+
+sys.exit(p.returncode)

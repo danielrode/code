@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: neovim
 # created: 15 jan 2021
-# updated: 16 oct 2026
+# updated: 21 oct 2026
 
 
 # New note. Creates a new text file (note) in my notes directory with
@@ -15,4 +15,4 @@ NOTES_DIR="$HOME/union/notes/cursory"
 mkdir -p "$NOTES_DIR"
 cd "$NOTES_DIR"
 printf "\033]7;file://$HOSTNAME$PWD\033\\"  # Notify terminal of cd
-nvim "$NOTES_DIR" "$NOTES_DIR/$(date '+%Y%m%d%H%M%S').md"
+nvim "$NOTES_DIR/$(date '+%Y%m%d%H%M%S').md"
