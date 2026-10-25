@@ -1,3 +1,12 @@
+
+-------------------------------------------------------------------------------
+-- Pre Plugin Options
+----
+
+-- Set leader keys
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
+
 -------------------------------------------------------------------------------
 -- Plugins
 ----
@@ -165,6 +174,34 @@ require("lazy").setup({
             }
         },
         {
+            "gaoDean/autolist.nvim",
+            ft = {
+                "markdown",
+                "text",
+                "tex",
+                "plaintex",
+                "norg",
+            },
+            config = function()
+                require("autolist").setup()
+
+                vim.keymap.set("i", "<tab>", "<cmd>AutolistTab<cr>")
+                vim.keymap.set("i", "<s-tab>", "<cmd>AutolistShiftTab<cr>")
+                vim.keymap.set("i", "<CR>", "<CR><cmd>AutolistNewBullet<cr>")
+                vim.keymap.set("n", "o", "o<cmd>AutolistNewBullet<cr>")
+                vim.keymap.set("n", "O", "O<cmd>AutolistNewBulletBefore<cr>")
+                vim.keymap.set("n", "<CR>",
+                    "<cmd>AutolistToggleCheckbox<cr><CR>")
+                vim.keymap.set("n", "<C-r>", "<cmd>AutolistRecalculate<cr>")
+
+                -- functions to recalculate list on edit
+                vim.keymap.set("n", ">>", ">><cmd>AutolistRecalculate<cr>")
+                vim.keymap.set("n", "<<", "<<<cmd>AutolistRecalculate<cr>")
+                vim.keymap.set("n", "dd", "dd<cmd>AutolistRecalculate<cr>")
+                vim.keymap.set("v", "d", "d<cmd>AutolistRecalculate<cr>")
+            end,
+        },
+        {
             -- Keybindings reference popup
             "folke/which-key.nvim",
             event = "VeryLazy",
@@ -226,7 +263,7 @@ require("lazy").setup({
                     "<c-w><space>",
                     function()
                         require("which-key").show({
-                            keys = "<c-w>", loop = true 
+                            keys = "<c-w>", loop = true
                         })
                     end,
                     desc = "Window Hydra Mode (which-key)",
@@ -294,19 +331,45 @@ require('nvim-treesitter').install {
 }
 
 -- Load https://github.com/nvim-telescope/telescope.nvim
-local builtin = require('telescope.builtin')
-vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live grep' })
-vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
-vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
+local teles_bltin = require("telescope.builtin")
+require('telescope').setup{
+    defaults = {
+        mappings = {
+            i = {
+                -- Open file in new tab
+                ["<CR>"] = require("telescope.actions").select_tab,
+                -- Prevent needing to double-escape to exit menu
+                ["<Esc>"] = require("telescope.actions").close,
+            },
+            n = {
+                -- Open file in new tab
+                ["<CR>"] = require("telescope.actions").select_tab,
+            },
+        },
+    },
+    pickers = {
+        find_files = {
+            mappings = {
+                i = {
+                    -- Open file in new tab
+                    ["<CR>"] = require("telescope.actions").select_tab,
+                },
+            },
+        },
+    },
+}
+vim.keymap.set('n', '<leader>ff', teles_bltin.find_files,
+    { desc = 'Telescope find files' })
+vim.keymap.set('n', '<leader>fg', teles_bltin.live_grep,
+    { desc = 'Telescope live grep' })
+vim.keymap.set('n', '<leader>fb', teles_bltin.buffers,
+    { desc = 'Telescope buffers' })
+vim.keymap.set('n', '<leader>fh', teles_bltin.help_tags,
+    { desc = 'Telescope help tags' })
 
 -------------------------------------------------------------------------------
--- Options
+-- Post Plugin Options
 ----
-
--- Set leader keys
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
 
 -- Allow Left arrow key to wrap to the previous line
 vim.opt.whichwrap:append("<>")  -- normal and visual modes
@@ -358,6 +421,16 @@ vim.g.python_indent = {
     continue = 'shiftwidth()',
     closed_paren_align_last_line = false,
 }
+
+-- Remove trailing whitespace on save
+vim.api.nvim_create_autocmd({ "BufWritePre" }, {
+    pattern = {"*"},
+    callback = function(ev)
+        save_cursor = vim.fn.getpos(".")
+        vim.cmd([[%s/\s\+$//e]])
+        vim.fn.setpos(".", save_cursor)
+    end,
+})
 
 -------------------------------------------------------------------------------
 -- Keybindings
@@ -430,6 +503,11 @@ vim.keymap.set('n', { 'x', '<Del>' }, function()
       return 'x'
     end
 end, { expr = true, silent = true, desc = "Delete current empty line" })
+
+-- Delete line(s)
+vim.keymap.set({ 'n', 'x' }, '<S-Del>', 'Vx', { desc = 'Delete line' })
+vim.keymap.set('i', '<S-Del>', '<C-o>"_dd', { desc = 'Delete line' })
+vim.keymap.set('v', '<S-Del>', 'Vx', { desc = 'Delete line' })
 
 -- Copy current file path to Wayland clipboard
 vim.keymap.set('n', '<leader>Ay', function()
