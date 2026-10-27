@@ -11,7 +11,7 @@
 #   google-chrome
 #   others?
 # created: 26 dec 2022
-# updated: 21 oct 2026
+# updated: 26 oct 2026
 
 
 """Spawn startup programs.
@@ -34,10 +34,12 @@ HOME = Path.home()
 HOSTNAME = socket.gethostname()
 
 STARTUP_CMDS_MESA = (
-    "foot -a foot_tasks -e lf ~/union/csu-nrel/notes/Worklog/tasks/", 
+    "foot -a foot_tasks -e lf ~/union/work0/notes/Worklog/tasks/",
     "foot -a foot_notes -e nvim -p " + ' '.join((
         shlex.quote(str(i))
-        for i in Path(HOME, 'union/csu-nrel/notes/Worklog').iterdir()
+        for d in (Path(HOME, 'union/work0/notes/Worklog'),)
+        if d.exists()
+        for i in d.iterdir()
         if i.is_file()
     )),
     "foot -a foot_htop -e htop",

@@ -4,7 +4,7 @@
 # dependencies:
 #   nvim (neovim)
 # created: 29 nov 2022
-# updated: 22 oct 2026
+# updated: 25 oct 2026
 
 
 """Open file in Neovim.
@@ -49,6 +49,10 @@ SESSION_DIR = Path(CACHE_DIR, "sessions.link")
 if not SESSION_DIR.exists():
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     td = Path(TemporaryDirectory(delete=False).name)
+    try:
+        SESSION_DIR.unlink()
+    except FileNotFoundError:
+        pass
     SESSION_DIR.symlink_to(td)
 
 # Get session ID, create if undefined

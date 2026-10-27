@@ -126,6 +126,7 @@ abbr --add pstree pstree -aps "$fish_pid"
 abbr --add rga rga --rga-no-cache
 abbr --add ipy ipython -i --no-confirm-exit
 abbr --add dmesg sudo dmesg -TH --color=always
+abbr --add shasum shasum --ignore-missing
 
 # One-liners / utils
 abbr --add lswifi nmcli device wifi list

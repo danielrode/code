@@ -642,7 +642,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
 
     # Screenshot region and copy to clipboard
     bindsym $mod+Print exec grimshot save area - | wl-copy --type image/png
-    
+
     # Print Screen / Screenshot mode
     mode "screenshot: w=window, m=monitor, r=select" {
         # Capture and save currently active output (monitor)
@@ -653,7 +653,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
 
         # Capture and save currently focused window
         bindsym w exec ~/code/bin/capture-screen window; mode "default"
-    
+
         # Return to default mode
         bindsym Escape mode "default"
     }
@@ -747,7 +747,7 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
         bindsym KP_8 exec $gamma_cmd 0.8
         bindsym KP_9 exec $gamma_cmd 0.9
         bindsym KP_0 exec $gamma_cmd 1.0
-        
+
         # Return to default mode
         bindsym Return mode "default"
         bindsym Escape mode "default"
@@ -988,10 +988,9 @@ exec dbus-update-activation-environment XDG_CURRENT_DESKTOP=sway
 
     # Pipewire
     exec --no-startup-id /usr/bin/pipewire
-    # `wireplumber` must be started after pipewire. This is configured under
-    # /etc/. For instructions on how to implement this, see
-    # https://docs.voidlinux.org/config/media/pipewire.html#session-management
-    exec --no-startup-id /usr/bin/pipewire-pulse
+    # `wireplumber` and `pipewire-pulse` must be started after pipewire. This
+    # is configured under /etc/. For instructions on how to implement this, see
+    # https://docs.voidlinux.org/config/media/pipewire.html
 
     # Launch startup programs (like browser, terminals, notes, etc...)
     exec ~/code/bin/sway-startup-windows

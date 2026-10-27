@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: sshfs, ~/.nunyuh
 # created: 25 jul 2024
-# updated: 09 jul 2026
+# updated: 26 oct 2026
 
 
 """Alias/shortcuts for mounting remote directories via SSH."""
@@ -62,7 +62,7 @@ def sshfs(
         f"{remote_host}:{remote_dir}",
         str(mnt_point),
     )
-    sp.run(cmd, check=True)
+    sp.run(cmd, check=False)
 
 
 # Parse command line input
