@@ -2,12 +2,13 @@
 # author: daniel rode
 # dependencies: wl-clipboard
 # created: 08 dec 2021
-# updated: 19 oct 2026
+# updated: 30 oct 2026
 
 
 import os
 import sys
 import json
+import shutil
 import subprocess as sp
 from pathlib import Path
 
