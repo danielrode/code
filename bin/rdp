@@ -3,14 +3,16 @@
 # dependencies:
 #   freerdp
 #   ~/.nunyuh
+#   screen
 # created: 15 jul 2025
-# updated: 04 aug 2026
+# updated: 27 oct 2026
 
 
-"""Macro for starting RDP (remote desktop) sessions."""
+"""Macro for spawning RDP (remote desktop) sessions."""
 
 
 import re
+import os
 import sys
 import i3ipc
 import shutil
@@ -19,6 +21,7 @@ import tomllib
 import subprocess as sp
 from pathlib import Path
 from getpass import getpass
+from tempfile import TemporaryDirectory
 
 
 EXE_NAME = Path(__file__).name  # This script's filename
@@ -39,8 +42,7 @@ NY = tomllib.loads(Path(HOME / '.nunyuh').read_text())['rdp']
 try:
     remote = sys.argv[1]
 except IndexError:
-    print(HELP)
-    sys.exit(1)
+    remote = input("Enter REMOTE_ALIAS: ")
 
 # Set values for remote host
 for k in NY:
@@ -91,17 +93,19 @@ if exe is None:
     sys.exit(2)
 
 # Run FreeRDP
-cmd = [exe, '/args-from:stdin']
-args_str = '\n'.join((
-    *FREERDP_ARGS,
-    "/d:" + domain,
-    "/u:" + user,
-    "/v:" + ip,
-    "/p:" + getpass(),
-))
-print("Calling:", cmd)
-print(re.sub('^/p:.*$', '/p:******', args_str, flags=re.MULTILINE))
-try:
-    sp.run(cmd, text=True, input=args_str)
-except KeyboardInterrupt:
-    pass
+with TemporaryDirectory() as td:
+    td = Path(td)
+    os.mkfifo(td/'pipe')
+    multiplexer = ('screen', '-d', '-m')
+    cmd = [*multiplexer, exe, f'/args-from:{td}/pipe']
+    args_str = '\n'.join((
+        *FREERDP_ARGS,
+        "/d:" + domain,
+        "/u:" + user,
+        "/v:" + ip,
+        "/p:" + getpass(),
+    ))
+    print("Calling:", cmd)
+    print(re.sub('^/p:.*$', '/p:******', args_str, flags=re.MULTILINE))
+    sp.run(cmd, text=True)
+    (td/'pipe').write_text(args_str)
