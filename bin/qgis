@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # author: daniel rode
 # created: 20 oct 2023
-# updated: 28 may 2026
+# updated: 04 nov 2026
 
 
 import sys
@@ -16,6 +16,8 @@ QGIS_CMD = [
     'exec',
     'flatpak',
     'run',
+    '--nosocket=wayland',
+    '--env=GDK_BACKEND=x11',
     'org.qgis.qgis',
     '--nologo',
     '--noversioncheck',
@@ -44,7 +46,7 @@ def arrange_window(i3, e) -> None:
     #     not e.container.???.endswith(' — QGIS'),
     # )):
     #     return
-    
+
     # Arrange window
     global ACTIVE_WS
     e.container.command(f"move workspace {ACTIVE_WS}")
