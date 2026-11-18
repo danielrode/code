@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: sshfs, ~/.nunyuh
 # created: 25 jul 2024
-# updated: 26 oct 2026
+# updated: 16 nov 2026
 
 
 """Alias/shortcuts for mounting remote directories via SSH."""
@@ -25,7 +25,7 @@ SSHFS_VER = next(filter(lambda x: x.startswith('SSHFS version '), sp.run(
 
 SSHFS_OPTS = (
     '-o', 'delay_connect',
-    '-o', 'reconnect',
+    # '-o', 'reconnect',
     '-o', 'noatime',
     # '-o', 'umask=177',
 
