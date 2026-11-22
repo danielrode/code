@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, crun-krun, ~/.nunyuh
 # created: 12 apr 2026
-# updated: 16 sep 2026
+# updated: 22 nov 2026
 
 
 """Setup and run containerized Joplin (notes) server."""
@@ -12,6 +12,7 @@
 # Change these first thing!
 
 
+import re
 import pwd
 import json
 import shlex
@@ -27,9 +28,10 @@ HOME = Path.home()
 USER = getpass.getuser()
 NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
+CHILD_IMG_CACHE_DIR = Path(f"/home/app_{APP_NAME}/docker_imgs/")
+
 CON_DEFAULTS = (
     '--rm',
-    '--replace',
     '--pod=app',
     # '--tz=local',
 
@@ -101,8 +103,7 @@ VM_CONTAINER = (
     '--secret=app_rh_conf,type=mount,target=/etc/rathole.toml',
     '--secret=app_origin,type=mount,target=/pod_secret__origin',
     '--secret=app_db_pw,type=mount,target=/pod_secret__db_pw',
-    '--volume=app_podman_store0:/var/lib/containers',
-    '--volume=app_podman_store1:/home/podman/.local/share/containers',
+    '--volume={}:/docker_imgs:ro,Z'.format(CHILD_IMG_CACHE_DIR),
     '--volume=notes_db:/notes_db',
     'quay.io/podman/stable:latest',
 )
@@ -165,6 +166,9 @@ def con_fmt_sh(con):
 
     return ' '.join(sh_args)
 
+def to_alpha_num(s):
+    return re.sub('[^A-Za-z0-9_-]', '_', s)
+
 
 # Run setup code that needs to be run as root
 try:
@@ -196,10 +200,29 @@ script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
         set -x
         mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
 
-        podman system migrate
+        # Workaround logging issue
+        # https://github.com/podman-container-tools/image_build/issues/75
+        mkdir /etc/containers/containers.conf.d
+        printf '[containers]\\nlog_driver = "k8s-file"\\n' \
+            > /etc/containers/containers.conf.d/99-logger-fix.conf
+
+        # Setup pod
+        podman pod create app
+        podman secret create rh_conf /etc/rathole.toml
+        podman secret create origin /pod_secret__origin
+        podman secret create db_pw /pod_secret__db_pw
+
+        {';\n'.join((
+            f'podman image load -i /docker_imgs/{to_alpha_num(img)}.tar'
+            for img in CHILD_CONTAINERS.keys()
+        ))}
+
+        {';\n'.join((
+            'podman create ' + con_fmt_sh(con)
+            for con in CHILD_CONTAINERS
+        ))}
 
         # Verify rathole image integrity
-        podman pull docker.io/rapiz1/rathole:v0.5.0
         if ! test \
             "$(podman inspect -f='{{{{.Id}}}}' rathole:v0.5.0)" \
             = 548fb992c738b11d4e23a95e93f5ccec32a49cc0277adf0d1f4d576744685526
@@ -208,16 +231,7 @@ script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
             exit 1
         fi
 
-        podman pod create --replace app
-        podman secret create --ignore rh_conf /etc/rathole.toml
-        podman secret create --ignore origin /pod_secret__origin
-        podman secret create --ignore db_pw /pod_secret__db_pw
-
-        {';\n'.join((
-            'podman create ' + con_fmt_sh(con)
-            for con in CHILD_CONTAINERS
-        ))}
-
+        # Run pod
         podman pod start app
         podman pod logs --names --timestamps --follow app
     ''',
@@ -259,6 +273,19 @@ run_app_user(
     ('podman', 'secret', 'create', '--replace', 'app_db_pw', '-'),
     input=NY['db_pw'],
 )
+
+# Cache container images
+run_app_user(('mkdir', '-p', str(CHILD_IMG_CACHE_DIR)))
+for img in CHILD_CONTAINERS.keys():
+    run_app_user(
+        ('podman', 'pull', '--policy=newer', img),
+    )
+    dst_tar_fp = CHILD_IMG_CACHE_DIR / f'{to_alpha_num(img)}.tar'
+    if dst_tar_fp.exists():
+        run_app_user(('rm', '--', str(dst_tar_fp.resolve())))
+    run_app_user(
+        ('podman', 'image', 'save', '-o', str(dst_tar_fp), img),
+    )
 
 # Start service
 run_app_user((
