@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # author: daniel rode
-# dependencies: podman, podman-compose, crun-krun, ~/.nunyuh
+# dependencies: podman, crun-krun, ~/.nunyuh
 # created: 04 may 2026
-# updated: 01 aug 2026
+# updated: 22 nov 2026
 
 
 """Install and serve cmintey's containerized 'wishlist' app."""
 
 
+import re
+import sys
 import pwd
 import json
 import shlex
@@ -25,67 +27,65 @@ USER = getpass.getuser()
 NY = tomllib.loads((HOME / '.nunyuh').read_text())['S']['wishlist']
 
 HARDENED_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
-CON_IMG_TAG = APP_NAME
-CON_HARDENED_DEFAULTS = {
-    'runtime': '/usr/bin/krun',
-    # "...the microVM ignores the USER set in the Dockerfile and always
-    # boots as root. Either switch to the correct user manually or put the
-    # switch into an entrypoint script."
-    # https://fedoramagazine.org/sandbox-ai-coding-agents-with-microvms-on-fedora-linux/
-    # TODO what about setting the user here (in compose)? does that work?
-    # 'user': '1111:1111',
-    'cap_drop': ['ALL'],
-    'security_opt': ['no-new-privileges'],
-    'read_only': True,
-    'tmpfs': ['/tmp:' + HARDENED_TMPFS],
-    'deploy': {'resources': {'limits': {
-        'mem_limit': '128m',  # Limit memory usage
-        'cpus': 0.5,  # Limit CPU usage to 50% of a single core
-    }}},
-}
+CON_DEFAULTS = (
+    '--pod=app',
+    # '--tz=local',
+    '--restart=always',
+
+    # Hardening
+    '--cpus=0.5',  # Limit CPU usage to 50% of a single core
+    '--memory=128m',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--cap-drop=ALL',
+    # '--user=1111:1111',  # TODO
+    '--read-only',
+    '--read-only-tmpfs',
+    '--tmpfs=/tmp:' + HARDENED_TMPFS,
+)
 CON_SERVICES = {
-    'wishlist': CON_HARDENED_DEFAULTS | {
-        'container_name': 'wishlist',
-        'image': CON_IMG_TAG,
-        'volumes': [
-            # Where user image uploads get stored
-            'uploads:/usr/src/app/uploads',
-            # Where the sqlite database gets stored
-            'db:/usr/src/app/data',
-        ],
-        'environment': {
-            'ORIGIN': NY['origin'],
-            # TOKEN_TIME: 72 # hours until signup and password reset tokens
-            # expire
-            'TOKEN_TIME': 72,
-        },
-        'secrets': [{
-            'source': APP_NAME + '_rh_token',
-            'target': '/etc/rathole.toml',
-            'uid': '0',
-            'gid': '0',
-            'mode': '0444',
-        }],
-        'tmpfs': [
-            '/usr/src/app/node_modules/.cache/jiti/:' + HARDENED_TMPFS,
-            '/usr/src/app/.config/caddy:' + HARDENED_TMPFS,
-            '/root/.config/caddy/:' + HARDENED_TMPFS,
-        ],
-        'restart': 'always',
-    },
+    'docker.io/rapiz1/rathole:v0.5.0': (
+        *CON_DEFAULTS,
+        '--name=RATHOLE',
+        '--secret=rh_conf,type=mount,target=/etc/rathole.toml',
+        '--entrypoint=' + json.dumps((
+            '/app/rathole',
+            '/etc/rathole.toml',
+        )),
+    ),
+    'ghcr.io/cmintey/wishlist:latest': (
+        *CON_DEFAULTS,
+        '--name=WISHLIST',
+        '--env=ORIGIN=' + NY['origin'],
+        # TOKEN_TIME: 72 # hours until signup and password reset tokens expire
+        '--env=TOKEN_TIME=72',
+        # Where user image uploads get stored
+        '--volume=/uploads:/usr/src/app/uploads:U,Z,nodev,noexec,nosuid',
+        # Where the sqlite database gets stored
+        '--volume=/db:/usr/src/app/data:U,Z,nodev,noexec,nosuid',
+        '--tmpfs=/usr/src/app/node_modules/.cache/jiti/:' + HARDENED_TMPFS,
+        '--tmpfs=/usr/src/app/.config/caddy:' + HARDENED_TMPFS,
+        '--tmpfs=/root/.config/caddy/:' + HARDENED_TMPFS,
+    ),
 }
-CON_COMPOSE = {
-    'version': '3',
-    'name': APP_NAME,
-    'services': CON_SERVICES,
-    'volumes': {
-        'db': {},
-        'uploads': {},
-    },
-    'secrets': {
-        APP_NAME + '_rh_token': {'external': True},
-    },
-}
+
+VM_CONTAINER = (
+    'podman',
+    '--runtime=/usr/bin/krun',
+    'run',
+    '--name=app_' + APP_NAME,
+    '--replace',
+    '--pull=newer',
+    '--memory=1g',
+    # '--cap-drop=ALL',
+    '--security-opt=no-new-privileges',
+    '--security-opt=proc-opts=hidepid=2',
+    '--restart=always',
+    '--secret=app_rh_conf,type=mount,target=/etc/rathole.toml',
+    '--volume=cmintey_wishlist_db:/db',
+    '--volume=cmintey_wishlist_uploads:/uploads',
+    'quay.io/podman/stable:latest',
+)
 
 RH_CONF = f"""
 [client]
@@ -93,37 +93,10 @@ remote_addr = "{NY['rh_addr']}"
 [client.services.wishlist]
 type = "tcp"
 token = "{NY['rh_token']}"
-local_addr = "localhost:3000" 
+local_addr = "localhost:3000"
 """
 
-IMG_SHA256 = "a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1"
-DOCKERFILE = f"""
-FROM ghcr.io/cmintey/wishlist:latest
-# Image a31b9178e985d = rathole:v0.5.0
-COPY --from=docker.io/rapiz1/rathole@sha256:{IMG_SHA256} \\
-    /app/rathole /opt/bin/rathole
-COPY <<'EOF' /opt/bin/init.sh
-#!/usr/bin/env bash
-log_run() {{
-    local label="$1"
-    shift
-    ("$@" 2>&1) | sed -u "s/^/[$label] /"
-}}
-(
-    log_run "RATHOLE" /opt/bin/rathole /etc/rathole.toml &
-    log_run "WISHLIST" /usr/bin/sh /usr/src/app/entrypoint.sh &
-    wait
-) | ts '[%Y-%m-%d %H:%M:%S]'
-EOF
-RUN apt-get update \\
-    && apt-get install -y --no-install-recommends \\
-        bash moreutils \\
-    && rm -rf /var/lib/apt/lists/* \\
-    && apt-get clean \\
-;
-
-ENTRYPOINT bash /opt/bin/init.sh
-"""
+INIT_CON_SH_FP = Path(f"/home/app_{APP_NAME}/start-{APP_NAME}.sh")
 
 SETUP_ROOT_SH_PAYLOAD = f"""
 set -e
@@ -133,8 +106,9 @@ set -x
 id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
     useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
+chmod 770 /home/app_{shlex.quote(APP_NAME)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
-# systemctl daemon-reload
+systemctl daemon-reload
 
 # Install systemd service file
 umask 0022
@@ -145,11 +119,11 @@ Requires=dbus.socket
 After=dbus.socket
 After=network-online.target
 [Service]
-Type=forking
+Type=exec
 Restart=on-failure
 RestartSec=33
-ExecStart=/usr/bin/podman pod start pod_{APP_NAME}
-ExecStop=/usr/bin/podman pod stop pod_{APP_NAME}
+ExecStart={shlex.quote(str(INIT_CON_SH_FP))}
+ExecStop=/usr/bin/podman stop app_{APP_NAME}
 [Install]
 WantedBy=default.target
 EOF
@@ -162,85 +136,113 @@ sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 """
 
 
-# Run setup code that needs to be run as root
-try:
-    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-except KeyError:
-    app_user_id = None
+def run_app_user(cmd_part2, check=True, **kwargs):
+    """Run shell commands as app user."""
 
-if any((
-    app_user_id is None,
-    not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
-)):
+    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+    sudo_preamble = (
+        'sudo',
+            '-u', f'app_{APP_NAME}',
+        'env',
+            '--chdir=/tmp',
+            f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+            f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+    )
+
+    cmd = (*sudo_preamble, *cmd_part2)
+    p = sp.run(cmd, check=check, text=True, **kwargs)
+
+    return p
+
+def con_fmt_sh(con):
+    sh_args = [
+        shlex.quote(i)
+        for i in CON_SERVICES[con]
+    ]
+    sh_args += [shlex.quote(con)]
+
+    return ' '.join(sh_args)
+
+def to_alpha_num(s):
+    return re.sub('[^A-Za-z0-9_-]', '_', s)
+
+
+# Run setup code that needs to be run as root
+if not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists():
     sp.run(
         ('sudo', 'bash'),
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
+    print("Setup/install code completed. Now re-run this script.")
+    sys.exit(0)
 
-# Build container
-app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-cmd_preamble = (
-    'sudo',
-        '-u', f'app_{APP_NAME}',
-    'env',
-        '--chdir=/tmp',
-        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
-        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
-)
-sp.run(
-    (
-        *cmd_preamble,
-        'podman', 'build',
-            '--file=-',
-            '--tag', CON_IMG_TAG,
-    ),
-    input=DOCKERFILE,
-    check=True, text=True,
-)
+# Write container spawning script
+script_chmod = 0o755
+INIT_CON_SH_FP.touch(script_chmod)
+INIT_CON_SH_FP.chmod(script_chmod)
+INIT_CON_SH_FP.write_text('#!/usr/bin/env bash\nexec ' + ' '.join(
+    shlex.quote(i) for i in (
+    *VM_CONTAINER,
+    'bash', '-c', f'''
+        set -e
+        set -x
+        mount -t tmpfs -o {HARDENED_TMPFS} tmpfs /tmp
 
-# Create container
-sp.run(
-    (
-        *cmd_preamble,
-        'podman', 'secret', 'create', '--replace', f'{APP_NAME}_rh_token', '-',
-    ),
+        # Workaround logging issue
+        # https://github.com/podman-container-tools/image_build/issues/75
+        mkdir /etc/containers/containers.conf.d
+        printf '[containers]\\nlog_driver = "k8s-file"\\n' \
+            > /etc/containers/containers.conf.d/99-logger-fix.conf
+
+        # Setup pod
+        podman pod create app
+        podman secret create rh_conf /etc/rathole.toml
+
+        {';\n'.join((
+            'podman create ' + con_fmt_sh(con)
+            for con in CON_SERVICES
+        ))}
+
+        # Verify rathole image integrity
+        if ! test \
+            "$(podman inspect -f='{{{{.Id}}}}' rathole:v0.5.0)" \
+            = 548fb992c738b11d4e23a95e93f5ccec32a49cc0277adf0d1f4d576744685526
+        then
+            echo "Bad rathole image!"
+            exit 1
+        fi
+
+        # Run pod
+        podman pod start app
+        podman pod logs --names --timestamps --follow app
+    ''',
+)))
+
+# Create container infrastructure
+run_app_user(
+    ('podman', 'secret', 'create', '--replace', 'app_rh_conf', '-'),
     input=RH_CONF,
-    check=True, text=True,
-)
-sp.run(
-    (
-        *cmd_preamble,
-        'podman-compose', '--file=-', 'up', '--no-start', '--no-color',
-    ),
-    input=json.dumps(CON_COMPOSE),
-    check=True, text=True,
 )
 
 # Start container
-sp.run(
+run_app_user(
     (
-        *cmd_preamble,
         'systemctl',
         '--user',
-        f'--machine=app_{APP_NAME}@.host',
         'enable',
         '--now',
         '--no-pager',
         '--full',
         f'app_{APP_NAME}.service',
-    ),
-    check=True,
+    )
 )
-sp.run(
+run_app_user(
     (
-        *cmd_preamble,
         'systemctl',
         '--user',
-        f'--machine=app_{APP_NAME}@.host',
         'status',
         '--no-pager',
         '--full',
         f'app_{APP_NAME}.service',
-    ),
-    check=True,
+    )
 )

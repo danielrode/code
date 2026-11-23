@@ -30,13 +30,13 @@ NY = tomllib.loads(Path(HOME, '.nunyuh').read_text())['S'][APP_NAME]
 
 CHILD_IMG_CACHE_DIR = Path(f"/home/app_{APP_NAME}/docker_imgs/")
 
+HARDENED_TMPFS = 'rw,noexec,nosuid,nodev,mode=1700'
 CON_DEFAULTS = (
-    '--rm',
     '--pod=app',
     # '--tz=local',
+    '--restart=always',
 
     # Hardening
-    '--pull=newer',
     '--cpus=0.5',  # Limit CPU usage to 50% of a single core
     '--memory=128m',
     '--security-opt=no-new-privileges',
@@ -45,13 +45,13 @@ CON_DEFAULTS = (
     # '--user=1111:1111',
     '--read-only',
     '--read-only-tmpfs',
-    # '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+    # '--tmpfs=/tmp:' + HARDENED_TMPFS,
 )
-CHILD_CONTAINERS = {
+CON_SERVICES = {
     'docker.io/rapiz1/rathole:v0.5.0': (
         *CON_DEFAULTS,
         # '--user=1000:1000',
-        '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+        '--tmpfs=/tmp:' + HARDENED_TMPFS,
         '--name=RATHOLE',
         '--secret=rh_conf,type=mount,target=/etc/rathole.toml',
         '--entrypoint=' + json.dumps((
@@ -61,7 +61,7 @@ CHILD_CONTAINERS = {
     ),
     'docker.io/postgres:16': (
         *CON_DEFAULTS,
-        '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1700',
+        '--tmpfs=/tmp:' + HARDENED_TMPFS,
         '--name=DATABASE',
         '--volume=/notes_db:/var/lib/postgresql/data:U,Z,nodev,noexec,nosuid',
         '--env=POSTGRES_USER=joplin0',
@@ -75,9 +75,6 @@ CHILD_CONTAINERS = {
         '--requires=DATABASE',
         # '--user=joplin',
         '--read-only=false',
-        # '--read-only-tmpfs=false',
-        # '--tmpfs=/tmp:rw,noexec,nosuid,nodev,mode=1777',
-        # '--tmpfs=/opt/pm2:rw,noexec,nosuid,nodev,mode=1777',
         '--cpus=1.0',
         '--memory=512m',
         '--env=APP_PORT=22300',
@@ -92,6 +89,9 @@ CHILD_CONTAINERS = {
 }
 
 VM_CONTAINER = (
+    'podman',
+    '--runtime=/usr/bin/krun',
+    'run',
     '--name=app_' + APP_NAME,
     '--replace',
     '--pull=newer',
@@ -118,6 +118,7 @@ local_addr = "localhost:22300"
 """
 
 INIT_CON_SH_FP = Path(f"/home/app_{APP_NAME}/start-{APP_NAME}.sh")
+
 SETUP_ROOT_SH_PAYLOAD = f"""
 set -e
 set -x
@@ -127,9 +128,8 @@ id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
     useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
 chmod 770 /home/app_{shlex.quote(APP_NAME)}
-#setfacl -m u:{shlex.quote(USER)}:rwx /home/app_{shlex.quote(APP_NAME)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
-# systemctl daemon-reload
+systemctl daemon-reload
 
 # Install systemd service file
 umask 0022
@@ -157,10 +157,28 @@ sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 """
 
 
+def run_app_user(cmd_part2, check=True, **kwargs):
+    """Run shell commands as app user."""
+
+    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
+    sudo_preamble = (
+        'sudo',
+            '-u', f'app_{APP_NAME}',
+        'env',
+            '--chdir=/tmp',
+            f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
+            f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
+    )
+
+    cmd = (*sudo_preamble, *cmd_part2)
+    p = sp.run(cmd, check=check, text=True, **kwargs)
+
+    return p
+
 def con_fmt_sh(con):
     sh_args = [
         shlex.quote(i)
-        for i in CHILD_CONTAINERS[con]
+        for i in CON_SERVICES[con]
     ]
     sh_args += [shlex.quote(con)]
 
@@ -171,34 +189,25 @@ def to_alpha_num(s):
 
 
 # Run setup code that needs to be run as root
-try:
-    app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-except KeyError:
-    app_user_id = None
-
-if any((
-    app_user_id is None,
-    not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists(),
-)):
+if not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists():
     sp.run(
         ('sudo', 'bash'),
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
+    print("Setup/install code completed. Now re-run this script.")
+    sys.exit(0)
 
 # Write container spawning script
 script_chmod = 0o755
 INIT_CON_SH_FP.touch(script_chmod)
 INIT_CON_SH_FP.chmod(script_chmod)
-script_blob = '#!/usr/bin/env bash\n'
-script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
-    'podman',
-        '--runtime=/usr/bin/krun',
-        'run',
-        *VM_CONTAINER,
+INIT_CON_SH_FP.write_text('#!/usr/bin/env bash\nexec ' + ' '.join(
+    shlex.quote(i) for i in (
+    *VM_CONTAINER,
     'bash', '-c', f'''
         set -e
         set -x
-        mount -t tmpfs -o rw,noexec,nosuid,nodev,mode=1700 tmpfs /tmp
+        mount -t tmpfs -o {HARDENED_TMPFS} tmpfs /tmp
 
         # Workaround logging issue
         # https://github.com/podman-container-tools/image_build/issues/75
@@ -214,12 +223,12 @@ script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
 
         {';\n'.join((
             f'podman image load -i /docker_imgs/{to_alpha_num(img)}.tar'
-            for img in CHILD_CONTAINERS.keys()
+            for img in CON_SERVICES.keys()
         ))}
 
         {';\n'.join((
             'podman create ' + con_fmt_sh(con)
-            for con in CHILD_CONTAINERS
+            for con in CON_SERVICES
         ))}
 
         # Verify rathole image integrity
@@ -235,30 +244,7 @@ script_blob += 'exec ' + ' '.join(shlex.quote(i) for i in (
         podman pod start app
         podman pod logs --names --timestamps --follow app
     ''',
-))
-INIT_CON_SH_FP.write_text(script_blob)
-
-# Define function to run commands as app user
-app_user_id = pwd.getpwnam(f'app_{APP_NAME}').pw_uid
-sudo_preamble = (
-    'sudo',
-        '-u', f'app_{APP_NAME}',
-    'env',
-        '--chdir=/tmp',
-        f'XDG_RUNTIME_DIR=/run/user/{app_user_id}',
-        f'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{app_user_id}/bus',
-)
-
-def run_app_user(cmd_part2, check=True, **kwargs):
-    cmd = (*sudo_preamble, *cmd_part2)
-    try:
-        if kwargs['input']:
-            kwargs['text'] = True
-    except KeyError:
-        pass
-    p = sp.run(cmd, check=check, **kwargs)
-
-    return p
+)))
 
 # Create container infrastructure
 run_app_user(
@@ -276,7 +262,7 @@ run_app_user(
 
 # Cache container images
 run_app_user(('mkdir', '-p', str(CHILD_IMG_CACHE_DIR)))
-for img in CHILD_CONTAINERS.keys():
+for img in CON_SERVICES.keys():
     run_app_user(
         ('podman', 'pull', '--policy=newer', img),
     )
