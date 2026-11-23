@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# author: daniel rode
+# dependencies: bash 4.3+
+# created: 22 nov 2026
+# updated: -
+
+
+# TODO set this up to run daily; if this script finds any problems, it should email me; check timestamps to make sure cron jobs are indeed running; check `uptime` to make sure computer is rebooting; check cron-dnf-update for "Complete!"
+
+
+# Check logs of my important periodic services run by cron, and make sure they
+# are not failing. Also ensure the cron jobs are actually running.
+
+
+set -e  # Exit on error
+
+
+# Make sure BTRFS scrub has not encountered any unfixable errors
+len="$(cat /var/log/cron-btrfs-scrub.log \
+    | rg -u ' Error summary: ' \
+    | rg -u -v ' no errors found$' \
+    | wc -l \
+;)"
+if "$len" != "0"; then
+    echo "error: BTRFS scrub encountered an issue"
+    exit 1
+fi
+
+
+# TODO
