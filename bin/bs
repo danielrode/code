@@ -7,20 +7,20 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 26 aug 2026
+# updated: 22 nov 2026
 
 
 # Backup Sync. Create backup of my data online using restic.
 
 # NOTE: In order to make this script functional under Termux (on Android), it
 # must be run under a functional proot environment. This is probably already
-# setup, but in case it isn't, see comments in 'enter-void.sh' under Termux 
+# setup, but in case it isn't, see comments in 'enter-void.sh' under Termux
 # home directory.
 
 # NOTE: This script requires getcred to get the master password from the
 # user. Under termux, this is difficult. In order to work around this, start
 # getcred before calling this script. Use:
-#   dtach -c `mktemp -d`/sock getcred --server --password-prompt-fallback 
+#   dtach -c `mktemp -d`/sock getcred --server --password-prompt-fallback
 # Enter the master KeePass credential password when prompted, then press
 # Ctrl+\ to detach, letting getcred continue on in the background.
 
@@ -34,7 +34,6 @@ from getpass import getuser
 from datetime import datetime
 
 
-# Variables
 HOME_PATH = Path.home()
 SDCARD_PATH = Path('/sdcard')
 HOSTNAME = os.environ['HOSTNAME']
@@ -44,6 +43,33 @@ UNIVERSAL_EXCLUDE_PATTERNS = [
     '.trash',
     '.Trash',
     '.dontbackup',
+
+    # Directories
+    '/data/data/com.termux/files/home/.appdata/go',
+    '/data/data/com.termux/files/home/.appdata/virt-manager',
+    '/data/data/com.termux/files/home/.cache',
+    '/data/data/com.termux/files/home/.cargo',
+    '/data/data/com.termux/files/home/.emacs.d',
+    '/data/data/com.termux/files/home/.local/lib',
+    '/data/data/com.termux/files/home/.local/opt',
+    '/data/data/com.termux/files/home/.local/share/gvfs-metadata',
+    '/data/data/com.termux/files/home/.local/share/tldr',
+    '/data/data/com.termux/files/home/.local/share/tracker',
+    '/data/data/com.termux/files/home/.local/share/Trash',
+    '/data/data/com.termux/files/home/.lyx/cache',
+    '/data/data/com.termux/files/home/.mozilla',
+    '/data/data/com.termux/files/home/.texlive20*',
+    '/data/data/com.termux/files/home/.thumbnails',
+    '/data/data/com.termux/files/home/downloads',
+    '/data/data/com.termux/files/home/progeny/go',
+    '/data/data/com.termux/files/home/progeny/virt-manager',
+    '/data/data/com.termux/files/home/media/import_temp',
+    '/sdcard/abode/dropbox',
+
+    # Files
+    '/data/data/com.termux/files/home/.config/nnn/.selection',
+    '/data/data/com.termux/files/home/.esd_auth',
+    '/data/data/com.termux/files/home/.ICEauthority',
 ]
 UNIVERSAL_EXCLUDE_PATTERNS += [str(Path(HOME_PATH, i)) for i in [
     # Directories
@@ -181,10 +207,6 @@ HOST_GRAMVOIDD = {
     'cred path': 'programs/restic/BackblazeB2',
     'repo address': lambda: (RESTIC_USERNAME),
     'backup paths': [HOME_PATH],
-    'exclude patterns': [
-        # Directories
-        '/home/daniel/working/nerd-dictation/model',
-    ],
 }
 HOST_ANDTERMUXDVOID = {
     'cred path': 'programs/restic/BackblazeB2',
@@ -203,41 +225,11 @@ HOST_ANDTERMUXDVOID = {
         SDCARD_PATH / 'Pictures',
         SDCARD_PATH / 'Snapseed',
     ],
-    'exclude patterns': [
-        # Directories
-        '/data/data/com.termux/files/home/.appdata/go',
-        '/data/data/com.termux/files/home/.appdata/virt-manager',
-        '/data/data/com.termux/files/home/.cache',
-        '/data/data/com.termux/files/home/.cargo',
-        '/data/data/com.termux/files/home/.emacs.d',
-        '/data/data/com.termux/files/home/.local/lib',
-        '/data/data/com.termux/files/home/.local/opt',
-        '/data/data/com.termux/files/home/.local/share/gvfs-metadata',
-        '/data/data/com.termux/files/home/.local/share/tldr',
-        '/data/data/com.termux/files/home/.local/share/tracker',
-        '/data/data/com.termux/files/home/.local/share/Trash',
-        '/data/data/com.termux/files/home/.lyx/cache',
-        '/data/data/com.termux/files/home/.mozilla',
-        '/data/data/com.termux/files/home/.texlive20*',
-        '/data/data/com.termux/files/home/.thumbnails',
-        '/data/data/com.termux/files/home/downloads',
-        '/data/data/com.termux/files/home/progeny/go',
-        '/data/data/com.termux/files/home/progeny/virt-manager',
-        '/data/data/com.termux/files/home/media/import_temp',
-        '/sdcard/abode/dropbox',
-
-        # Files
-        '/data/data/com.termux/files/home/.config/nnn/.selection',
-        '/data/data/com.termux/files/home/.esd_auth',
-        '/data/data/com.termux/files/home/.ICEauthority',
-    ],
 }
 
 
-# Function
 def timestamp() -> str:
     return datetime.now().strftime('%Y-%m-%d-%H%M%S')
-
 
 def ncduX(exclude_patterns):
     # Run this function to get an idea of what large directories/files to
@@ -252,105 +244,108 @@ def ncduX(exclude_patterns):
     cmd = ['ncdu', *exclude_pattern_args, HOME_PATH]
     sp.run(cmd, check=True)
 
-
 def log_system_state(host):
     pass
     # TODO (see todo list at bottom)
 
 
-# Determine host
-if HOSTNAME == 'gramvoidd':
-    print("Host 'gramvoidd' detected")
-    host = HOST_GRAMVOIDD
-elif HOSTNAME == 'andtermuxd-void':
-    print("Host 'andtermuxd-void' detected")
-    host = HOST_ANDTERMUXDVOID
-else:
-    print("error: Unsupported host")
-    sys.exit(1)
+def main():
+    # Determine host
+    if HOSTNAME == 'gramvoidd':
+        print("Host 'gramvoidd' detected")
+        host = HOST_GRAMVOIDD
+    elif HOSTNAME == 'andtermuxd-void':
+        print("Host 'andtermuxd-void' detected")
+        host = HOST_ANDTERMUXDVOID
+    else:
+        print("error: Unsupported host")
+        sys.exit(1)
 
 
-# Parse command line input
-DRY_RUN_MODE = False
-args = iter(sys.argv[1:])
-for i in args:
-    match i:
-        case '-X'|'--ncdu':
-            ncduX(host['exclude patterns'] + UNIVERSAL_EXCLUDE_PATTERNS)
-            sys.exit()
-        case '-d'|'-n'|'--dry-run':
-            DRY_RUN_MODE = True
-            print("Running in dry run mode")
-        case _:
-            print("error: Unsupported argument")
-            sys.exit(1)
+    # Parse command line input
+    DRY_RUN_MODE = False
+    args = iter(sys.argv[1:])
+    for i in args:
+        match i:
+            case '-X'|'--ncdu':
+                ncduX(UNIVERSAL_EXCLUDE_PATTERNS)
+                sys.exit()
+            case '-d'|'-n'|'--dry-run':
+                DRY_RUN_MODE = True
+                print("Running in dry run mode")
+            case _:
+                print("error: Unsupported argument")
+                sys.exit(1)
 
 
-# Collect credentials for restic
-print("Loading credentials...")
+    # Collect credentials for restic
+    print("Loading credentials...")
 
-RESTIC_USERNAME = sp.run(
-    ['getcred', host['cred path'], 'username'],
-    check=True, text=True, capture_output=True
-).stdout
-
-credentials = {
-    'RESTIC_PASSWORD_COMMAND': f"getcred {host['cred path']} password",
-}
-for k, v in (
-    ('B2_ACCOUNT_KEY',          'Application Key'),
-    ('B2_ACCOUNT_ID',           'Key ID'),
-):
-    credentials[k] = sp.run(
-        ['getcred', host['cred path'], v],
+    RESTIC_USERNAME = sp.run(
+        ['getcred', host['cred path'], 'username'],
         check=True, text=True, capture_output=True
     ).stdout
 
-
-# Compile exclude pattern arguments for restic
-exclude_pattern_args = list()
-for pattern in (host['exclude patterns'] + UNIVERSAL_EXCLUDE_PATTERNS):
-    exclude_pattern_args.append('-e')  # restic flag: -e = --exclude
-    exclude_pattern_args.append(pattern)
-
-
-# Finish structuring restic command array
-repo_addr = host['repo address']
-if callable(repo_addr):
-    # 'lambda' (which defines anonymous--nameless--functions) is used under
-    #  the 'host' dictionary for items that depend on the contents of other
-    #  variables that are not yet defined. 'lambda' allows these other
-    #  variables to be mentioned in the 'host' dictionary before they are
-    #  defined (because functions are do not call the variables they
-    #  reference until the function is run). For the 'repo address' key, where
-    #  the value does not depend on other variables, the value will just be a
-    #  plain string (and thus does not need to be called as a function).
-    repo_addr = repo_addr()
-
-cmd = [
-    'restic',
-    '--cleanup-cache',
-    'backup',
-    '--repo', repo_addr,
-    *exclude_pattern_args,
-    *host['backup paths'],
-]
-
-if DRY_RUN_MODE:
-    cmd.insert(2, '--verbose=2')
-    cmd.insert(2, '--dry-run')
+    credentials = {
+        'RESTIC_PASSWORD_COMMAND': f"getcred {host['cred path']} password",
+    }
+    for k, v in (
+        ('B2_ACCOUNT_KEY',          'Application Key'),
+        ('B2_ACCOUNT_ID',           'Key ID'),
+    ):
+        credentials[k] = sp.run(
+            ['getcred', host['cred path'], v],
+            check=True, text=True, capture_output=True
+        ).stdout
 
 
-# Backup
-print("Current time:", datetime.now())
-# TODO
-#print("Saving system state to log files for backup...")
-#log_system_state(host)
-print("Performing backup...")
-signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
-p = sp.run(cmd, env={**os.environ, **credentials})
+    # Compile exclude pattern arguments for restic
+    exclude_pattern_args = list()
+    for pattern in UNIVERSAL_EXCLUDE_PATTERNS:
+        exclude_pattern_args.append('-e')  # restic flag: -e = --exclude
+        exclude_pattern_args.append(pattern)
 
-sys.exit(p.returncode)
+
+    # Finish structuring restic command array
+    repo_addr = host['repo address']
+    if callable(repo_addr):
+        # 'lambda' (which defines anonymous--nameless--functions) is used under
+        #  the 'host' dictionary for items that depend on the contents of other
+        #  variables that are not yet defined. 'lambda' allows these other
+        #  variables to be mentioned in the 'host' dictionary before they are
+        #  defined (because functions are do not call the variables they
+        #  reference until the function is run). For the 'repo address' key, where
+        #  the value does not depend on other variables, the value will just be a
+        #  plain string (and thus does not need to be called as a function).
+        repo_addr = repo_addr()
+
+    cmd = [
+        'restic',
+        '--cleanup-cache',
+        'backup',
+        '--repo', repo_addr,
+        *exclude_pattern_args,
+        *host['backup paths'],
+    ]
+
+    if DRY_RUN_MODE:
+        cmd.insert(2, '--verbose=2')
+        cmd.insert(2, '--dry-run')
+
+
+    # Backup
+    print("Current time:", datetime.now())
+    # TODO
+    #print("Saving system state to log files for backup...")
+    #log_system_state(host)
+    print("Performing backup...")
+    signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
+    p = sp.run(cmd, env={**os.environ, **credentials})
+
+    sys.exit(p.returncode)
+
+if __name__ == '__main__':
+    main()
 
 
 
