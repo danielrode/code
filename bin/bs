@@ -167,6 +167,7 @@ UNIVERSAL_EXCLUDE_PATTERNS += [str(Path(HOME_PATH, i)) for i in [
     '.var/app/org.chromium.Chromium/',
     '.var/app/org.kde.falkon/cache/',
     '.var/app/org.qgis.qgis/cache/',
+    '.var/app/org.qgis.qgis/data/QGIS/QGIS4/profiles/default/proj/',
     '.zoom/',
     '.wine/',
     'Dropbox/',
@@ -204,13 +205,16 @@ UNIVERSAL_EXCLUDE_PATTERNS += [str(Path(HOME_PATH, i)) for i in [
 
 # Host specific values for restic
 HOST_GRAMVOIDD = {
-    'cred path': 'programs/restic/BackblazeB2',
-    'repo address': lambda: (RESTIC_USERNAME),
+    'name': 'gramvoidd',
+    'cred paths': [
+        'programs/restic/BackblazeB2',
+        'programs/restic/S',
+    ],
     'backup paths': [HOME_PATH],
 }
 HOST_ANDTERMUXDVOID = {
-    'cred path': 'programs/restic/BackblazeB2',
-    'repo address': lambda: (RESTIC_USERNAME),
+    'name': 'andtermuxd-void',
+    'cred paths': ['programs/restic/BackblazeB2'],
     'backup paths': [
         '/etc',
         HOME_PATH,
@@ -248,56 +252,26 @@ def log_system_state(host):
     pass
     # TODO (see todo list at bottom)
 
-
-def main():
-    # Determine host
-    if HOSTNAME == 'gramvoidd':
-        print("Host 'gramvoidd' detected")
-        host = HOST_GRAMVOIDD
-    elif HOSTNAME == 'andtermuxd-void':
-        print("Host 'andtermuxd-void' detected")
-        host = HOST_ANDTERMUXDVOID
-    else:
-        print("error: Unsupported host")
-        sys.exit(1)
-
-
-    # Parse command line input
-    DRY_RUN_MODE = False
-    args = iter(sys.argv[1:])
-    for i in args:
-        match i:
-            case '-X'|'--ncdu':
-                ncduX(UNIVERSAL_EXCLUDE_PATTERNS)
-                sys.exit()
-            case '-d'|'-n'|'--dry-run':
-                DRY_RUN_MODE = True
-                print("Running in dry run mode")
-            case _:
-                print("error: Unsupported argument")
-                sys.exit(1)
-
-
+def backup(backup_paths, cred_path, dry_run_mode=False):
     # Collect credentials for restic
     print("Loading credentials...")
 
-    RESTIC_USERNAME = sp.run(
-        ['getcred', host['cred path'], 'username'],
+    repo_addr = sp.run(
+        ['getcred', cred_path, 'username'],
         check=True, text=True, capture_output=True
     ).stdout
 
     credentials = {
-        'RESTIC_PASSWORD_COMMAND': f"getcred {host['cred path']} password",
+        'RESTIC_PASSWORD_COMMAND': f"getcred {cred_path} password",
     }
     for k, v in (
-        ('B2_ACCOUNT_KEY',          'Application Key'),
-        ('B2_ACCOUNT_ID',           'Key ID'),
+        ('B2_ACCOUNT_KEY', 'Application Key'),
+        ('B2_ACCOUNT_ID',  'Key ID'),
     ):
         credentials[k] = sp.run(
-            ['getcred', host['cred path'], v],
+            ['getcred', cred_path, v],
             check=True, text=True, capture_output=True
         ).stdout
-
 
     # Compile exclude pattern arguments for restic
     exclude_pattern_args = list()
@@ -305,44 +279,65 @@ def main():
         exclude_pattern_args.append('-e')  # restic flag: -e = --exclude
         exclude_pattern_args.append(pattern)
 
-
     # Finish structuring restic command array
-    repo_addr = host['repo address']
-    if callable(repo_addr):
-        # 'lambda' (which defines anonymous--nameless--functions) is used under
-        #  the 'host' dictionary for items that depend on the contents of other
-        #  variables that are not yet defined. 'lambda' allows these other
-        #  variables to be mentioned in the 'host' dictionary before they are
-        #  defined (because functions are do not call the variables they
-        #  reference until the function is run). For the 'repo address' key, where
-        #  the value does not depend on other variables, the value will just be a
-        #  plain string (and thus does not need to be called as a function).
-        repo_addr = repo_addr()
-
     cmd = [
         'restic',
         '--cleanup-cache',
         'backup',
         '--repo', repo_addr,
         *exclude_pattern_args,
-        *host['backup paths'],
+        *backup_paths,
     ]
 
-    if DRY_RUN_MODE:
+    if dry_run_mode:
         cmd.insert(2, '--verbose=2')
         cmd.insert(2, '--dry-run')
 
-
     # Backup
     print("Current time:", datetime.now())
-    # TODO
-    #print("Saving system state to log files for backup...")
-    #log_system_state(host)
     print("Performing backup...")
     signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
     p = sp.run(cmd, env={**os.environ, **credentials})
 
-    sys.exit(p.returncode)
+    if p.returncode != 0:
+        sys.exit(p.returncode)
+
+
+def main():
+    # Parse command line input
+    dry_run_mode = False
+    args = iter(sys.argv[1:])
+    for i in args:
+        match i:
+            case '-X'|'--ncdu':
+                ncduX(UNIVERSAL_EXCLUDE_PATTERNS)
+                sys.exit(0)
+            case '-d'|'-n'|'--dry-run':
+                dry_run_mode = True
+                print("Running in dry run mode")
+            case _:
+                print("error: Unsupported argument")
+                sys.exit(1)
+
+    # Determine host
+    if HOSTNAME == 'gramvoidd':
+        host = HOST_GRAMVOIDD
+    elif HOSTNAME == 'andtermuxd-void':
+        host = HOST_ANDTERMUXDVOID
+    else:
+        print("error: Unsupported host")
+        sys.exit(1)
+
+    print(host)
+    print(f"Host '{host['name']}' detected")
+
+    # TODO
+    #print("Saving system state to log files for backup...")
+    #log_system_state(host)
+
+    # Backup
+    for cred_path in host['cred paths']:
+        backup(host['backup paths'], cred_path, dry_run_mode=dry_run_mode)
 
 if __name__ == '__main__':
     main()
