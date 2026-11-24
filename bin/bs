@@ -7,7 +7,7 @@
 #    restic
 #    ~/code/bin/getcred
 # created: 23 nov 2022
-# updated: 22 nov 2026
+# updated: 23 nov 2026
 
 
 # Backup Sync. Create backup of my data online using restic.
@@ -328,7 +328,6 @@ def main():
         print("error: Unsupported host")
         sys.exit(1)
 
-    print(host)
     print(f"Host '{host['name']}' detected")
 
     # TODO
