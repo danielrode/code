@@ -528,3 +528,8 @@ vim.keymap.set(
     '<leader>p',
     ':r !md-paste<CR>',
     { desc = "Paste markdown output" })
+
+-- Replace selection with clipboard contents
+vim.keymap.set({'v'}, 'R', '"_d"+P',
+    { desc = 'Replace selection with clipboard contents' })
+
