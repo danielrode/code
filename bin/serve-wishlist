@@ -2,7 +2,7 @@
 # author: daniel rode
 # dependencies: podman, crun-krun, ~/.nunyuh
 # created: 04 may 2026
-# updated: 22 nov 2026
+# updated: 24 nov 2026
 
 
 """Install and serve cmintey's containerized 'wishlist' app."""
@@ -103,16 +103,20 @@ set -e
 set -x
 
 # Add user for service
-id app_{shlex.quote(APP_NAME)} &>/dev/null || \\
-    useradd -m app_{shlex.quote(APP_NAME)}
+useradd -m app_{shlex.quote(APP_NAME)}
 usermod -a -G app_{shlex.quote(APP_NAME)} {shlex.quote(USER)}
 chmod 770 /home/app_{shlex.quote(APP_NAME)}
 loginctl enable-linger app_{shlex.quote(APP_NAME)}
 systemctl daemon-reload
 
-# Install systemd service file
-umask 0022
-tee <<'EOF' > /etc/systemd/user/app_{shlex.quote(APP_NAME)}.service
+# Allow current user to login as service user
+tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+{USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
+EOF
+sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
+"""
+
+SYSTEMD_UNIT = f"""\
 [Unit]
 Description=app_{APP_NAME}
 Requires=dbus.socket
@@ -126,13 +130,6 @@ ExecStart={shlex.quote(str(INIT_CON_SH_FP))}
 ExecStop=/usr/bin/podman stop app_{APP_NAME}
 [Install]
 WantedBy=default.target
-EOF
-
-# Allow current user to login as service user
-tee <<'EOF' > /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
-{USER} ALL=(app_{APP_NAME}) NOPASSWD: ALL
-EOF
-sudo chmod 440 /etc/sudoers.d/app_{shlex.quote(APP_NAME)}
 """
 
 
@@ -168,18 +165,27 @@ def to_alpha_num(s):
 
 
 # Run setup code that needs to be run as root
-if not Path(f'/etc/systemd/user/app_{APP_NAME}.service').exists():
+if not Path(f'/home/app_{APP_NAME}/').exists():
     sp.run(
         ('sudo', 'bash'),
         check=True, text=True, input=SETUP_ROOT_SH_PAYLOAD,
     )
-    print("Setup/install code completed. Now re-run this script.")
+    print("Admin setup completed. Now re-run this script.")
     sys.exit(0)
 
+# Install systemd service file
+unit_fp = Path(
+    f"/home/app_{APP_NAME}/.config/systemd/user/app_{APP_NAME}.service"
+)
+unit_fp.parent.mkdir(mode=775, parents=True, exist_ok=True)
+run_app_user(
+    ('tee', str(unit_fp)),
+    input=SYSTEMD_UNIT,
+)
+
 # Write container spawning script
-script_chmod = 0o755
-INIT_CON_SH_FP.touch(script_chmod)
-INIT_CON_SH_FP.chmod(script_chmod)
+INIT_CON_SH_FP.touch()
+INIT_CON_SH_FP.chmod(0o775)
 INIT_CON_SH_FP.write_text('#!/usr/bin/env bash\nexec ' + ' '.join(
     shlex.quote(i) for i in (
     *VM_CONTAINER,
